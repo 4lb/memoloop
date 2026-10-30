@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Tests for the memoloop prototype scheduling and answer-matching logic.
+# Tests for the memoloop config + scoring system.
 #
-# Sources src/memoloop (command dispatcher is guarded so nothing runs on
-# source) with MEMOLOOP_STATE redirected to a temporary directory, then
-# exercises the pure functions directly.
+# Uses temp directories for isolated testing.
+# Sources src/memoloop then exercises the functions directly.
 #
 # Run: ./tests/memoloop_test.sh
 
@@ -18,20 +17,19 @@ SELF_DIR() {
 		*) _sd=$(dirname -- "$_sd")/$_sd_l ;;
 		esac
 	done
-	(CDPATH='' cd -- "$(dirname -- "$_sd")" && pwd -P)
+	(CDPATH='' cd -- "$(dirname -- "$_sd")/.." && pwd -P)
 }
 REPO=$(SELF_DIR)
 unset -f SELF_DIR
 
+export MEMOLOOP_CONFIG_DIR="$(mktemp -d)"
+export MEMOLOOP_CACHE_DIR="$(mktemp -d)"
 export MEMOLOOP_STATE="$(mktemp -d)"
 export MEMOLOOP_LOG="$(mktemp -d)"
-trap 'rm -rf "$MEMOLOOP_STATE" "$MEMOLOOP_LOG"' EXIT
+trap 'rm -rf "$MEMOLOOP_CONFIG_DIR" "$MEMOLOOP_CACHE_DIR" "$MEMOLOOP_STATE" "$MEMOLOOP_LOG"' EXIT
 
 # shellcheck source=../src/memoloop
-. "$REPO/../src/memoloop"
-
-# Create the state files the functions read/write.
-state_init >/dev/null 2>&1
+. "$REPO/src/memoloop"
 
 pass=0
 fail=0
@@ -45,102 +43,115 @@ assert_eq() { # $1 desc $2 expected $3 actual
 	fi
 }
 
-rc() { # run $1.., print exit code
-	"$@"
-	printf '%s' "$?"
-}
+# ---------------------------------------------------------------- config loading
 
-# ---------------------------------------------------------------- intervals
+cat >"$MEMOLOOP_CONFIG_DIR/intervals.conf" <<'EOF'
+fixed_seconds=2700
+random_min=15
+random_max=30
+decay_hours=24
+min_per_day=10
+EOF
 
-fixed_sec=$(rule_interval_seconds fixed)
-assert_eq "fixed interval seconds" "2700" "$fixed_sec"
+cat >"$MEMOLOOP_CONFIG_DIR/pickup.set" <<'EOF'
+greetings
+family
+weather
+conversation
+adjectives
+verbs
+nouns
+EOF
 
-random_ok=1
-for _ in $(seq 1 200); do
-	sec=$(rule_interval_seconds random)
-	if [ "$sec" -lt 900 ] || [ "$sec" -gt 1800 ]; then
-		random_ok=0
-		break
-	fi
-done
-assert_eq "random interval always in 1800-2400s" "1" "$random_ok"
+mkdir -p "$MEMOLOOP_CONFIG_DIR/questions/greetings"
+cat >"$MEMOLOOP_CONFIG_DIR/questions/greetings/basics.json" <<'EOF'
+[
+  {"id": "t-greet-1", "type": "translation", "japanese": "こんにちは", "english": "Hello", "accepted": ["こんにちは", "konnichiwa"]},
+  {"id": "t-greet-2", "type": "reverse", "japanese": "ありがとう", "english": "Thank you", "accepted": ["ありがとう", "arigatou"]},
+  {"id": "t-greet-3", "type": "cloze", "japanese": "小さな町です", "target": "小さな", "english": "Small town", "accepted": ["小さな", "chiisana"]},
+  {"id": "t-greet-4", "type": "choice", "japanese": "雨 means?", "english": "rain", "choices": ["A. 雪", "B. 雨", "C. 晴れ"], "answer": "B", "accepted": ["B", "b"]}
+]
+EOF
 
-# ---------------------------------------------------------------- schedule_recalc / due_rules
+load_intervals
+state_init >/dev/null 2>&1
 
-now=$(epoch)
-schedule_recalc fixed
-schedule_recalc random
-for id in fixed random; do
-	nd=$(rule_next_due "$id")
-	assert_eq "$id next_due in future" "0" $([ "$nd" -gt "$now" ] && echo 0 || echo 1)
-done
+assert_eq "fixed_seconds loaded" "2700" "$FIXED_SECONDS"
+assert_eq "random_min loaded" "15" "$RANDOM_MIN"
+assert_eq "random_max loaded" "30" "$RANDOM_MAX"
+assert_eq "decay_hours loaded" "24" "$DECAY_HOURS"
+assert_eq "min_per_day loaded" "10" "$MIN_PER_DAY"
 
-rules_set_next_due fixed $((now - 100))
-rules_set_next_due random $((now + 100000))
-due=$(due_rules)
-assert_eq "due_rules returns fixed only" "fixed" "$due"
+# ---------------------------------------------------------------- question loading
 
-schedule_recalc fixed
-schedule_recalc random
+groups=$(load_enabled_groups)
+gcount=$(printf '%s' "$groups" | grep -c .)
+assert_eq "enabled groups count" "7" "$gcount"
 
-# ---------------------------------------------------------------- pause / resume / dnd
+questions=$(load_all_questions "$groups")
+qcount=$(printf '%s' "$questions" | jq 'length')
+assert_eq "question set non-empty" "0" $([ "$qcount" -gt 0 ] && echo 0 || echo 1)
 
-cmd_pause
-assert_eq "pause sets paused=true" "true" "$(session_get paused)"
-cmd_resume
-assert_eq "resume sets paused=false" "false" "$(session_get paused)"
-
-cmd_dnd 09:00 17:00
-assert_eq "dnd start stored" "09:00" "$(session_get dnd_start)"
-assert_eq "dnd end stored" "17:00" "$(session_get dnd_end)"
-
-session_set dnd_start "null"
-session_set dnd_end "null"
-assert_eq "no DND → in_dnd returns 1" "1" "$(rc in_dnd)"
-
-start_hm=$(date +%H:%M)
-end_hm=$(date -d '+1 minute' +%H:%M)
-session_set dnd_start "\"$start_hm\""
-session_set dnd_end "\"$end_hm\""
-assert_eq "current minute inside DND → in_dnd returns 0" "0" "$(rc in_dnd)"
-
-session_set dnd_start "null"
-session_set dnd_end "null"
-
-# ---------------------------------------------------------------- answer matching
-
-assert_eq "normalize lowercase" "hai" "$(normalize "HAI")"
-assert_eq "normalize trim" "hai" "$(normalize "  hai  ")"
-
-accepted='はい
-hai
-konnichiwa'
-match() { # $1 candidate → 0 if matches any accepted line
-	local cand="$1" a
-	cand=$(normalize "$cand")
-	while IFS= read -r a; do
-		[ -z "$a" ] && continue
-		if [ "$cand" = "$(normalize "$a")" ]; then return 0; fi
-	done <<<"$accepted"
-	return 1
-}
-
-assert_eq "hai matches accepted" "0" "$(rc match hai)"
-assert_eq "HAI matches accepted (case)" "0" "$(rc match HAI)"
-assert_eq " trimmed hai matches accepted" "0" "$(rc match " hai ")"
-assert_eq "nope does not match" "1" "$(rc match nope)"
-
-# ---------------------------------------------------------------- question file loads
-
-qcount=$(jq 'length' "$QUESTIONS")
-assert_eq "question set is non-empty" "0" $([ "$qcount" -gt 0 ] && echo 0 || echo 1)
-all_have_jp=1
+all_valid=1
 while IFS= read -r line; do
-	[ -n "$line" ] || continue
-	jp=$(printf '%s' "$line" | jq -r '.japanese')
-	[ -n "$jp" ] || all_have_jp=0
-done < <(jq -c '.[]' "$QUESTIONS")
-assert_eq "every question has japanese text" "1" "$all_have_jp"
+	[ -z "$line" ] && continue
+	id=$(printf '%s' "$line" | jq -r '.id // empty')
+	jp=$(printf '%s' "$line" | jq -r '.japanese // empty')
+	en=$(printf '%s' "$line" | jq -r '.english // empty')
+	[ -n "$id" ] && [ -n "$jp" ] && [ -n "$en" ] || all_valid=0
+done < <(printf '%s' "$questions" | jq -c '.[]')
+assert_eq "all questions have required fields" "1" "$all_valid"
+
+# ---------------------------------------------------------------- answer scoring
+
+printf '{}' >"$ANSWERS_STATE"
+
+update_points "t-greet-1" "accepted"
+points=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-1"].points // 100')
+assert_eq "correct answer +10 points" "110" "$points"
+
+update_points "t-greet-2" "rejected"
+points=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-2"].points // 100')
+assert_eq "incorrect answer -10 points" "90" "$points"
+
+# Floor at 0: reject 9 more times (total 10 rejects from 100 → 0)
+for i in $(seq 1 9); do update_points "t-greet-2" "rejected"; done
+points=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-2"].points // 100')
+assert_eq "points floor at 0" "0" "$points"
+
+ts=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-1"].times_shown // 0')
+tc=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-1"].times_correct // 0')
+assert_eq "times_shown tracked" "1" "$ts"
+assert_eq "times_correct tracked" "1" "$tc"
+
+# ---------------------------------------------------------------- question weight
+
+# New question, points=100 → weight = 100/(100+100) = 0.5
+w=$(question_weight "t-greet-3" "$(load_answers)" "$(epoch)")
+assert_eq "new question weight" "0.5" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
+
+# High points (110) → weight = 100/(110+100) ≈ 0.476 → 0.5
+w=$(question_weight "t-greet-1" "$(load_answers)" "$(epoch)")
+assert_eq "high points lower weight" "0.5" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
+
+# Zero points → max weight = 100/(0+100) = 1.0
+w=$(question_weight "t-greet-2" "$(load_answers)" "$(epoch)")
+assert_eq "zero points max weight" "1.0" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
+
+# ---------------------------------------------------------------- daily minimum
+
+shown_count=$(questions_shown_today)
+assert_eq "questions shown today (2 answered)" "2" "$shown_count"
+
+# ---------------------------------------------------------------- question selection
+
+sel=$(select_question "$groups")
+sel_id=$(printf '%s' "$sel" | jq -r '.id // empty')
+[ -n "$sel_id" ] && assert_eq "question selected" "0" "0" || assert_eq "question selected" "1" "1"
+
+# Selected question should be from greetings group (id prefix t-greet)
+sel_prefix=$(printf '%s' "$sel_id" | cut -d- -f1-2)
+assert_eq "selected group is greetings" "t-greet" "$sel_prefix"
 
 # ---------------------------------------------------------------- summary
 

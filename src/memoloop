@@ -2,14 +2,17 @@
 # memoloop — MemoLoop Linux prototype: independent Japanese study reminders.
 #
 # Popup-terminal question experience with two scheduling rules:
-#   fixed  → one prompt every 15 minutes
-#   random → one prompt at a random interval of 30–40 minutes
+#   fixed  → one prompt every N seconds (from intervals.conf)
+#   random → one prompt at a random interval of M–N minutes
 #
 # Each rule keeps its own next-due time. Prompts open one at a time in a
 # terminal popup; a rule that fires while a prompt is open is queued.
 # Global pause / Do-Not-Disturb suppress prompts without backlog.
 #
-# Self-contained: state/ and log/ live beside this script (gitignored).
+# Configuration: ~/.config/memoloop/  (intervals.conf, pickup.set, questions/)
+# Cache/scores:  ~/.cache/memoloop/   (answers.json with point system)
+#
+# State/ and log/ live beside this script (gitignored).
 
 SELF_DIR() {
   _sd=${BASH_SOURCE[0]}
@@ -25,27 +28,37 @@ SELF_DIR() {
 SELF_DIR=$(SELF_DIR)
 unset -f SELF_DIR
 
-LIB_DIR="$SELF_DIR/../lib"
-DATA_DIR="$SELF_DIR/../data"
+# ------------------------------------------------------------------ paths
+
+CONFIG_DIR="${MEMOLOOP_CONFIG_DIR:-$HOME/.config/memoloop}"
+CACHE_DIR="${MEMOLOOP_CACHE_DIR:-$HOME/.cache/memoloop}"
 STATE_DIR="${MEMOLOOP_STATE:-$SELF_DIR/../state}"
 LOG_DIR="${MEMOLOOP_LOG:-$SELF_DIR/../log}"
-QUESTIONS="$DATA_DIR/questions/questions.json"
 
-# shellcheck source=../lib/term.sh
-. "$LIB_DIR/term.sh"
+INTERVALS_CONF="$CONFIG_DIR/intervals.conf"
+PICKUP_SET="$CONFIG_DIR/pickup.set"
+QUESTIONS_DIR="$CONFIG_DIR/questions"
+ANSWERS_STATE="$CACHE_DIR/answers.json"
 
 RULES_STATE="$STATE_DIR/rules.json"
 SESSION_STATE="$STATE_DIR/session.json"
 CURRENT_STATE="$STATE_DIR/current.json"
 RESULT_STATE="$STATE_DIR/result.json"
-QUEUE_STATE="$STATE_DIR/queue.json"
 LOG_FILE="$LOG_DIR/reminders.log"
+
+# ------------------------------------------------------------------ defaults (overridden by intervals.conf)
+
+FIXED_SECONDS=2700
+RANDOM_MIN=15
+RANDOM_MAX=30
+DECAY_HOURS=24
+MIN_PER_DAY=10
 
 RULE_FIXED_ID="fixed"
 RULE_RANDOM_ID="random"
-FIXED_SECONDS="${MEMOLOOP_FIXED_SECONDS:-2700}"
-RANDOM_MIN=15
-RANDOM_MAX=30
+
+# shellcheck source=../lib/term.sh
+. "$SELF_DIR/../lib/term.sh"
 
 die() { printf 'memoloop: %s\n' "$1" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
@@ -53,10 +66,39 @@ need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
 epoch() { date +%s; }
 iso() { date -d "@$1" '+%H:%M:%S' 2>/dev/null || date -r "$1" '+%H:%M:%S'; }
 
+today_start() { # → epoch of today 00:00:00
+  date -d "$(date +%F)" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$(date +%F)" +%s
+}
+
+# ------------------------------------------------------------------ config
+
+load_intervals() {
+  if [ -f "$INTERVALS_CONF" ]; then
+    local key value
+    while IFS='=' read -r key value; do
+      case "$key" in
+        fixed_seconds) FIXED_SECONDS="$value" ;;
+        random_min) RANDOM_MIN="$value" ;;
+        random_max) RANDOM_MAX="$value" ;;
+        decay_hours) DECAY_HOURS="$value" ;;
+        min_per_day) MIN_PER_DAY="$value" ;;
+      esac
+    done <"$INTERVALS_CONF"
+  fi
+}
+
+load_enabled_groups() { # → prints group ids, one per line
+  if [ -f "$PICKUP_SET" ]; then
+    grep -v '^[[:space:]]*#' "$PICKUP_SET" | grep -v '^[[:space:]]*$'
+  fi
+}
+
 # ------------------------------------------------------------------ state
 
 state_init() {
-  mkdir -p "$STATE_DIR" "$LOG_DIR"
+  mkdir -p "$STATE_DIR" "$LOG_DIR" "$CACHE_DIR"
+  load_intervals
+
   if [ ! -f "$RULES_STATE" ]; then
     cat >"$RULES_STATE" <<EOF
 {
@@ -71,6 +113,9 @@ EOF
     cat >"$SESSION_STATE" <<EOF
 {"paused": false, "dnd_start": null, "dnd_end": null, "open": 0, "queue": []}
 EOF
+  fi
+  if [ ! -f "$ANSWERS_STATE" ] || [ ! -s "$ANSWERS_STATE" ]; then
+    printf '{}' >"$ANSWERS_STATE"
   fi
   touch "$LOG_FILE"
 }
@@ -132,7 +177,145 @@ log_add() { # $1 = rule $2 = event $3 = message
   printf '%s %s %s %s\n' "$(iso "$(epoch)")" "$1" "$2" "$3" >>"$LOG_FILE"
 }
 
-# ---------------------------------------------------------------- scheduling
+# ------------------------------------------------------------------ questions
+
+load_all_questions() { # $1 = newline-separated group ids → prints combined JSON array
+  local groups="$1"
+  local combined="[]"
+  local group file
+  for group in $groups; do
+    for file in "$QUESTIONS_DIR/$group"/*.json; do
+      [ -f "$file" ] || continue
+      combined=$(jq -s '.[0] + .[1]' <(printf '%s' "$combined") "$file")
+    done
+  done
+  printf '%s' "$combined"
+}
+
+# ------------------------------------------------------------------ answers / scoring
+
+load_answers() { # → prints answers JSON object
+  if [ -f "$ANSWERS_STATE" ]; then
+    cat "$ANSWERS_STATE"
+  else
+    printf '{}'
+  fi
+}
+
+save_answers() { # $1 = answers JSON
+  mkdir -p "$CACHE_DIR"
+  printf '%s' "$1" >"$ANSWERS_STATE"
+}
+
+update_points() { # $1 = question id $2 = result (accepted|rejected|dismissed|skipped|paused)
+  local qid="$1" result="$2"
+  [ "$result" = "accepted" ] || [ "$result" = "rejected" ] || return 0
+
+  local answers now points
+  answers=$(load_answers)
+  now=$(epoch)
+  points=$(printf '%s' "$answers" | jq --arg id "$qid" '.[$id].points // 100')
+
+  case "$result" in
+    accepted) points=$(( points + 10 )) ;;
+    rejected) points=$(( points - 10 )); [ "$points" -lt 0 ] && points=0 ;;
+  esac
+
+  answers=$(printf '%s' "$answers" | jq --arg id "$qid" --arg result "$result" --argjson pts "$points" --argjson now "$now" '
+    .[$id] = {
+      points: $pts,
+      last_shown: $now,
+      last_correct: (if $result == "accepted" then $now else .[$id].last_correct end),
+      times_shown: ((.[$id].times_shown // 0) + 1),
+      times_correct: ((.[$id].times_correct // 0) + (if $result == "accepted" then 1 else 0 end))
+    }
+  ')
+  save_answers "$answers"
+}
+
+question_weight() { # $1 = question id $2 = answers JSON $3 = now epoch → prints weight
+  local qid="$1" answers="$2" now="$3"
+  local points last_shown hours_diff decay_factor effective_points weight
+
+  points=$(printf '%s' "$answers" | jq --arg id "$qid" '.[$id].points // 100')
+  last_shown=$(printf '%s' "$answers" | jq --arg id "$qid" '.[$id].last_shown // 0')
+
+  if [ "$last_shown" = "0" ] || [ "$last_shown" = "null" ]; then
+    decay_factor=1
+  else
+    hours_diff=$(( (now - last_shown) / 3600 ))
+    decay_factor=$(awk -v hd="$hours_diff" -v dh="$DECAY_HOURS" 'BEGIN { print exp(log(0.5) * hd / dh) }')
+  fi
+
+  effective_points=$(awk -v p="$points" -v df="$decay_factor" 'BEGIN { print p * df }')
+  weight=$(awk -v ep="$effective_points" 'BEGIN { print 100 / (ep + 100) }')
+  printf '%s' "$weight"
+}
+
+questions_shown_today() { # → count of unique question IDs shown today
+  local answers count
+  answers=$(load_answers)
+  count=$(printf '%s' "$answers" | jq --argjson start "$(today_start)" '
+    [to_entries[] | select(.value.last_shown >= $start)] | length
+  ')
+  printf '%s' "$count"
+}
+
+select_question() { # $1 = newline-separated group ids → prints selected question JSON
+  local groups="$1"
+  local questions answers now shown_count
+  questions=$(load_all_questions "$groups")
+  answers=$(load_answers)
+  now=$(epoch)
+  shown_count=$(questions_shown_today)
+
+  local qcount
+  qcount=$(printf '%s' "$questions" | jq 'length')
+  [ "$qcount" -gt 0 ] || return 1
+
+  # Build arrays of question IDs and weights
+  local qids=() weights=()
+  local total_weight=0
+  local all_ids qid w
+
+  all_ids=$(printf '%s' "$questions" | jq -r '.[].id')
+  for qid in $all_ids; do
+    # Daily minimum: skip questions already shown today
+    if [ "$shown_count" -lt "$MIN_PER_DAY" ]; then
+      local was_shown
+      was_shown=$(printf '%s' "$answers" | jq --arg id "$qid" --argjson start "$(today_start)" '
+        (.[$id].last_shown // 0) >= $start
+      ')
+      [ "$was_shown" = "true" ] && continue
+    fi
+
+    w=$(question_weight "$qid" "$answers" "$now")
+    qids+=("$qid")
+    weights+=("$w")
+    total_weight=$(awk -v tw="$total_weight" -v w="$w" 'BEGIN { print tw + w }')
+  done
+
+  [ ${#qids[@]} -gt 0 ] || return 1
+
+  # Weighted random selection
+  local r cumulative idx
+  r=$(awk -v tw="$total_weight" 'BEGIN { print rand() * tw }')
+  cumulative=0
+  idx=0
+  for qid in "${qids[@]}"; do
+    cumulative=$(awk -v c="$cumulative" -v w="${weights[$idx]}" 'BEGIN { print c + w }')
+    if [ "$(awk -v r="$r" -v c="$cumulative" 'BEGIN { print (r < c) ? 1 : 0 }')" = "1" ]; then
+      printf '%s' "$questions" | jq --arg id "$qid" '.[] | select(.id == $id)'
+      return 0
+    fi
+    idx=$((idx + 1))
+  done
+
+  # Fallback: return first
+  printf '%s' "$questions" | jq '.[0]'
+}
+
+# ------------------------------------------------------------------ scheduling
 
 random_between() { # $1 min $2 max
   local min="$1" max="$2"
@@ -140,9 +323,8 @@ random_between() { # $1 min $2 max
 }
 
 rule_interval_seconds() { # $1 = rule id → prints seconds
-  local r
+  local r type min max
   r=$(rules_get "$1")
-  local type minutes min max
   type=$(printf '%s' "$r" | jq -r '.type')
   case "$type" in
     fixed)
@@ -171,7 +353,6 @@ in_dnd() { # → 0 if in DND window, 1 otherwise
   [ "$start" = "null" ] || [ -z "$start" ] && return 1
   [ "$end" = "null" ] || [ -z "$end" ] && return 1
   now_hm=$(date +%H:%M)
-  # Simple inclusive window; handles same-day windows. Overnight windows not supported.
   if [ "$now_hm" \> "$start" ] && [ "$now_hm" \< "$end" ]; then
     return 0
   fi
@@ -192,7 +373,7 @@ due_rules() { # → prints rule ids due now (enabled, past next_due)
   done
 }
 
-# ---------------------------------------------------------------- popup
+# ------------------------------------------------------------------ popup
 
 popup_running() { # → 0 if a popup process is still alive
   local pid
@@ -221,7 +402,7 @@ process_queue() { # → if no popup open, launch next queued rule
   fi
 }
 
-# ---------------------------------------------------------------- ask
+# ------------------------------------------------------------------ ask
 
 cmd_ask() { # $1 = rule id
   term_init
@@ -229,16 +410,18 @@ cmd_ask() { # $1 = rule id
   [ -n "$id" ] || die "ask needs a rule id"
   need jq
 
-  local q json qtype jp en target note answer_label n idx choices answer_letter
-  n=$(jq 'length' "$QUESTIONS")
-  idx=$(( RANDOM % n ))
-  json=$(jq --argjson idx "$idx" -c '.[$idx]' "$QUESTIONS")
+  local groups json qtype jp en target note answer_label choices answer_letter
+  groups=$(load_enabled_groups)
+  [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
+
+  json=$(select_question "$groups")
+  [ -n "$json" ] && [ "$json" != "null" ] || die "no questions available in enabled groups"
+
   qtype=$(printf '%s' "$json" | jq -r '.type // "translation"')
   jp=$(printf '%s' "$json" | jq -r '.japanese')
   en=$(printf '%s' "$json" | jq -r '.english')
   target=$(printf '%s' "$json" | jq -r '.target // ""')
   note=$(printf '%s' "$json" | jq -r '.note // ""')
-  accepted=$(printf '%s' "$json" | jq -r '.accepted | join("\n")')
   printf '%s' "$json" >"$CURRENT_STATE"
 
   local now_hm status1 status2
@@ -310,7 +493,8 @@ cmd_ask() { # $1 = rule id
   term_ask_close
   printf '\n'
 
-  local result="dismissed" correct=0
+  local result="dismissed" correct=0 qid
+  qid=$(printf '%s' "$json" | jq -r '.id')
   case "$answer" in
     ''|s|S) result="skipped" ;;
     p|P)
@@ -321,12 +505,13 @@ cmd_ask() { # $1 = rule id
     d|D) result="dismissed" ;;
     *)
       correct=1
-      local a
       if [ "$qtype" = "choice" ]; then
         if [ "$(normalize "$answer")" = "$(normalize "$answer_letter")" ]; then
           correct=0
         fi
       else
+        local accepted a
+        accepted=$(printf '%s' "$json" | jq -r '.accepted | join("\n")')
         while IFS= read -r a; do
           [ -z "$a" ] && continue
           if [ "$(normalize "$answer")" = "$(normalize "$a")" ]; then correct=0; break; fi
@@ -350,10 +535,13 @@ cmd_ask() { # $1 = rule id
     read -n1 -r -s _close_key || true
   fi
 
+  # Update answer cache with points
+  update_points "$qid" "$result"
+
   cat >"$RESULT_STATE" <<EOF
 {"rule": "$id", "result": "$result", "question": $(printf '%s' "$json"), "answered_at": $(epoch)}
 EOF
-  log_add "$id" "answered" "$result (answer: $answer)"
+  log_add "$id" "answered" "$result (answer: $answer, qid: $qid)"
   return 0
 }
 
@@ -361,7 +549,7 @@ normalize() { # $1 = text → lowercase, trimmed
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
-# ---------------------------------------------------------------- watch
+# ------------------------------------------------------------------ watch
 
 cmd_watch() {
   state_init
@@ -394,21 +582,25 @@ cmd_watch() {
   done
 }
 
-# ---------------------------------------------------------------- controls
+# ------------------------------------------------------------------ controls
 
 cmd_status() {
   state_init
   term_init
-  local paused dnd open
+  local paused dnd open groups
   paused=$(session_get paused)
   dnd=$(in_dnd && echo yes || echo no)
   open=$(session_get open)
+  groups=$(load_enabled_groups | tr '\n' ' ')
   printf '\n'
   term_header "$TERM_NEUTRAL" "memoloop status" ""
   printf '\n'
   term_ask_row '' "Paused: $paused"
   term_ask_row '' "Do Not Disturb: $dnd"
   term_ask_row '' "Prompt open: $open"
+  term_ask_row '' "Config: $CONFIG_DIR"
+  term_ask_row '' "Cache: $CACHE_DIR"
+  term_ask_row '' "Groups: $groups"
   term_ask_row '' ''
   term_ask_row '-' ''
   local id enabled nd
@@ -444,33 +636,61 @@ cmd_test() {
 
 cmd_setup() {
   state_init
-  term_notice "Setup" "State directory ready: $STATE_DIR"
+  term_notice "Setup" "Config: $CONFIG_DIR  Cache: $CACHE_DIR"
 }
+
+# ---------------------------------------------------------------- config management
+
+cmd_config() { # show effective config
+  state_init
+  term_init
+  printf '\n'
+  term_header "$TERM_NEUTRAL" "memoloop config" ""
+  printf '\n'
+  term_ask_row '' "CONFIG_DIR=$CONFIG_DIR"
+  term_ask_row '' "CACHE_DIR=$CACHE_DIR"
+  term_ask_row '' "fixed_seconds=$FIXED_SECONDS"
+  term_ask_row '' "random_min=$RANDOM_MIN random_max=$RANDOM_MAX"
+  term_ask_row '' "decay_hours=$DECAY_HOURS min_per_day=$MIN_PER_DAY"
+  term_ask_row '' ''
+  term_ask_row '-' ''
+  local groups
+  groups=$(load_enabled_groups)
+  term_ask_row '' "Enabled groups:"
+  for g in $groups; do
+    term_ask_row '' "  $g"
+  done
+  term_ask_close
+  printf '\n'
+}
+
+# ---------------------------------------------------------------- main
 
 usage() {
   cat <<'EOF'
 Usage: memoloop <command>
 
-  setup       initialize state directory
-  watch       run the reminder daemon (fixed 15 min + random 30–40 min)
+  setup       initialize state/cache/config directories
+  watch       run the reminder daemon (fixed + random rules)
   ask <rule>  show one question popup (used by the daemon)
-  status      show paused/DND/next-due state
+  status      show paused/DND/next-due/state
+  config      show effective configuration
   pause       pause all reminders
   resume      resume all reminders
-  dnd <s> <e> set Do Not Disturb window (HH:MM HH:MM)
+  dnd  <e> set Do Not Disturb window (HH:MM HH:MM)
   test        launch a test prompt immediately
 
-State: state/  Logs: log/  Questions: data/questions/
+Config:  ~/.config/memoloop/  (intervals.conf, pickup.set, questions/)
+Cache:   ~/.cache/memoloop/   (answers.json with point system)
 EOF
 }
-
-# ---------------------------------------------------------------- main
 
 main() {
   case "${1:-}" in
     watch)   shift; cmd_watch "$@" ;;
     ask)     shift; cmd_ask "$@" ;;
     status)  cmd_status ;;
+    config)  cmd_config ;;
     pause)   cmd_pause ;;
     resume)  cmd_resume ;;
     dnd)     shift; cmd_dnd "$@" ;;
