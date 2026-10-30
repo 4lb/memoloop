@@ -31,8 +31,14 @@ Modified: README.md, pickup.md, ~/.config/niri/config.kdl (added memoloop.kdl in
 
 ## Where to resume next
 
-Improve the question set per user request: not only translation patterns — add fill-in-the-blank (cloze), multiple-choice (A/B/C), and one more pattern. Base content on user's Japanese references under `/home/eru/q/` (JLPT kanji level 4 base, common words, homework conjugations) to match their beginner level.
+Nothing blocking for the MVP prototype. The question set now has 70 questions
+across 4 patterns (translation, reverse, cloze fill-gap, ABC multiple choice)
+based on the user's notes at `/home/eru/r/notes/inbox/wp-notes.md` and
+JLPT references at `/home/eru/q/NIHONGO/`. Optional follow-up per plans:
+- Tauri proof of concept (plans/tech-stack.md)
+- Per-rule enable/disable, optional prompt bundling, richer question types
+- Add GitHub remote for the repo (open question from prior snapshot)
 
 ## Open questions / blockers
 
-- User's `~/mynotes/` not found at `/home/eru/mynotes/`; notes location unclear. References live in `/home/eru/q/NIHONGO/` and `/home/eru/q/_sync/MEGA/Preply-Nihongo/`.
+- None blocking.

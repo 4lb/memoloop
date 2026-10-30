@@ -5,4 +5,4 @@
    - or `cat progress/*.md | tail -n +1` to list all snapshots.
 2. Source-of-truth plans: `plans/AGENT.md`
 3. Repo: directory `a-memoloop`, project name `memoloop` (MemoLoop).
-4. State: groundwork done; implementation not started (see progress snapshot above).
+4. State: implementation complete for MVP prototype (see progress snapshot).

@@ -229,12 +229,14 @@ cmd_ask() { # $1 = rule id
   [ -n "$id" ] || die "ask needs a rule id"
   need jq
 
-  local q json jp en accepted note n idx
+  local q json qtype jp en target note answer_label n idx choices answer_letter
   n=$(jq 'length' "$QUESTIONS")
   idx=$(( RANDOM % n ))
   json=$(jq --argjson idx "$idx" -c '.[$idx]' "$QUESTIONS")
+  qtype=$(printf '%s' "$json" | jq -r '.type // "translation"')
   jp=$(printf '%s' "$json" | jq -r '.japanese')
   en=$(printf '%s' "$json" | jq -r '.english')
+  target=$(printf '%s' "$json" | jq -r '.target // ""')
   note=$(printf '%s' "$json" | jq -r '.note // ""')
   accepted=$(printf '%s' "$json" | jq -r '.accepted | join("\n")')
   printf '%s' "$json" >"$CURRENT_STATE"
@@ -253,18 +255,53 @@ cmd_ask() { # $1 = rule id
   fi
 
   printf '\n'
-  term_header "$TERM_NEUTRAL" "Japanese prompt — $id" ""
+  term_header "$TERM_NEUTRAL" "Japanese prompt — $id ($qtype)" ""
   printf '\n'
-  term_ask_row '' "$jp"
-  [ -n "$note" ] && term_ask_row '' "$note"
-  term_ask_row '' "English: $en"
-  term_ask_row '' "Type your answer, then Enter.  (d)ismiss  (p)ause all  (s)kip"
+
+  case "$qtype" in
+    translation)
+      term_ask_row '' "$jp"
+      [ -n "$note" ] && term_ask_row '' "$note"
+      term_ask_row '' "English: $en"
+      answer_label='Japanese: '
+      ;;
+    reverse)
+      term_ask_row '' "English: $en"
+      [ -n "$note" ] && term_ask_row '' "$note"
+      answer_label='Japanese: '
+      ;;
+    cloze)
+      local cloze_prompt
+      cloze_prompt=$(printf '%s' "$jp" | sed "s|$target|___|")
+      term_ask_row '' "$cloze_prompt"
+      [ -n "$note" ] && term_ask_row '' "$note"
+      term_ask_row '' "Meaning: $en"
+      answer_label='Fill in the blank: '
+      ;;
+    choice)
+      choices=$(printf '%s' "$json" | jq -r '.choices | join("\n")')
+      answer_letter=$(printf '%s' "$json" | jq -r '.answer')
+      term_ask_row '' "$jp"
+      [ -n "$note" ] && term_ask_row '' "$note"
+      term_ask_row '' ''
+      while IFS= read -r c; do
+        [ -n "$c" ] && term_ask_row '' "  $c"
+      done <<<"$choices"
+      term_ask_row '' ''
+      answer_label='Answer (A/B/C): '
+      ;;
+    *)
+      die "unknown question type: $qtype"
+      ;;
+  esac
+
   term_ask_row '' "$status1"
   [ -n "$status2" ] && term_ask_row '' "$status2"
+  term_ask_row '' '(d)ismiss  (p)ause all  (s)kip'
   term_ask_row '' ''
   term_ask_row '-' ''
   TERM_ASK_NO_NEWLINE=1 TERM_ASK_INDENT="$TERM_INDENT  " \
-    term_ask_row '' 'Your answer: '
+    term_ask_row '' "$answer_label"
   unset TERM_ASK_NO_NEWLINE TERM_ASK_INDENT
 
   local answer=''
@@ -285,10 +322,16 @@ cmd_ask() { # $1 = rule id
     *)
       correct=1
       local a
-      while IFS= read -r a; do
-        [ -z "$a" ] && continue
-        if [ "$(normalize "$answer")" = "$(normalize "$a")" ]; then correct=0; break; fi
-      done <<<"$accepted"
+      if [ "$qtype" = "choice" ]; then
+        if [ "$(normalize "$answer")" = "$(normalize "$answer_letter")" ]; then
+          correct=0
+        fi
+      else
+        while IFS= read -r a; do
+          [ -z "$a" ] && continue
+          if [ "$(normalize "$answer")" = "$(normalize "$a")" ]; then correct=0; break; fi
+        done <<<"$accepted"
+      fi
       if [ "$correct" -eq 0 ]; then
         result="accepted"
         term_ok "Accepted" "Answer: $jp ($en)"

@@ -112,12 +112,27 @@ skipped (no backlog).
 
 ## How to edit the sample questions
 
-Edit `data/questions/questions.json`. Each entry needs:
+Edit `data/questions/questions.json`. Each entry needs at least `japanese`,
+`english`, and `accepted`. The `type` field selects the question pattern:
+
+- `translation` (default) — show Japanese, type the Japanese or romaji answer.
+- `reverse` — show the English meaning, type the Japanese.
+- `cloze` — show Japanese with one word blanked out (`target`), type the missing word.
+- `choice` — show the question plus `choices` (A/B/C), type the letter.
+
+Each entry needs:
 
 - `japanese` — the prompt text (kana and/or kanji)
 - `english` — the meaning shown to the learner
 - `accepted` — list of accepted answers (Japanese and/or romaji; matched
   case-insensitively with surrounding whitespace trimmed)
+- `type` — one of `translation`, `reverse`, `cloze`, `choice` (default:
+  `translation`)
+
+Extra fields by type:
+
+- `cloze`: `target` — the word to blank out in `japanese`
+- `choice`: `choices` — array of option strings, `answer` — the correct letter
 
 Add/remove entries freely; `ask` picks one at random each time.
 
