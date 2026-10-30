@@ -158,6 +158,11 @@ EOF"
 	installer_do_section installer_as_root systemctl --user enable "$SERVICE_UNIT"
 	installer_do_section installer_as_root systemctl --user start "$SERVICE_UNIT"
 
+	# Reload niri config if running
+	if command -v niri >/dev/null 2>&1 && pgrep -x niri >/dev/null 2>&1; then
+		installer_do_section sh -c "niri msg action load-config-file --path '$HOME/.config/niri/config.kdl'"
+	fi
+
 	# Next steps shown after installation completes
 	_INSTALLER_NEXT_STEPS="Config:   $CONFIG_DIR (intervals.conf, pickup.set)
 Cache:    $CACHE_DIR (answers.json)
