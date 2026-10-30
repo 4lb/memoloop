@@ -669,17 +669,21 @@ cmd_status() {
 
   # Daemon state drives the top-level status
   if [ "$daemon_status" = "stopped" ]; then
-    status="stopped"
+    status_marker="$TERM_MARK_NEG"
+    status_text="stopped"
   elif [ "$paused" = "true" ]; then
-    status="PAUSED"
+    status_marker="$TERM_MARK_NEG"
+    status_text="PAUSED"
   elif [ "$dnd" = "yes" ]; then
-    status="Do Not Disturb"
+    status_marker="$TERM_MARK_WARN"
+    status_text="Do Not Disturb"
   else
-    status="reminders running"
+    status_marker="$TERM_MARK_OK"
+    status_text="reminders running"
   fi
 
   term_status "Status" \
-    "$TERM_MARK_OK" "$status" \
+    "$status_marker" "$status_text" \
     "$TERM_MARK_PLAIN" "daemon: $daemon_status (PID $(cat "$PID_FILE" 2>/dev/null || echo -))" \
     "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
 }
