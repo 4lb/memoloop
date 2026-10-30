@@ -298,8 +298,9 @@ select_question() { # $1 = newline-separated group ids → prints selected quest
   [ ${#qids[@]} -gt 0 ] || return 1
 
   # Weighted random selection
-  local r cumulative idx
-  r=$(awk -v tw="$total_weight" 'BEGIN { print rand() * tw }')
+  local r cumulative idx now
+  now=$(epoch)
+  r=$(awk -v tw="$total_weight" -v seed="$now" 'BEGIN { srand(seed); print rand() * tw }')
   cumulative=0
   idx=0
   for qid in "${qids[@]}"; do
