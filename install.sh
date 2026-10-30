@@ -168,11 +168,7 @@ EOF"
 	installer_do_section installer_as_root install -m 644 "$SCRIPT_DIR/niri/memoloop.kdl" "$HOME/.config/niri/memoloop.kdl"
 	if [ -f "$HOME/.config/niri/config.kdl" ] && ! grep -qF 'include optional=true "memoloop.kdl"' "$HOME/.config/niri/config.kdl"; then
 		niri_inc_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-niri.XXXXXX")
-		cat >"$niri_inc_tmp" <<'EOF'
-
-// memoloop. Floating popup windows for the MemoLoop study reminders.
-include optional=true "memoloop.kdl"
-EOF
+		printf 'include optional=true "memoloop.kdl"\n' >"$niri_inc_tmp"
 		installer_do_section sh -c "cat '$niri_inc_tmp' >> '$HOME/.config/niri/config.kdl'"
 		rm -f "$niri_inc_tmp"
 	fi
@@ -188,7 +184,7 @@ uninstall_integration() {
 	# Remove niri memoloop.kdl and its include from config.kdl
 	installer_remove rm -f "$HOME/.config/niri/memoloop.kdl"
 	if [ -f "$HOME/.config/niri/config.kdl" ]; then
-		installer_remove sed -i '/^include optional=true "memoloop.kdl"$/d; /^\/\/ memoloop\. Floating popup windows for the MemoLoop study reminders\.$/d' "$HOME/.config/niri/config.kdl"
+		installer_remove sed -i '/^include optional=true "memoloop.kdl"$/d' "$HOME/.config/niri/config.kdl"
 	fi
 }
 
