@@ -578,9 +578,9 @@ wrap_text() { # $1 text $2 max width
 
 # ------------------------------------------------------------------ watch / start / stop
 
-PID_FILE="$STATE_DIR/pidfile"
+SERVICE_UNIT="memoloop.service"
 
-cmd_watch() { # foreground daemon loop (used internally by start)
+cmd_watch() { # foreground daemon loop (used internally by systemd service)
   state_init
   need foot jq
   # Seed next_due on first start (consistent restart behaviour: recalculate from now).
@@ -611,186 +611,50 @@ cmd_watch() { # foreground daemon loop (used internally by start)
   done
 }
 
-cmd_start() { # background the daemon and return immediately
+cmd_start() { # start the systemd user service
   state_init
-  need foot jq
-  # Seed next_due on first start.
-  for id in fixed random; do
-    [ "$(rule_next_due "$id")" = "0" ] && schedule_recalc "$id"
-  done
-
-  # If already running, don't start a second instance.
-  if [ -f "$PID_FILE" ]; then
-    local old_pid
-    old_pid=$(cat "$PID_FILE" 2>/dev/null)
-    if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
-      term_notice "memoloop already running" "PID $old_pid"
-      return 0
-    fi
-  fi
-
-  # Launch watch in a new session so it survives terminal close.
-  # The child writes its own PID to the pidfile before exec'ing into watch,
-  # so we always capture the correct daemon PID.
-  rm -f "$PID_FILE"
-  setsid bash -c "printf '%s' \$\$ > '$PID_FILE'; exec '$SELF_DIR/memoloop' watch" >>"$LOG_FILE" 2>&1 &
-  local setsid_pid=$!
-
-  # Wait briefly for the daemon to write its pidfile
-  local waited=0
-  while [ ! -s "$PID_FILE" ] && [ "$waited" -lt 10 ]; do
-    sleep 0.1
-    waited=$((waited + 1))
-  done
-
-  # Show status after starting
-  local watch_pid paused dnd nd_fixed nd_random st
-  watch_pid=$(cat "$PID_FILE" 2>/dev/null)
-  paused=$(session_get paused)
-  dnd=$(in_dnd && echo yes || echo no)
-  nd_fixed=$(rule_next_due fixed)
-  nd_random=$(rule_next_due random)
-  if [ "$paused" = "true" ]; then
-    st="PAUSED"
-  elif [ "$dnd" = "yes" ]; then
-    st="Do Not Disturb"
-  else
-    st="reminders running"
-  fi
-
-  printf '\n'
-  printf '%s%s%s%s%s\n' "$TERM_ADD" "$TERM_FRAME_TOP_LEFT" \
-    "$(term_rep "$TERM_FRAME_HORIZONTAL" $((TERM_WIDTH - TERM_RULE)))" \
-    "$TERM_FRAME_TOP_RIGHT" "$TERM_RESET"
-  printf '\n'
-  term_ask_row "$TERM_MARK_ADD" "memoloop started · PID $watch_pid"
-  term_ask_row "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
-  printf '\n'
-  printf '%s%s%s%s%s\n' "$TERM_ADD" "$TERM_FRAME_BOTTOM_LEFT" \
-    "$(term_rep "$TERM_FRAME_HORIZONTAL" $((TERM_WIDTH - TERM_RULE)))" \
-    "$TERM_FRAME_BOTTOM_RIGHT" "$TERM_RESET"
-  printf '\n'
-}
-
-cmd_stop() { # stop the background daemon
-  state_init
-  if [ ! -f "$PID_FILE" ]; then
-    term_notice "memoloop not running" "No pidfile at $PID_FILE"
+  need systemctl
+  if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
+    term_notice "memoloop already running" "systemctl --user status $SERVICE_UNIT"
     return 0
   fi
-  local pid
-  pid=$(cat "$PID_FILE" 2>/dev/null)
-  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
-    rm -f "$PID_FILE"
-    term_notice "memoloop not running" "Stale pidfile removed"
-    return 0
-  fi
-  kill "$pid" 2>/dev/null
-  # Wait briefly for it to exit
-  local waited=0
-  while kill -0 "$pid" 2>/dev/null && [ "$waited" -lt 10 ]; do
-    sleep 0.5
-    waited=$((waited + 1))
-  done
-  if kill -0 "$pid" 2>/dev/null; then
-    kill -9 "$pid" 2>/dev/null
-  fi
-  rm -f "$PID_FILE"
-  term_removed "memoloop stopped · PID $pid"
+  systemctl --user start "$SERVICE_UNIT"
+  term_added "memoloop started"
 }
 
-cmd_status() {
+cmd_stop() { # stop the systemd user service
+  state_init
+  need systemctl
+  if ! systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
+    term_notice "memoloop not running"
+    return 0
+  fi
+  systemctl --user stop "$SERVICE_UNIT"
+  term_removed "memoloop stopped"
+}
+
+cmd_status() { # show systemd user service status + scheduling info
   state_init
   term_init
-  local paused dnd nd_fixed nd_random status daemon_status
+  local paused dnd nd_fixed nd_random
   paused=$(session_get paused)
   dnd=$(in_dnd && echo yes || echo no)
   nd_fixed=$(rule_next_due fixed)
   nd_random=$(rule_next_due random)
 
-  # Check if the daemon process is actually alive
-  daemon_status="stopped"
-  if [ -f "$PID_FILE" ]; then
-    local dp
-    dp=$(cat "$PID_FILE" 2>/dev/null)
-    if [ -n "$dp" ] && kill -0 "$dp" 2>/dev/null; then
-      daemon_status="running"
-    fi
-  fi
-
-  # Daemon state drives the top-level status
-  if [ "$daemon_status" = "stopped" ]; then
-    status_marker="$TERM_MARK_PLAIN"
-    status_text="memoloop is not running"
-  elif [ "$paused" = "true" ]; then
-    status_marker="$TERM_MARK_NEG"
-    status_text="memoloop is paused"
-  elif [ "$dnd" = "yes" ]; then
-    status_marker="$TERM_MARK_WARN"
-    status_text="memoloop is in do not disturb"
+  # Is the systemd service active?
+  if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
+    local status_text="memoloop is running"
+    local status_marker="$TERM_MARK_OK"
+    local extra=("$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")")
   else
-    status_marker="$TERM_MARK_OK"
-    status_text="memoloop is running"
+    local status_text="memoloop is not running"
+    local status_marker="$TERM_MARK_PLAIN"
+    local extra=()
   fi
 
-  local status_args
-  status_args=("$status_marker" "$status_text")
-  if [ "$daemon_status" = "running" ]; then
-    status_args+=("$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")")
-  fi
-
+  local status_args=("$status_marker" "$status_text" "${extra[@]}")
   term_status "Status" "${status_args[@]}"
-}
-
-cmd_pause() { session_set paused true; term_notice "Paused" "All reminders paused."; }
-cmd_resume() { session_set paused false; term_notice "Resumed" "Reminders running again."; }
-
-cmd_dnd() { # $1 = start HH:MM $2 = end HH:MM
-  local start="${1:-}" end="${2:-}"
-  [ -n "$start" ] && [ -n "$end" ] || die "usage: memoloop dnd <start HH:MM> <end HH:MM>"
-  session_set dnd_start "\"$start\""
-  session_set dnd_end "\"$end\""
-  term_notice "Do Not Disturb" "DND window $start – $end"
-}
-
-cmd_test() {
-  state_init
-  term_init
-  need foot jq
-  launch_popup fixed
-  term_notice "Test" "Fixed-rule prompt launched. Watch the popup terminal."
-}
-
-# ---------------------------------------------------------------- setup
-
-cmd_setup() {
-  state_init
-  term_notice "Setup" "Config: $CONFIG_DIR  Cache: $CACHE_DIR"
-}
-
-# ---------------------------------------------------------------- config management
-
-cmd_config() { # show effective config
-  state_init
-  term_init
-  printf '\n'
-  term_header "$TERM_NEUTRAL" "memoloop config" ""
-  printf '\n'
-  term_ask_row '' "CONFIG_DIR=$CONFIG_DIR"
-  term_ask_row '' "CACHE_DIR=$CACHE_DIR"
-  term_ask_row '' "fixed_seconds=$FIXED_SECONDS"
-  term_ask_row '' "random_min=$RANDOM_MIN random_max=$RANDOM_MAX"
-  term_ask_row '' "decay_hours=$DECAY_HOURS min_per_day=$MIN_PER_DAY"
-  term_ask_row '' ''
-  term_ask_row '-' ''
-  local groups
-  groups=$(load_enabled_groups)
-  term_ask_row '' "Enabled groups:"
-  for g in $groups; do
-    term_ask_row '' "  $g"
-  done
-  term_ask_close
-  printf '\n'
 }
 
 # ---------------------------------------------------------------- main
