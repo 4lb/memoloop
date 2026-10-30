@@ -11,13 +11,15 @@ Resume: `read ./pickup.md`
 Prototype implemented (Linux/Bash). See [`plans/AGENT.md`](plans/AGENT.md) for the
 product plan, [`plans/first-steps.md`](plans/first-steps.md) for the build
 stages, and [`plans/app-plan.md`](plans/app-plan.md) for the revised product
-plan.
+plan. See [`plans/config-scoring-plan.md`](plans/config-scoring-plan.md) for the
+config + scoring design.
 
 ## What the prototype does and does not do
 
 Does:
 - Two independent scheduling rules: fixed (every 45 minutes by default) and random
-  (every 15–30 minutes), each tracking its own next-due time.
+  (every 15–30 minutes), each tracking its own next-due time. Intervals configured
+  in `~/.config/memoloop/intervals.conf`.
 - A terminal popup (`foot`) showing a Japanese prompt with its English meaning,
   answer instructions, and current status (running / paused / DND).
 - Answer submission, correctness feedback (accepted vs not accepted, intended
@@ -28,6 +30,9 @@ Does:
   prompt is queued and shown after the first is dismissed (no overlapping
   popup terminals).
 - Logging of each prompt (rule, scheduled time, result) to `log/`.
+- Answer scoring with point system: base 100, correct +10, incorrect -10
+  (floor 0). Weighted random selection favours low-point questions, with time
+  decay so unseen questions resurface. Minimum ~10 unique questions per day.
 - Basic automated tests in `tests/`.
 
 Does not:
@@ -40,6 +45,7 @@ Does not:
 - `bash` (5.x)
 - `foot` terminal emulator (popup windows)
 - `jq` (JSON processing)
+- `awk` (floating-point math for scoring weights)
 - A UTF-8 locale and a font that covers Japanese (kana/kanji) for correct display.
 
 Install (CachyOS/Arch example):
@@ -50,9 +56,10 @@ Install (CachyOS/Arch example):
 
 All commands run from the repo root:
 
-    ./src/memoloop setup        # initialise state/ and log/ directories
-    ./src/memoloop status       # show paused / DND / next-due state
-    ./src/memoloop watch        # run the reminder daemon (fixed 15 min + random 30–40 min)
+    ./src/memoloop setup        # initialise state/, log/, config/, cache/ directories
+    ./src/memoloop status       # show paused / DND / next-due / config state
+    ./src/memoloop config       # show effective configuration
+    ./src/memoloop watch        # run the reminder daemon (fixed + random rules)
     ./src/memoloop test         # launch one test prompt immediately
     ./src/memoloop pause        # pause all reminders
     ./src/memoloop resume       # resume all reminders
@@ -66,6 +73,75 @@ popup at a time when a rule is due.
 Tests:
 
     ./tests/memoloop_test.sh
+
+## Configuration (`~/.config/memoloop/`)
+
+**intervals.conf** — scheduling parameters:
+
+```
+fixed_seconds=2700
+random_min=15
+random_max=30
+decay_hours=24
+min_per_day=10
+```
+
+- `fixed_seconds`: interval between fixed-rule prompts (default 2700 = 45 min)
+- `random_min` / `random_max`: random-rule interval in minutes (default 15–30)
+- `decay_hours`: half-life for answer-point decay in hours (default 24)
+- `min_per_day`: minimum unique questions shown per day (default 10)
+
+Override at run time via `MEMOLOOP_FIXED_SECONDS`, e.g. for a 30-second test:
+
+    MEMOLOOP_FIXED_SECONDS=30 ./src/memoloop watch
+
+**pickup.set** — enabled question groups, one ID per line:
+
+```
+greetings
+family
+weather
+conversation
+adjectives
+verbs
+nouns
+```
+
+Only groups listed here are in the loop. Lines starting with `#` are comments.
+
+**questions/<group>/<file>.json** — question files grouped by directory.
+Each entry needs `japanese`, `english`, `accepted`, and `type`:
+
+- `translation` (default) — show Japanese, type the Japanese or romaji answer.
+- `reverse` — show the English meaning, type the Japanese.
+- `cloze` — show Japanese with one word blanked out (`target`), fill in the missing word.
+- `choice` — show the question plus `choices` (A/B/C), type the letter.
+
+Extra fields by type:
+
+- `cloze`: `target` — the word to blank out in `japanese`
+- `choice`: `choices` — array of option strings, `answer` — the correct letter
+
+## Cache (`~/.cache/memoloop/`)
+
+**answers.json** — per-question answer cache with points:
+
+```json
+{
+  "t-greet-1": {
+    "points": 110,
+    "last_shown": 1793371387,
+    "last_correct": 1793371387,
+    "times_shown": 1,
+    "times_correct": 1
+  }
+}
+```
+
+Scoring: base 100 points, correct +10, incorrect -10 (floor 0). Weight for
+random selection: `100 / (points + 100)` — lower points = higher chance.
+Points decay by half-life every `decay_hours` so unseen questions resurface.
+Minimum `min_per_day` unique questions per day guaranteed.
 
 ## Floating popups (niri)
 
@@ -84,73 +160,27 @@ the term.sh frame (64 columns) so the popup box is centred.
 
 - `src/memoloop` — entry script (daemon + popup + scheduling)
 - `lib/term.sh` — terminal renderer (vendored copy, like glyph-key's)
-- `data/questions/questions.json` — local sample Japanese question set
+- `data/questions/questions.json` — legacy sample question set (no longer used)
 - `state/` — runtime state (rules, session, current question, result; gitignored)
 - `log/` — runtime logs (gitignored)
 - `tests/memoloop_test.sh` — basic automated tests
 - `plans/` — product and technical plans
 - `progress/` — session progress snapshots
 
-## How to configure intervals and DND
-
-Intervals are defined in `src/memoloop` (`FIXED_SECONDS=2700` = 45 minutes by
-default, `RANDOM_MIN=15`, `RANDOM_MAX=30`). Override the fixed interval at run
-time via the `MEMOLOOP_FIXED_SECONDS` environment variable, e.g. for a 30-second
-test:
-
-    MEMOLOOP_FIXED_SECONDS=30 ./src/memoloop watch
-
-Edit the source values and restart `watch` for a permanent change.
-
-DND is a global window set with:
-
-    ./src/memoloop dnd 09:00 17:00
-
-It is stored in `state/session.json` (`dnd_start`/`dnd_end`). Clear it by
-setting both to null, or omit the times. Prompts due inside the window are
-skipped (no backlog).
-
-## How to edit the sample questions
-
-Edit `data/questions/questions.json`. Each entry needs at least `japanese`,
-`english`, and `accepted`. The `type` field selects the question pattern:
-
-- `translation` (default) — show Japanese, type the Japanese or romaji answer.
-- `reverse` — show the English meaning, type the Japanese.
-- `cloze` — show Japanese with one word blanked out (`target`), type the missing word.
-- `choice` — show the question plus `choices` (A/B/C), type the letter.
-
-Each entry needs:
-
-- `japanese` — the prompt text (kana and/or kanji)
-- `english` — the meaning shown to the learner
-- `accepted` — list of accepted answers (Japanese and/or romaji; matched
-  case-insensitively with surrounding whitespace trimmed)
-- `type` — one of `translation`, `reverse`, `cloze`, `choice` (default:
-  `translation`)
-
-Extra fields by type:
-
-- `cloze`: `target` — the word to blank out in `japanese`
-- `choice`: `choices` — array of option strings, `answer` — the correct letter
-
-Add/remove entries freely; `ask` picks one at random each time.
-
 ## How simultaneous rules and an already-open popup are handled
 
 Each rule keeps its own next-due time. If fixed and random both fire close
 together, the first one opens its popup and the second is queued in
-`state/session.json` (`queue`). While a popup is open (`foot --hold`), any
-further due rule is queued rather than launching an overlapping terminal. When
-the user dismisses the held window, the daemon launches the next queued rule.
+`state/session.json` (`queue`). While a popup is open, any further due rule
+is queued rather than launching an overlapping terminal. When the user
+dismisses the held window, the daemon launches the next queued rule.
 Each prompt is logged separately with its rule id, so both rules are honoured
 and none is silently merged or discarded.
 
 ## Restart, pause, and missed-prompt behaviour
 
 - Restart: on start, `watch` recalculates each rule's next-due from now
-  (fixed: now + 15 min; random: now + 30–40 min). No complex persistence; a
-  small JSON state file is enough.
+  (fixed: now + fixed_seconds; random: now + random_min–random_max min).
 - Pause: `./src/memoloop pause` stops all prompts; `resume` restarts them.
   Missed prompts during pause are skipped, not queued.
 - DND: prompts due inside the DND window are skipped (no backlog).
@@ -163,11 +193,9 @@ and none is silently merged or discarded.
 - Japanese display/input assumes a UTF-8 locale and a font covering kana/kanji;
   verify with `memoloop ask fixed`.
 - DND window is same-day only (no overnight windows) in this prototype.
-- State files live inside the repo (`state/`, `log/`, gitignored) for
-  self-containment.
-- Follow-up: Tauri proof of concept (see `plans/tech-stack.md`), spaced
-  repetition behind a replaceable interface, richer question types, per-rule
-  enable/disable, optional prompt bundling.
+- Follow-up: Tauri proof of concept (see `plans/tech-stack.md`), per-rule
+  enable/disable, optional prompt bundling, `config` subcommands to edit
+  intervals/pickup.set interactively.
 
 ## Reference projects (do not modify, no runtime dependency)
 
