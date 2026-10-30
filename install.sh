@@ -153,10 +153,14 @@ PICKUPEOF
 		rm -f "$pickup_tmp"
 	fi
 
-	# zsh alias
+	# zsh alias (write directly to avoid quoting problems)
 	installer_do_section installer_as_root mkdir -p "$(dirname "$ZSH_ALIASES")"
-	if [ ! -f "$ZSH_ALIASES" ] || ! grep -qF "$ALIAS_LINE" "$ZSH_ALIASES"; then
-		installer_do_section sh -c "printf '\n# memoloop\n%s\n' '$ALIAS_LINE' >> '$ZSH_ALIASES'"
+	if [ ! -f "$ZSH_ALIASES" ] || ! grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
+		installer_do_section sh -c "cat >> '$ZSH_ALIASES' <<'EOF'
+
+# memoloop
+alias memoloop='$INSTALLER_TARGET'
+EOF"
 	fi
 }
 
