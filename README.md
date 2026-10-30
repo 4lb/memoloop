@@ -122,7 +122,7 @@ Extra fields by type:
 - `cloze`: `target` — the word to blank out in `japanese`
 - `choice`: `choices` — array of option strings, `answer` — the correct letter
 
-## Cache (`~/.cache/memoloop/`)
+## Cache (`~/.local/share/memoloop/`)
 
 **answers.json** — per-question answer cache with points:
 

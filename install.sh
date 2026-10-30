@@ -26,7 +26,7 @@ case "$mode" in
 	INSTALLER_LIB_DIR="$INSTALLER_BIN_DIR/../lib"
 	SYSTEMD_DIR="$HOME/.config/systemd/user"
 	CONFIG_DIR="$HOME/.config/memoloop"
-	CACHE_DIR="$HOME/.cache/memoloop"
+	CACHE_DIR="$HOME/.local/share/memoloop"
 	ZSH_ALIASES="$HOME/.config/zsh/my_zsh_aliases"
 	SUDO=""
 	;;
@@ -35,7 +35,7 @@ case "$mode" in
 	INSTALLER_LIB_DIR="$INSTALLER_BIN_DIR/../lib"
 	SYSTEMD_DIR="/etc/systemd/system"
 	CONFIG_DIR="/etc/memoloop"
-	CACHE_DIR="/var/cache/memoloop"
+	CACHE_DIR="/var/lib/memoloop"
 	ZSH_ALIASES="/etc/zsh/zshrc"
 	SUDO="sudo"
 	;;
@@ -94,7 +94,7 @@ ExecStart=%h/.local/bin/memoloop watch
 Restart=on-failure
 RestartSec=30
 Environment=MEMOLOOP_CONFIG_DIR=%h/.config/memoloop
-Environment=MEMOLOOP_CACHE_DIR=%h/.cache/memoloop
+Environment=MEMOLOOP_CACHE_DIR=%h/.local/share/memoloop
 
 [Install]
 WantedBy=graphical-session.target
