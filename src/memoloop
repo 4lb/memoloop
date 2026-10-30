@@ -410,6 +410,14 @@ cmd_ask() { # $1 = rule id (optional; defaults to "manual")
   local id="${1:-manual}"
   need jq
 
+  # If not running inside foot (manual invocation from user's terminal),
+  # relaunch in a foot popup window so it opens as its own terminal.
+  if [ -z "${FOOT_POPUP:-}" ]; then
+    need foot
+    FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
+    return 0
+  fi
+
   local groups json qtype jp en target note answer_label choices answer_letter
   groups=$(load_enabled_groups)
   [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
