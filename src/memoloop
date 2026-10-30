@@ -618,7 +618,8 @@ cmd_start() { # background the daemon and return immediately
   else
     st="reminders running"
   fi
-  term_added "memoloop started · PID $watch_pid · $st · next fixed $(iso "$nd_fixed") · next random $(iso "$nd_random")"
+  term_status "memoloop started · PID $watch_pid" \
+    "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
 }
 
 cmd_stop() { # stop the background daemon
