@@ -1,7 +1,7 @@
 # pickup — resume here
 
 1. Read the latest progress snapshot, then continue at its "Where to resume next" section:
-   - `progress/261030-1605-progress-final-polish.md`
+   - `progress/261030-1607-progress-srand-fix.md`
    - or `cat progress/*.md | tail -n +1` to list all snapshots.
 2. Source-of-truth plans: `plans/AGENT.md`
 3. Repo: directory `a-memoloop`, project name `memoloop` (MemoLoop).
