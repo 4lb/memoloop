@@ -574,7 +574,7 @@ cmd_watch() { # foreground daemon loop (used internally by start)
 
 cmd_start() { # background the daemon and return immediately
   state_init
-  need foot jq setsid
+  need foot jq
   # Seed next_due on first start.
   for id in fixed random; do
     [ "$(rule_next_due "$id")" = "0" ] && schedule_recalc "$id"
@@ -590,10 +590,35 @@ cmd_start() { # background the daemon and return immediately
     fi
   fi
 
-  setsid "$SELF_DIR/memoloop" watch >>"$LOG_FILE" 2>&1 &
-  local pid=$!
-  printf '%s' "$pid" >"$PID_FILE"
-  term_notice "memoloop started" "PID $pid · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
+  # Launch watch in a new session so it survives terminal close.
+  # The child writes its own PID to the pidfile before exec'ing into watch,
+  # so we always capture the correct daemon PID.
+  rm -f "$PID_FILE"
+  setsid bash -c "printf '%s' \$\$ > '$PID_FILE'; exec '$SELF_DIR/memoloop' watch" >>"$LOG_FILE" 2>&1 &
+  local setsid_pid=$!
+
+  # Wait briefly for the daemon to write its pidfile
+  local waited=0
+  while [ ! -s "$PID_FILE" ] && [ "$waited" -lt 10 ]; do
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+
+  # Show status after starting
+  local watch_pid paused dnd nd_fixed nd_random st
+  watch_pid=$(cat "$PID_FILE" 2>/dev/null)
+  paused=$(session_get paused)
+  dnd=$(in_dnd && echo yes || echo no)
+  nd_fixed=$(rule_next_due fixed)
+  nd_random=$(rule_next_due random)
+  if [ "$paused" = "true" ]; then
+    st="PAUSED"
+  elif [ "$dnd" = "yes" ]; then
+    st="Do Not Disturb"
+  else
+    st="reminders running"
+  fi
+  term_notice "memoloop started" "PID $watch_pid · $st · next fixed $(iso "$nd_fixed") · next random $(iso "$nd_random")"
 }
 
 cmd_stop() { # stop the background daemon
@@ -626,20 +651,32 @@ cmd_stop() { # stop the background daemon
 cmd_status() {
   state_init
   term_init
-  local paused dnd nd_fixed nd_random status
+  local paused dnd nd_fixed nd_random status daemon_status
   paused=$(session_get paused)
   dnd=$(in_dnd && echo yes || echo no)
   nd_fixed=$(rule_next_due fixed)
   nd_random=$(rule_next_due random)
   if [ "$paused" = "true" ]; then
-    status="PAUSED (all reminders stopped)"
+    status="PAUSED"
   elif [ "$dnd" = "yes" ]; then
     status="Do Not Disturb"
   else
     status="reminders running"
   fi
+
+  # Check if the daemon process is actually alive
+  daemon_status="stopped"
+  if [ -f "$PID_FILE" ]; then
+    local dp
+    dp=$(cat "$PID_FILE" 2>/dev/null)
+    if [ -n "$dp" ] && kill -0 "$dp" 2>/dev/null; then
+      daemon_status="running (PID $dp)"
+    fi
+  fi
+
   term_status "Status" \
     "$TERM_MARK_OK" "$status" \
+    "$TERM_MARK_PLAIN" "daemon: $daemon_status" \
     "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
 }
 
@@ -720,6 +757,7 @@ main() {
   case "${1:-}" in
     start)    shift; cmd_start "$@" ;;
     stop)     shift; cmd_stop "$@" ;;
+    watch)    cmd_watch ;;       # internal foreground loop, used by start
     ask)      shift; cmd_ask "$@" ;;
     status)   cmd_status ;;
     config)   cmd_config ;;
