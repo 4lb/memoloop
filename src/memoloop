@@ -53,6 +53,7 @@ RANDOM_MIN=15
 RANDOM_MAX=30
 DECAY_HOURS=24
 MIN_PER_DAY=10
+NOHELP=false
 
 RULE_FIXED_ID="fixed"
 RULE_RANDOM_ID="random"
@@ -82,6 +83,7 @@ load_intervals() {
         random_max) RANDOM_MAX="$value" ;;
         decay_hours) DECAY_HOURS="$value" ;;
         min_per_day) MIN_PER_DAY="$value" ;;
+        nohelp) NOHELP="$value" ;;
       esac
     done <"$INTERVALS_CONF"
   fi
@@ -532,8 +534,9 @@ cmd_ask() { # $1 = rule id (optional; defaults to "manual")
   esac
 
   # Keep the window open so the reader can review the feedback, then close on
-  # any key (no Enter required). Skipped when stdin is not a terminal.
-  if [ -t 0 ]; then
+  # any key (no Enter required). Skipped when stdin is not a terminal, or when
+  # NOHELP is set.
+  if [ -t 0 ] && [ "$NOHELP" != "true" ]; then
     printf '\n  Press any key to close...\n'
     _close_key=''
     read -n1 -r -s _close_key || true
