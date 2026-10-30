@@ -185,8 +185,8 @@ EOF"
 	fi
 
 	# Next steps shown after installation completes
-	_INSTALLER_NEXT_STEPS="Config:   $CONFIG_DIR (intervals.conf, pickup.set)
-Cache:    $CACHE_DIR (answers.json)
+	_INSTALLER_NEXT_STEPS="Config:   $CONFIG_DIR
+Cache:    $CACHE_DIR
 Alias:    memoloop  →  $INSTALLER_TARGET
 Run:      memoloop --help
 Popup:    MOD+N (niri) or memoloop ask
