@@ -67,6 +67,19 @@ Tests:
 
     ./tests/memoloop_test.sh
 
+## Floating popups (niri)
+
+memoloop opens its prompt in a `foot` terminal. To make that window float
+(centred, not tiled) under niri, add this to your `~/.config/niri/config.kdl`
+— after any global window rules so it takes precedence:
+
+    include optional=true "memoloop.kdl"
+
+and place `niri/memoloop.kdl` at
+`~/.config/niri/memoloop.kdl`. It matches `app-id="memoloop"` exactly, so
+every other `foot` window keeps tiling. The size rule dimensions the window to
+the term.sh frame (64 columns) so the popup box is centred.
+
 ## Directory tree
 
 - `src/memoloop` — entry script (daemon + popup + scheduling)
