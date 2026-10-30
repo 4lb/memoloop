@@ -172,7 +172,8 @@ uninstall_integration() {
 	installer_remove rm -rf "$CONFIG_DIR"
 	installer_remove rm -rf "$CACHE_DIR"
 	if [ -f "$ZSH_ALIASES" ] && grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
-		installer_remove sed -i '/^# memoloop$/,+1d' "$ZSH_ALIASES"
+		installer_remove sed -i '/^alias memoloop=/d' "$ZSH_ALIASES"
+		installer_remove sed -i '/^# memoloop$/d' "$ZSH_ALIASES"
 	fi
 	installer_remove rm -f "$HOME/.config/niri/memoloop.kdl"
 	if [ -f "$HOME/.config/niri/config.kdl" ]; then
