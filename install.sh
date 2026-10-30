@@ -162,12 +162,33 @@ PICKUPEOF
 alias memoloop='$INSTALLER_TARGET'
 EOF"
 	fi
+
+	# niri config
+	installer_do_section installer_as_root mkdir -p "$HOME/.config/niri"
+	installer_do_section installer_as_root install -m 644 "$SCRIPT_DIR/niri/memoloop.kdl" "$HOME/.config/niri/memoloop.kdl"
+	if [ -f "$HOME/.config/niri/config.kdl" ] && ! grep -qF 'include optional=true "memoloop.kdl"' "$HOME/.config/niri/config.kdl"; then
+		niri_inc_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-niri.XXXXXX")
+		cat >"$niri_inc_tmp" <<'EOF'
+
+// memoloop. Floating popup windows for the MemoLoop study reminders.
+include optional=true "memoloop.kdl"
+EOF
+		installer_do_section sh -c "cat '$niri_inc_tmp' >> '$HOME/.config/niri/config.kdl'"
+		rm -f "$niri_inc_tmp"
+	fi
 }
 
 uninstall_integration() {
-	installer_do_section_remove rm -f "$SYSTEMD_DIR/$SERVICE_UNIT"
-	if [ -f "$ZSH_ALIASES" ] && grep -qF "$ALIAS_LINE" "$ZSH_ALIASES"; then
-		installer_do_section sh -c "sed -i '/^# memoloop\$/,+1d' '$ZSH_ALIASES'"
+	installer_remove rm -f "$SYSTEMD_DIR/$SERVICE_UNIT"
+	installer_remove rm -rf "$CONFIG_DIR"
+	installer_remove rm -rf "$CACHE_DIR"
+	if [ -f "$ZSH_ALIASES" ] && grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
+		installer_remove sed -i '/^# memoloop$/,+1d' "$ZSH_ALIASES"
+	fi
+	# Remove niri memoloop.kdl and its include from config.kdl
+	installer_remove rm -f "$HOME/.config/niri/memoloop.kdl"
+	if [ -f "$HOME/.config/niri/config.kdl" ]; then
+		installer_remove sed -i '/^include optional=true "memoloop.kdl"$/d; /^\/\/ memoloop\. Floating popup windows for the MemoLoop study reminders\.$/d' "$HOME/.config/niri/config.kdl"
 	fi
 }
 
