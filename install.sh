@@ -136,6 +136,27 @@ PICKUPEOF
 		rm -f "$pickup_tmp"
 	fi
 
+	# Copy questions from backup if available, otherwise create defaults
+	if [ ! -d "$CONFIG_DIR/questions" ]; then
+		if [ -d "$HOME/.config/memoloop-bak/questions" ]; then
+			installer_do_section installer_as_root cp -r "$HOME/.config/memoloop-bak/questions" "$CONFIG_DIR/questions"
+		else
+			installer_do_section installer_as_root mkdir -p "$CONFIG_DIR/questions/greetings"
+			local q_tmp
+			q_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-questions.XXXXXX")
+			cat >"$q_tmp" <<'QEOF'
+[
+  {"id": "greet-001", "type": "translation", "japanese": "こんにちは", "english": "Hello / Good afternoon", "accepted": ["こんにちは", "konnichiwa"], "note": "Standard daytime greeting."},
+  {"id": "greet-002", "type": "translation", "japanese": "ありがとうございます", "english": "Thank you", "accepted": ["ありがとうございます", "arigatou gozaimasu", "arigatou", "ありがとう"], "note": "Thank you (polite)."},
+  {"id": "greet-003", "type": "reverse", "japanese": "こんにちは", "english": "Hello / Good afternoon", "accepted": ["こんにちは", "konnichiwa"], "note": "Translate this English to Japanese: Hello / Good afternoon"},
+  {"id": "greet-004", "type": "choice", "japanese": "小さい means?", "english": "small", "choices": ["A. big", "B. small", "C. new"], "answer": "B", "accepted": ["B", "b"], "note": "小さい (chiisai) = small."}
+]
+QEOF
+			installer_do_section installer_as_root install -m 644 "$q_tmp" "$CONFIG_DIR/questions/greetings/basics.json"
+			rm -f "$q_tmp"
+		fi
+	fi
+
 	installer_do_section installer_as_root mkdir -p "$(dirname "$ZSH_ALIASES")"
 	if [ ! -f "$ZSH_ALIASES" ] || ! grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
 		installer_do_section sh -c "cat >> '$ZSH_ALIASES' <<'EOF'

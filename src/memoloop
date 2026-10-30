@@ -395,7 +395,10 @@ cmd_ask() {
   [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
 
   json=$(select_question "$groups")
-  [ -n "$json" ] && [ "$json" != "null" ] || die "no questions available in enabled groups"
+  if [ -z "$json" ] || [ "$json" = "null" ]; then
+    term_notice "No questions available" "Add question files to $CONFIG_DIR/questions/<group>/<file>.json"
+    return 0
+  fi
 
   qtype=$(printf '%s' "$json" | jq -r '.type // "translation"')
   jp=$(printf '%s' "$json" | jq -r '.japanese')
