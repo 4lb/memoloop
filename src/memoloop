@@ -656,13 +656,6 @@ cmd_status() {
   dnd=$(in_dnd && echo yes || echo no)
   nd_fixed=$(rule_next_due fixed)
   nd_random=$(rule_next_due random)
-  if [ "$paused" = "true" ]; then
-    status="PAUSED"
-  elif [ "$dnd" = "yes" ]; then
-    status="Do Not Disturb"
-  else
-    status="reminders running"
-  fi
 
   # Check if the daemon process is actually alive
   daemon_status="stopped"
@@ -670,13 +663,24 @@ cmd_status() {
     local dp
     dp=$(cat "$PID_FILE" 2>/dev/null)
     if [ -n "$dp" ] && kill -0 "$dp" 2>/dev/null; then
-      daemon_status="running (PID $dp)"
+      daemon_status="running"
     fi
+  fi
+
+  # Daemon state drives the top-level status
+  if [ "$daemon_status" = "stopped" ]; then
+    status="stopped"
+  elif [ "$paused" = "true" ]; then
+    status="PAUSED"
+  elif [ "$dnd" = "yes" ]; then
+    status="Do Not Disturb"
+  else
+    status="reminders running"
   fi
 
   term_status "Status" \
     "$TERM_MARK_OK" "$status" \
-    "$TERM_MARK_PLAIN" "daemon: $daemon_status" \
+    "$TERM_MARK_PLAIN" "daemon: $daemon_status (PID $(cat "$PID_FILE" 2>/dev/null || echo -))" \
     "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
 }
 
