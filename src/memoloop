@@ -618,8 +618,19 @@ cmd_start() { # background the daemon and return immediately
   else
     st="reminders running"
   fi
-  term_status "memoloop started · PID $watch_pid" \
-    "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
+
+  printf '\n'
+  printf '%s%s%s%s%s\n' "$TERM_ADD" "$TERM_FRAME_TOP_LEFT" \
+    "$(term_rep "$TERM_FRAME_HORIZONTAL" $((TERM_WIDTH - TERM_RULE)))" \
+    "$TERM_FRAME_TOP_RIGHT" "$TERM_RESET"
+  printf '\n'
+  term_ask_row "$TERM_MARK_ADD" "memoloop started · PID $watch_pid"
+  term_ask_row "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
+  printf '\n'
+  printf '%s%s%s%s%s\n' "$TERM_ADD" "$TERM_FRAME_BOTTOM_LEFT" \
+    "$(term_rep "$TERM_FRAME_HORIZONTAL" $((TERM_WIDTH - TERM_RULE)))" \
+    "$TERM_FRAME_BOTTOM_RIGHT" "$TERM_RESET"
+  printf '\n'
 }
 
 cmd_stop() { # stop the background daemon
