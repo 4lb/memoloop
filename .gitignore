@@ -1,0 +1,11 @@
+# Runtime state and logs (kept inside the repo for the prototype,
+# but never committed)
+state/
+log/
+*.state
+
+# Editor / OS
+.*.swp
+.*.swo
+*~
+.DS_Store
