@@ -537,9 +537,11 @@ normalize() { # $1 = text → lowercase, trimmed
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 }
 
-# ------------------------------------------------------------------ watch
+# ------------------------------------------------------------------ watch / start / stop
 
-cmd_watch() {
+PID_FILE="$STATE_DIR/pidfile"
+
+cmd_watch() { # foreground daemon loop (used internally by start)
   state_init
   need foot jq
   # Seed next_due on first start (consistent restart behaviour: recalculate from now).
@@ -570,7 +572,56 @@ cmd_watch() {
   done
 }
 
-# ------------------------------------------------------------------ controls
+cmd_start() { # background the daemon and return immediately
+  state_init
+  need foot jq setsid
+  # Seed next_due on first start.
+  for id in fixed random; do
+    [ "$(rule_next_due "$id")" = "0" ] && schedule_recalc "$id"
+  done
+
+  # If already running, don't start a second instance.
+  if [ -f "$PID_FILE" ]; then
+    local old_pid
+    old_pid=$(cat "$PID_FILE" 2>/dev/null)
+    if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+      term_notice "memoloop already running" "PID $old_pid"
+      return 0
+    fi
+  fi
+
+  setsid "$SELF_DIR/memoloop" watch >>"$LOG_FILE" 2>&1 &
+  local pid=$!
+  printf '%s' "$pid" >"$PID_FILE"
+  term_notice "memoloop started" "PID $pid · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
+}
+
+cmd_stop() { # stop the background daemon
+  state_init
+  if [ ! -f "$PID_FILE" ]; then
+    term_notice "memoloop not running" "No pidfile at $PID_FILE"
+    return 0
+  fi
+  local pid
+  pid=$(cat "$PID_FILE" 2>/dev/null)
+  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+    rm -f "$PID_FILE"
+    term_notice "memoloop not running" "Stale pidfile removed"
+    return 0
+  fi
+  kill "$pid" 2>/dev/null
+  # Wait briefly for it to exit
+  local waited=0
+  while kill -0 "$pid" 2>/dev/null && [ "$waited" -lt 10 ]; do
+    sleep 0.5
+    waited=$((waited + 1))
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -9 "$pid" 2>/dev/null
+  fi
+  rm -f "$PID_FILE"
+  term_notice "memoloop stopped" "PID $pid"
+}
 
 cmd_status() {
   state_init
@@ -650,7 +701,8 @@ usage() {
 Usage: memoloop <command>
 
   setup       initialize state/cache/config directories
-  watch       run the reminder daemon (fixed + random rules)
+  start       start the reminder daemon in the background
+  stop        stop the background reminder daemon
   ask <rule>  show one question popup (used by the daemon)
   status      show paused/DND/next-due/state
   config      show effective configuration
@@ -666,17 +718,18 @@ EOF
 
 main() {
   case "${1:-}" in
-    watch)   shift; cmd_watch "$@" ;;
-    ask)     shift; cmd_ask "$@" ;;
-    status)  cmd_status ;;
-    config)  cmd_config ;;
-    pause)   cmd_pause ;;
-    resume)  cmd_resume ;;
-    dnd)     shift; cmd_dnd "$@" ;;
-    test)    cmd_test ;;
-    setup)   cmd_setup ;;
+    start)    shift; cmd_start "$@" ;;
+    stop)     shift; cmd_stop "$@" ;;
+    ask)      shift; cmd_ask "$@" ;;
+    status)   cmd_status ;;
+    config)   cmd_config ;;
+    pause)    cmd_pause ;;
+    resume)   cmd_resume ;;
+    dnd)      shift; cmd_dnd "$@" ;;
+    test)     cmd_test ;;
+    setup)    cmd_setup ;;
     -h|--help|help) usage ;;
-    *)       usage >&2; exit 1 ;;
+    *)        usage >&2; exit 1 ;;
   esac
 }
 
