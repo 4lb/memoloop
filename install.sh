@@ -152,6 +152,11 @@ EOF"
 		installer_do_section sh -c "cat '$niri_inc_tmp' >> '$HOME/.config/niri/config.kdl'"
 		rm -f "$niri_inc_tmp"
 	fi
+
+	# Enable and start the systemd user service
+	installer_do_section installer_as_root systemctl --user daemon-reload
+	installer_do_section installer_as_root systemctl --user enable "$SERVICE_UNIT"
+	installer_do_section installer_as_root systemctl --user start "$SERVICE_UNIT"
 }
 
 uninstall_integration() {
