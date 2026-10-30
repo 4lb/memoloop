@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# Tests for the memoloop config + scoring system.
-#
-# Uses temp directories for isolated testing.
-# Sources src/memoloop then exercises the functions directly.
-#
-# Run: ./tests/memoloop_test.sh
 
 set -u
 
@@ -28,13 +22,12 @@ export MEMOLOOP_STATE="$(mktemp -d)"
 export MEMOLOOP_LOG="$(mktemp -d)"
 trap 'rm -rf "$MEMOLOOP_CONFIG_DIR" "$MEMOLOOP_CACHE_DIR" "$MEMOLOOP_STATE" "$MEMOLOOP_LOG"' EXIT
 
-# shellcheck source=../src/memoloop
 . "$REPO/src/memoloop"
 
 pass=0
 fail=0
 
-assert_eq() { # $1 desc $2 expected $3 actual
+assert_eq() {
 	if [ "$2" = "$3" ]; then
 		pass=$((pass + 1))
 	else
@@ -43,7 +36,6 @@ assert_eq() { # $1 desc $2 expected $3 actual
 	fi
 }
 
-# ---------------------------------------------------------------- config loading
 
 cat >"$MEMOLOOP_CONFIG_DIR/intervals.conf" <<'EOF'
 fixed_seconds=2700
@@ -82,7 +74,6 @@ assert_eq "random_max loaded" "30" "$RANDOM_MAX"
 assert_eq "decay_hours loaded" "24" "$DECAY_HOURS"
 assert_eq "min_per_day loaded" "10" "$MIN_PER_DAY"
 
-# ---------------------------------------------------------------- question loading
 
 groups=$(load_enabled_groups)
 gcount=$(printf '%s' "$groups" | grep -c .)
@@ -102,7 +93,6 @@ while IFS= read -r line; do
 done < <(printf '%s' "$questions" | jq -c '.[]')
 assert_eq "all questions have required fields" "1" "$all_valid"
 
-# ---------------------------------------------------------------- answer scoring
 
 printf '{}' >"$ANSWERS_STATE"
 
@@ -114,7 +104,6 @@ update_points "t-greet-2" "rejected"
 points=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-2"].points // 100')
 assert_eq "incorrect answer -10 points" "90" "$points"
 
-# Floor at 0: reject 9 more times (total 10 rejects from 100 → 0)
 for i in $(seq 1 9); do update_points "t-greet-2" "rejected"; done
 points=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-2"].points // 100')
 assert_eq "points floor at 0" "0" "$points"
@@ -124,36 +113,28 @@ tc=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-1"].times_correct // 0')
 assert_eq "times_shown tracked" "1" "$ts"
 assert_eq "times_correct tracked" "1" "$tc"
 
-# ---------------------------------------------------------------- question weight
 
-# New question, points=100 → weight = 100/(100+100) = 0.5
 w=$(question_weight "t-greet-3" "$(load_answers)" "$(epoch)")
 assert_eq "new question weight" "0.5" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
 
-# High points (110) → weight = 100/(110+100) ≈ 0.476 → 0.5
 w=$(question_weight "t-greet-1" "$(load_answers)" "$(epoch)")
 assert_eq "high points lower weight" "0.5" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
 
-# Zero points → max weight = 100/(0+100) = 1.0
 w=$(question_weight "t-greet-2" "$(load_answers)" "$(epoch)")
 assert_eq "zero points max weight" "1.0" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
 
-# ---------------------------------------------------------------- daily minimum
 
 shown_count=$(questions_shown_today)
 assert_eq "questions shown today (2 answered)" "2" "$shown_count"
 
-# ---------------------------------------------------------------- question selection
 
 sel=$(select_question "$groups")
 sel_id=$(printf '%s' "$sel" | jq -r '.id // empty')
 [ -n "$sel_id" ] && assert_eq "question selected" "0" "0" || assert_eq "question selected" "1" "1"
 
-# Selected question should be from greetings group (id prefix t-greet)
 sel_prefix=$(printf '%s' "$sel_id" | cut -d- -f1-2)
 assert_eq "selected group is greetings" "t-greet" "$sel_prefix"
 
-# ---------------------------------------------------------------- summary
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 if [ "$fail" -gt 0 ]; then

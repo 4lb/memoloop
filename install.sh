@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# Manage memoloop: install, uninstall, reinstall.
-# Usage:
-#   ./install.sh                     # install, user-local (default)
-#   ./install.sh --user              # install, user-local
-#   ./install.sh --system            # install, system-wide
-#   ./install.sh --uninstall         # remove everything this tool installs
-#   ./install.sh --reinstall         # uninstall then install
-#   ./install.sh --dry-run           # show what would be done, touch nothing
-#   ./install.sh --no-integration    # install the script only; no unit or config
-#   ./install.sh --install-path DIR  # where the script goes
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -18,7 +8,6 @@ INSTALLER_NAME=memoloop
 INSTALLER_INTEGRATION_DESC=' (the script, lib/term.sh, systemd user service, config and zsh alias)'
 INSTALLER_NO_INTEGRATION_DESC=' install the script only; no systemd unit, config or alias'
 
-# --- this tool's own mode, parsed before the library sees the arguments -----
 mode="--user"
 rest=()
 while [ $# -gt 0 ]; do
@@ -57,9 +46,7 @@ SERVICE_UNIT="memoloop.service"
 ALIAS_NAME="memoloop"
 ALIAS_LINE="alias memoloop='$INSTALLER_TARGET ask'"
 
-# shellcheck source=lib/term.sh
 . "$SCRIPT_DIR/lib/term.sh"
-# shellcheck source=lib/installer.sh
 . "$SCRIPT_DIR/lib/installer.sh"
 
 term_init
@@ -93,7 +80,6 @@ uninstall_tool() {
 }
 
 install_integration() {
-	# systemd user service unit (written to temp file, then installed)
 	local svc_tmp
 	svc_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop.service.XXXXXX")
 	cat >"$svc_tmp" <<'UNITEOF'
@@ -118,13 +104,11 @@ UNITEOF
 	installer_do_section installer_as_root install -m 644 "$svc_tmp" "$SYSTEMD_DIR/$SERVICE_UNIT"
 	rm -f "$svc_tmp"
 
-	# config directory and files (only if missing)
 	installer_do_section installer_as_root mkdir -p "$CONFIG_DIR"
 	if [ ! -f "$CONFIG_DIR/intervals.conf" ]; then
 		local conf_tmp
 		conf_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-intervals.XXXXXX")
 		cat >"$conf_tmp" <<'CONFEOF'
-# memoloop interval configuration
 fixed_seconds=2700
 random_min=15
 random_max=30
@@ -140,7 +124,6 @@ CONFEOF
 		local pickup_tmp
 		pickup_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-pickup.XXXXXX")
 		cat >"$pickup_tmp" <<'PICKUPEOF'
-# memoloop enabled question groups
 greetings
 family
 weather
@@ -153,17 +136,14 @@ PICKUPEOF
 		rm -f "$pickup_tmp"
 	fi
 
-	# zsh alias (write directly to avoid quoting problems)
 	installer_do_section installer_as_root mkdir -p "$(dirname "$ZSH_ALIASES")"
 	if [ ! -f "$ZSH_ALIASES" ] || ! grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
 		installer_do_section sh -c "cat >> '$ZSH_ALIASES' <<'EOF'
 
-# memoloop
 alias memoloop='$INSTALLER_TARGET'
 EOF"
 	fi
 
-	# niri config
 	installer_do_section installer_as_root mkdir -p "$HOME/.config/niri"
 	installer_do_section installer_as_root install -m 644 "$SCRIPT_DIR/niri/memoloop.kdl" "$HOME/.config/niri/memoloop.kdl"
 	if [ -f "$HOME/.config/niri/config.kdl" ] && ! grep -qF 'include optional=true "memoloop.kdl"' "$HOME/.config/niri/config.kdl"; then
@@ -181,7 +161,6 @@ uninstall_integration() {
 	if [ -f "$ZSH_ALIASES" ] && grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
 		installer_remove sed -i '/^# memoloop$/,+1d' "$ZSH_ALIASES"
 	fi
-	# Remove niri memoloop.kdl and its include from config.kdl
 	installer_remove rm -f "$HOME/.config/niri/memoloop.kdl"
 	if [ -f "$HOME/.config/niri/config.kdl" ]; then
 		installer_remove sed -i '/^include optional=true "memoloop.kdl"$/d' "$HOME/.config/niri/config.kdl"
