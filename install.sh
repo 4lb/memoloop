@@ -114,7 +114,7 @@ random_min=15
 random_max=30
 decay_hours=24
 min_per_day=10
-nohelp=false
+nohelp=true
 CONFEOF
 		installer_do_section installer_as_root install -m 644 "$conf_tmp" "$CONFIG_DIR/intervals.conf"
 		rm -f "$conf_tmp"

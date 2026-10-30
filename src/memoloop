@@ -20,7 +20,7 @@ CACHE_DIR="${MEMOLOOP_CACHE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/memoloop}"
 STATE_DIR="${MEMOLOOP_STATE:-$SELF_DIR/../state}"
 LOG_DIR="${MEMOLOOP_LOG:-$SELF_DIR/../log}"
 
-INTERVALS_CONF="$CONFIG_DIR/intervals.conf"
+CONFIG_CONF="$CONFIG_DIR/config.conf"
 PICKUP_SET="$CONFIG_DIR/pickup.set"
 QUESTIONS_DIR="$CONFIG_DIR/questions"
 ANSWERS_STATE="$CACHE_DIR/answers.json"
@@ -37,7 +37,7 @@ RANDOM_MIN=15
 RANDOM_MAX=30
 DECAY_HOURS=24
 MIN_PER_DAY=10
-NOHELP=false
+NOHELP=true
 
 RULE_FIXED_ID="fixed"
 RULE_RANDOM_ID="random"
@@ -56,7 +56,7 @@ today_start() {
 
 
 load_intervals() {
-  if [ -f "$INTERVALS_CONF" ]; then
+  if [ -f "$CONFIG_CONF" ]; then
     local key value
     while IFS='=' read -r key value; do
       case "$key" in
@@ -67,7 +67,7 @@ load_intervals() {
         min_per_day) MIN_PER_DAY="$value" ;;
         nohelp) NOHELP="$value" ;;
       esac
-    done <"$INTERVALS_CONF"
+    done <"$CONFIG_CONF"
   fi
 }
 
@@ -383,6 +383,8 @@ cmd_ask() {
   term_init
   local id="${1:-manual}"
   need jq
+  load_intervals
+  load_intervals
 
   if [ -z "${FOOT_POPUP:-}" ]; then
     need foot
