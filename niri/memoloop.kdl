@@ -6,8 +6,7 @@
 //     include optional=true "memoloop.kdl"
 //
 // The rules match app-id="memoloop" exactly, so every other foot window keeps
-// tiling. Size is derived from the term.sh frame (64 columns) so the popup
-// box is centred in the window rather than flush against an edge.
+// tiling.
 
 window-rule {
     match app-id="^memoloop$"
@@ -15,13 +14,12 @@ window-rule {
     open-focused true
 }
 
-// Size, in pixels. niri owns the window size and ignores the client's
-// request, so this must be set here. 68 characters (~933px at this machine's
-// foot font) is 64 columns plus two of margin on each side; 660px fits the
-// tallest popup box with a couple of rows to spare. Change if your foot font
-// or font size differs.
 window-rule {
     match app-id="^memoloop$"
     default-column-width { fixed 933; }
     default-window-height { fixed 660; }
+}
+
+binds {
+    MOD+N hotkey-overlay-title="Memoloop: Japanese prompt" { spawn-sh "MEMOLOOP_NOHELP=1 /mnt/r/projects/a-memoloop/src/memoloop ask"; }
 }
