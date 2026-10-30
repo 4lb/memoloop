@@ -474,6 +474,8 @@ cmd_ask() { # $1 = rule id
   IFS= read -r answer || true
 
   term_ask_close
+  # Hide cursor while the feedback box is shown
+  printf '\033[?25l'
   printf '\n'
 
   local result="dismissed" correct=0 qid
@@ -525,6 +527,8 @@ cmd_ask() { # $1 = rule id
 {"rule": "$id", "result": "$result", "question": $(printf '%s' "$json"), "answered_at": $(epoch)}
 EOF
   log_add "$id" "answered" "$result (answer: $answer, qid: $qid)"
+  # Restore cursor before exiting
+  printf '\033[?25h'
   return 0
 }
 
