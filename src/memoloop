@@ -424,19 +424,6 @@ cmd_ask() { # $1 = rule id
   note=$(printf '%s' "$json" | jq -r '.note // ""')
   printf '%s' "$json" >"$CURRENT_STATE"
 
-  local now_hm status1 status2
-  now_hm=$(date +%H:%M)
-  if [ "$(session_get paused)" = "true" ]; then
-    status1="Status: PAUSED (all reminders stopped)"
-    status2=""
-  elif in_dnd; then
-    status1="Status: Do Not Disturb ($now_hm)"
-    status2=""
-  else
-    status1="Status: reminders running"
-    status2="next fixed $(iso "$(rule_next_due fixed)") · next random $(iso "$(rule_next_due random)")"
-  fi
-
   printf '\n'
   term_header "$TERM_NEUTRAL" "Japanese prompt — $id ($qtype)" ""
   printf '\n'
@@ -477,9 +464,6 @@ cmd_ask() { # $1 = rule id
       ;;
   esac
 
-  term_ask_row '' "$status1"
-  [ -n "$status2" ] && term_ask_row '' "$status2"
-  term_ask_row '' '(d)ismiss  (p)ause all  (s)kip'
   term_ask_row '' ''
   term_ask_row '-' ''
   TERM_ASK_NO_NEWLINE=1 TERM_ASK_INDENT="$TERM_INDENT  " \
@@ -586,30 +570,21 @@ cmd_watch() {
 cmd_status() {
   state_init
   term_init
-  local paused dnd open groups
+  local paused dnd nd_fixed nd_random status
   paused=$(session_get paused)
   dnd=$(in_dnd && echo yes || echo no)
-  open=$(session_get open)
-  groups=$(load_enabled_groups | tr '\n' ' ')
-  printf '\n'
-  term_header "$TERM_NEUTRAL" "memoloop status" ""
-  printf '\n'
-  term_ask_row '' "Paused: $paused"
-  term_ask_row '' "Do Not Disturb: $dnd"
-  term_ask_row '' "Prompt open: $open"
-  term_ask_row '' "Config: $CONFIG_DIR"
-  term_ask_row '' "Cache: $CACHE_DIR"
-  term_ask_row '' "Groups: $groups"
-  term_ask_row '' ''
-  term_ask_row '-' ''
-  local id enabled nd
-  for id in fixed random; do
-    enabled=$(rule_enabled "$id")
-    nd=$(rule_next_due "$id")
-    term_ask_row '' "$id: enabled=$enabled next_due=$(iso "$nd")"
-  done
-  term_ask_close
-  printf '\n'
+  nd_fixed=$(rule_next_due fixed)
+  nd_random=$(rule_next_due random)
+  if [ "$paused" = "true" ]; then
+    status="PAUSED (all reminders stopped)"
+  elif [ "$dnd" = "yes" ]; then
+    status="Do Not Disturb"
+  else
+    status="reminders running"
+  fi
+  term_status "Status" \
+    "$TERM_MARK_OK" "$status" \
+    "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
 }
 
 cmd_pause() { session_set paused true; term_notice "Paused" "All reminders paused."; }
