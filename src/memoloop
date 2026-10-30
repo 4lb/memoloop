@@ -502,15 +502,25 @@ cmd_ask() { # $1 = rule id
           if [ "$(normalize "$answer")" = "$(normalize "$a")" ]; then correct=0; break; fi
         done <<<"$accepted"
       fi
-      if [ "$correct" -eq 0 ]; then
-        result="accepted"
-        accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
-        term_ok "Accepted" "Answer: $accepted_display ($en)"
-      else
-        result="rejected"
-        accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
-        term_bad "Not accepted" "Intended: $accepted_display ($en)"
-      fi
+  if [ "$correct" -eq 0 ]; then
+    result="accepted"
+    accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
+    msg="Answer: $accepted_display ($en)"
+    local rows=()
+    while IFS= read -r line; do
+      [ -n "$line" ] && rows+=("$line")
+    done < <(wrap_text "$msg" "$TERM_ROW")
+    term_rows_box "$TERM_OK" "$TERM_OK" "Accepted" "$TERM_MARK_OK" "${rows[@]}"
+  else
+    result="rejected"
+    accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
+    msg="Intended: $accepted_display ($en)"
+    local rows=()
+    while IFS= read -r line; do
+      [ -n "$line" ] && rows+=("$line")
+    done < <(wrap_text "$msg" "$TERM_ROW")
+    term_rows_box "$TERM_NEG" "$TERM_NEG" "Not accepted" "$TERM_MARK_NEG" "${rows[@]}"
+  fi
       ;;
   esac
 
@@ -534,8 +544,26 @@ EOF
   return 0
 }
 
-normalize() { # $1 = text → lowercase, trimmed
-  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+normalize() { # $1 = text → lowercase, trimmed, spaces removed
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | tr -d '[:space:]'
+}
+
+# Wrap text into lines of at most $2 chars, one per line, splitting on spaces.
+wrap_text() { # $1 text $2 max width
+  local text="$1" max="$2"
+  local word line=""
+  # shellcheck disable=SC2086
+  for word in $text; do
+    if [ -z "$line" ]; then
+      line="$word"
+    elif [ $(( ${#line} + 1 + ${#word} )) -le "$max" ]; then
+      line="$line $word"
+    else
+      printf '%s\n' "$line"
+      line="$word"
+    fi
+  done
+  [ -n "$line" ] && printf '%s\n' "$line"
 }
 
 # ------------------------------------------------------------------ watch / start / stop
