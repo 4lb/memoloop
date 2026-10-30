@@ -669,8 +669,8 @@ cmd_status() {
 
   # Daemon state drives the top-level status
   if [ "$daemon_status" = "stopped" ]; then
-    status_marker="$TERM_MARK_NEG"
-    status_text="stopped"
+    status_marker="$TERM_MARK_PLAIN"
+    status_text="not running"
   elif [ "$paused" = "true" ]; then
     status_marker="$TERM_MARK_NEG"
     status_text="PAUSED"
@@ -683,9 +683,11 @@ cmd_status() {
   fi
 
   local status_args
-  status_args=("$status_marker" "$status_text"
-    "$TERM_MARK_PLAIN" "daemon: $daemon_status (PID $(cat "$PID_FILE" 2>/dev/null || echo -))")
+  status_args=("$status_marker" "$status_text")
   if [ "$daemon_status" = "running" ]; then
+    local dp
+    dp=$(cat "$PID_FILE" 2>/dev/null || echo -)
+    status_args+=("$TERM_MARK_PLAIN" "daemon: running (PID $dp)")
     status_args+=("$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")")
   fi
 
