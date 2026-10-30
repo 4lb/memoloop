@@ -157,6 +157,14 @@ EOF"
 	installer_do_section installer_as_root systemctl --user daemon-reload
 	installer_do_section installer_as_root systemctl --user enable "$SERVICE_UNIT"
 	installer_do_section installer_as_root systemctl --user start "$SERVICE_UNIT"
+
+	# Next steps shown after installation completes
+	_INSTALLER_NEXT_STEPS="Config:   $CONFIG_DIR (intervals.conf, pickup.set)
+Cache:    $CACHE_DIR (answers.json)
+Alias:    memoloop  →  $INSTALLER_TARGET
+Run:      memoloop --help
+Popup:    MOD+N (niri) or memoloop ask
+Service:  systemctl --user status $SERVICE_UNIT"
 }
 
 uninstall_integration() {

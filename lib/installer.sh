@@ -62,7 +62,12 @@ installer_plan() { # $1 message
 # Print a command and, unless --dry-run, run it.  Uses "added" marker.
 # If called within a section (via installer_do_section), does not print immediately.
 installer_do() { # $@ command
-	[ -n "${_install_rows:-}" ] && { installer_section_add "$*"; [ "${INSTALLER_DRY:-0}" -eq 0 ] || return 0; "$@"; return 0; }
+	[ -n "${_install_rows:-}" ] && {
+		installer_section_add "$*"
+		[ "${INSTALLER_DRY:-0}" -eq 0 ] || return 0
+		"$@"
+		return 0
+	}
 	term_added "$*"
 	[ "${INSTALLER_DRY:-0}" -eq 0 ] || return 0
 	"$@"
@@ -70,7 +75,7 @@ installer_do() { # $@ command
 
 # Print a removal command and, unless --dry-run, run it.  Uses "removed" marker.
 installer_remove() { # $@ command
-	term_removed "$*"
+	installer_section_add "$*"
 	[ "${INSTALLER_DRY:-0}" -eq 0 ] || return 0
 	"$@"
 }
@@ -89,7 +94,10 @@ path: $INSTALLER_TARGET"
 # Run a command that writes into the binary directory, escalating to sudo only
 # when the directory is one this user cannot write to.
 installer_as_root() { # $@ command
-	[ "${INSTALLER_DRY:-0}" -eq 0 ] || { term_added "$*"; return 0; }
+	[ "${INSTALLER_DRY:-0}" -eq 0 ] || {
+		term_added "$*"
+		return 0
+	}
 	if mkdir -p "$INSTALLER_BIN_DIR" 2>/dev/null && [ -w "$INSTALLER_BIN_DIR" ]; then
 		"$@"
 		return $?
@@ -126,32 +134,46 @@ installer_section_add() { # $1 text
 }
 
 installer_section_end() { # $1 final message
-	[ -s "$_install_rows" ] || { rm -f "$_install_rows"; _install_rows=""; return 0; }
+	[ -s "$_install_rows" ] || {
+		rm -f "$_install_rows"
+		_install_rows=""
+		return 0
+	}
 	term_rows_box_file "$_install_frame" "$_install_frame" "$_install_title" "$_install_marker" "$_install_rows"
 	rm -f "$_install_rows"
 	_install_rows=""
-	term_ok "$INSTALLER_NAME" "$1"
 }
 
 # --- install phase ---
 
 installer_do_install() {
 	installer_section_begin "installing $INSTALLER_NAME" "$TERM_ADD" "$TERM_MARK_ADD"
-	
+
 	# bin dir creation (use section API so it's grouped)
 	installer_do_section installer_as_root mkdir -p "$INSTALLER_BIN_DIR" || installer_die_unwritable
-	
+
 	# tool-specific install
 	if command -v install_tool >/dev/null 2>&1; then
 		install_tool_section
 	fi
-	
+
 	# integration
 	if [ "$INSTALLER_INTEGRATE" -eq 1 ] && command -v install_integration >/dev/null 2>&1; then
 		install_integration_section
 	fi
-	
-	installer_section_end "$INSTALLER_NAME successfully installed"
+
+	installer_section_end "$INSTALLER_NAME"
+
+	# Success + next steps in one box
+	if [ -n "$_INSTALLER_NEXT_STEPS" ]; then
+		old_ifs="$IFS"
+		IFS=$'\n'
+		# shellcheck disable=SC2086
+		term_rows_box "$TERM_OK" "$TERM_OK" "$INSTALLER_NAME" "$TERM_MARK_OK" "installed" $_INSTALLER_NEXT_STEPS
+		IFS="$old_ifs"
+	else
+		term_ok "$INSTALLER_NAME" "installed"
+	fi
 }
 
 # Helper for tools that want to add to the install section
@@ -175,18 +197,19 @@ install_tool() { # [$1 section file (rows temp file)]
 
 installer_do_uninstall() {
 	installer_section_begin "uninstalling $INSTALLER_NAME" "$TERM_DEL" "$TERM_MARK_DEL"
-	
+
 	# integration first
 	if [ "$INSTALLER_INTEGRATE" -eq 1 ] && command -v uninstall_integration >/dev/null 2>&1; then
 		uninstall_integration_section
 	fi
-	
+
 	# tool-specific uninstall
 	if command -v uninstall_tool >/dev/null 2>&1; then
 		uninstall_tool_section
 	fi
-	
-	installer_section_end "$INSTALLER_NAME uninstalled"
+
+	installer_section_end "$INSTALLER_NAME"
+	term_ok "$INSTALLER_NAME" "uninstalled"
 }
 
 # Helper for tools that want to add to the uninstall section
@@ -232,7 +255,7 @@ uninstall_integration() { :; }
 installer_do_section() { # [$1 message] [cmd args...]
 	# Known command verbs that indicate "this is a command, not a message"
 	case "$1" in
-	installer_as_root|install|rm|mkdir|sed|awk|grep|systemctl|systemctl_run|mv|cp|ln|chmod|chown|tee|cat|echo|printf|awk|bash|sh)
+	installer_as_root | install | rm | mkdir | sed | awk | grep | systemctl | systemctl_run | mv | cp | ln | chmod | chown | tee | cat | echo | printf | awk | bash | sh)
 		# It's a command: print it as message, then run it
 		installer_section_add "$*"
 		[ "${INSTALLER_DRY:-0}" -eq 0 ] || return 0
@@ -253,7 +276,7 @@ installer_do_section() { # [$1 message] [cmd args...]
 installer_do_section_remove() { # $@ command
 	# Same heuristic for removal commands
 	case "$1" in
-	installer_as_root|rm|rmdir|sed|awk|grep|systemctl|systemctl_run|mv|cp|ln|chmod|chown|tee|cat|echo|printf|awk|bash|sh)
+	installer_as_root | rm | rmdir | sed | awk | grep | systemctl | systemctl_run | mv | cp | ln | chmod | chown | tee | cat | echo | printf | awk | bash | sh)
 		installer_section_add "$*"
 		[ "${INSTALLER_DRY:-0}" -eq 0 ] || return 0
 		"$@"
@@ -283,23 +306,44 @@ installer_run() {
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
-		--uninstall) INSTALLER_ACTION=uninstall; shift ;;
-		--reinstall) INSTALLER_ACTION=reinstall; shift ;;
-		--dry-run | -n) INSTALLER_DRY=1; shift ;;
-		--no-integration) INSTALLER_INTEGRATE=0; shift ;;
+		--uninstall)
+			INSTALLER_ACTION=uninstall
+			shift
+			;;
+		--reinstall)
+			INSTALLER_ACTION=reinstall
+			shift
+			;;
+		--dry-run | -n)
+			INSTALLER_DRY=1
+			shift
+			;;
+		--no-integration)
+			INSTALLER_INTEGRATE=0
+			shift
+			;;
 		--install-path)
-			[ $# -ge 2 ] || { term_bad "install.sh: --install-path needs a directory" ""; exit 2; }
+			[ $# -ge 2 ] || {
+				term_bad "install.sh: --install-path needs a directory" ""
+				exit 2
+			}
 			INSTALLER_BIN_DIR=$2
 			INSTALLER_TARGET="$INSTALLER_BIN_DIR/$INSTALLER_NAME"
 			shift 2
 			;;
 		--install-path=*)
 			INSTALLER_BIN_DIR=${1#--install-path=}
-			[ -n "$INSTALLER_BIN_DIR" ] || { term_bad "install.sh: --install-path needs a directory" ""; exit 2; }
+			[ -n "$INSTALLER_BIN_DIR" ] || {
+				term_bad "install.sh: --install-path needs a directory" ""
+				exit 2
+			}
 			INSTALLER_TARGET="$INSTALLER_BIN_DIR/$INSTALLER_NAME"
 			shift
 			;;
-		-h | --help) installer_usage; exit 0 ;;
+		-h | --help)
+			installer_usage
+			exit 0
+			;;
 		*)
 			term_bad "Unknown option: $1" "Use --help for the list."
 			exit 2
