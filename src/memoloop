@@ -405,10 +405,9 @@ process_queue() { # → if no popup open, launch next queued rule
 
 # ------------------------------------------------------------------ ask
 
-cmd_ask() { # $1 = rule id
+cmd_ask() { # $1 = rule id (optional; defaults to "manual")
   term_init
-  local id="${1:-}"
-  [ -n "$id" ] || die "ask needs a rule id"
+  local id="${1:-manual}"
   need jq
 
   local groups json qtype jp en target note answer_label choices answer_letter
