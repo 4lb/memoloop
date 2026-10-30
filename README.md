@@ -16,8 +16,8 @@ plan.
 ## What the prototype does and does not do
 
 Does:
-- Two independent scheduling rules: fixed (every 15 minutes by default) and random
-  (every 30–40 minutes), each tracking its own next-due time.
+- Two independent scheduling rules: fixed (every 45 minutes by default) and random
+  (every 15–30 minutes), each tracking its own next-due time.
 - A terminal popup (`foot`) showing a Japanese prompt with its English meaning,
   answer instructions, and current status (running / paused / DND).
 - Answer submission, correctness feedback (accepted vs not accepted, intended
@@ -93,8 +93,8 @@ the term.sh frame (64 columns) so the popup box is centred.
 
 ## How to configure intervals and DND
 
-Intervals are defined in `src/memoloop` (`FIXED_SECONDS=900` = 15 minutes by
-default, `RANDOM_MIN=30`, `RANDOM_MAX=40`). Override the fixed interval at run
+Intervals are defined in `src/memoloop` (`FIXED_SECONDS=2700` = 45 minutes by
+default, `RANDOM_MIN=15`, `RANDOM_MAX=30`). Override the fixed interval at run
 time via the `MEMOLOOP_FIXED_SECONDS` environment variable, e.g. for a 30-second
 test:
 

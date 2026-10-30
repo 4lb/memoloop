@@ -53,12 +53,12 @@ rc() { # run $1.., print exit code
 # ---------------------------------------------------------------- intervals
 
 fixed_sec=$(rule_interval_seconds fixed)
-assert_eq "fixed interval seconds" "900" "$fixed_sec"
+assert_eq "fixed interval seconds" "2700" "$fixed_sec"
 
 random_ok=1
 for _ in $(seq 1 200); do
 	sec=$(rule_interval_seconds random)
-	if [ "$sec" -lt 1800 ] || [ "$sec" -gt 2400 ]; then
+	if [ "$sec" -lt 900 ] || [ "$sec" -gt 1800 ]; then
 		random_ok=0
 		break
 	fi

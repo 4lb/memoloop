@@ -43,9 +43,9 @@ LOG_FILE="$LOG_DIR/reminders.log"
 
 RULE_FIXED_ID="fixed"
 RULE_RANDOM_ID="random"
-FIXED_SECONDS="${MEMOLOOP_FIXED_SECONDS:-900}"
-RANDOM_MIN=30
-RANDOM_MAX=40
+FIXED_SECONDS="${MEMOLOOP_FIXED_SECONDS:-2700}"
+RANDOM_MIN=15
+RANDOM_MAX=30
 
 die() { printf 'memoloop: %s\n' "$1" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
