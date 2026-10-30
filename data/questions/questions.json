@@ -1,0 +1,98 @@
+[
+  {
+    "id": "q001",
+    "japanese": "こんにちは",
+    "romaji": "konnichiwa",
+    "english": "Hello / Good afternoon",
+    "accepted": ["こんにちは", "konnichiwa", "kon nichi wa"],
+    "note": "Standard daytime greeting."
+  },
+  {
+    "id": "q002",
+    "japanese": "ありがとう",
+    "romaji": "arigatou",
+    "english": "Thank you",
+    "accepted": ["ありがとう", "arigatou", "arigato", "ありがとうござい", "arigatou gozaimasu"],
+    "note": "Thank you. Casual form shown; polite form also accepted."
+  },
+  {
+    "id": "q003",
+    "japanese": "さようなら",
+    "romaji": "sayonara",
+    "english": "Goodbye",
+    "accepted": ["さようなら", "sayonara", "sayounara"],
+    "note": "Farewell."
+  },
+  {
+    "id": "q004",
+    "japanese": "はい",
+    "romaji": "hai",
+    "english": "Yes",
+    "accepted": ["はい", "hai"],
+    "note": "Yes."
+  },
+  {
+    "id": "q005",
+    "japanese": "いいえ",
+    "romaji": "iie",
+    "english": "No",
+    "accepted": ["いいえ", "iie"],
+    "note": "No."
+  },
+  {
+    "id": "q006",
+    "japanese": "すみません",
+    "romaji": "sumimasen",
+    "english": "Excuse me / I'm sorry",
+    "accepted": ["すみません", "sumimasen"],
+    "note": "Excuse me / sorry."
+  },
+  {
+    "id": "q007",
+    "japanese": "おはようございます",
+    "romaji": "ohayou gozaimasu",
+    "english": "Good morning",
+    "accepted": ["おはようございます", "ohayou gozaimasu", "ohayou", "おはよう"],
+    "note": "Good morning. Polite and casual forms accepted."
+  },
+  {
+    "id": "q008",
+    "japanese": "おねがいします",
+    "romaji": "onegaishimasu",
+    "english": "Please / I request",
+    "accepted": ["おねがいします", "onegaishimasu", "onegai shimasu"],
+    "note": "Please / request."
+  },
+  {
+    "id": "q009",
+    "japanese": "はい、わかりました",
+    "romaji": "hai, wakarimashita",
+    "english": "Yes, I understand",
+    "accepted": ["はい、わかりました", "hai wakarimashita", "wakarimashita", "わかりました"],
+    "note": "Yes, I understand."
+  },
+  {
+    "id": "q010",
+    "japanese": "英語",
+    "romaji": "eigo",
+    "english": "English (language)",
+    "accepted": ["英語", "eigo"],
+    "note": "Kanji example: English language."
+  },
+  {
+    "id": "q011",
+    "japanese": "日本語",
+    "romaji": "nihongo",
+    "english": "Japanese (language)",
+    "accepted": ["日本語", "nihongo", "nipponGO"],
+    "note": "Kanji example: Japanese language."
+  },
+  {
+    "id": "q012",
+    "japanese": "水",
+    "romaji": "mizu",
+    "english": "Water",
+    "accepted": ["水", "mizu"],
+    "note": "Single kanji: water."
+  }
+]

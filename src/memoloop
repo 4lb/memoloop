@@ -1,0 +1,438 @@
+#!/usr/bin/env bash
+# memoloop — MemoLoop Linux prototype: independent Japanese study reminders.
+#
+# Popup-terminal question experience with two scheduling rules:
+#   fixed  → one prompt every 15 minutes
+#   random → one prompt at a random interval of 30–40 minutes
+#
+# Each rule keeps its own next-due time. Prompts open one at a time in a
+# terminal popup; a rule that fires while a prompt is open is queued.
+# Global pause / Do-Not-Disturb suppress prompts without backlog.
+#
+# Self-contained: state/ and log/ live beside this script (gitignored).
+
+SELF_DIR() {
+  _sd=${BASH_SOURCE[0]}
+  while [ -L "$_sd" ]; do
+    _sd_l=$(readlink "$_sd")
+    case "$_sd_l" in
+      /*) _sd=$_sd_l ;;
+      *) _sd=$(dirname -- "$_sd")/$_sd_l ;;
+    esac
+  done
+  (CDPATH='' cd -- "$(dirname -- "$_sd")" && pwd -P)
+}
+SELF_DIR=$(SELF_DIR)
+unset -f SELF_DIR
+
+LIB_DIR="$SELF_DIR/../lib"
+DATA_DIR="$SELF_DIR/../data"
+STATE_DIR="${MEMOLOOP_STATE:-$SELF_DIR/../state}"
+LOG_DIR="${MEMOLOOP_LOG:-$SELF_DIR/../log}"
+QUESTIONS="$DATA_DIR/questions/questions.json"
+
+# shellcheck source=../lib/term.sh
+. "$LIB_DIR/term.sh"
+
+RULES_STATE="$STATE_DIR/rules.json"
+SESSION_STATE="$STATE_DIR/session.json"
+CURRENT_STATE="$STATE_DIR/current.json"
+RESULT_STATE="$STATE_DIR/result.json"
+QUEUE_STATE="$STATE_DIR/queue.json"
+LOG_FILE="$LOG_DIR/reminders.log"
+
+RULE_FIXED_ID="fixed"
+RULE_RANDOM_ID="random"
+FIXED_SECONDS="${MEMOLOOP_FIXED_SECONDS:-900}"
+RANDOM_MIN=30
+RANDOM_MAX=40
+
+die() { printf 'memoloop: %s\n' "$1" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
+
+epoch() { date +%s; }
+iso() { date -d "@$1" '+%H:%M:%S' 2>/dev/null || date -r "$1" '+%H:%M:%S'; }
+
+# ------------------------------------------------------------------ state
+
+state_init() {
+  mkdir -p "$STATE_DIR" "$LOG_DIR"
+  if [ ! -f "$RULES_STATE" ]; then
+    cat >"$RULES_STATE" <<EOF
+{
+  "rules": [
+    {"id": "fixed", "type": "fixed", "seconds": $FIXED_SECONDS, "enabled": true, "next_due": 0},
+    {"id": "random", "type": "random", "min": $RANDOM_MIN, "max": $RANDOM_MAX, "enabled": true, "next_due": 0}
+  ]
+}
+EOF
+  fi
+  if [ ! -f "$SESSION_STATE" ]; then
+    cat >"$SESSION_STATE" <<EOF
+{"paused": false, "dnd_start": null, "dnd_end": null, "open": 0, "queue": []}
+EOF
+  fi
+  touch "$LOG_FILE"
+}
+
+rules_get() { # $1 = rule id
+  jq -r --arg id "$1" '.rules[] | select(.id==$id)' "$RULES_STATE"
+}
+
+rules_set_next_due() { # $1 = rule id $2 = next_due epoch
+  jq --arg id "$1" --argjson nd "$2" '
+    (.rules[] | select(.id==$id)).next_due = $nd
+  ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+}
+
+rules_set_enabled() { # $1 = rule id $2 = true|false
+  jq --arg id "$1" --argjson en "$2" '
+    (.rules[] | select(.id==$id)).enabled = $en
+  ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+}
+
+rule_next_due() { # $1 = rule id → prints epoch
+  jq -r --arg id "$1" '.rules[] | select(.id==$id).next_due' "$RULES_STATE"
+}
+
+rule_enabled() { # $1 = rule id → prints true|false
+  jq -r --arg id "$1" '.rules[] | select(.id==$id).enabled' "$RULES_STATE"
+}
+
+session_get() { # $1 = key
+  jq -r --arg k "$1" '.[$k]' "$SESSION_STATE"
+}
+
+session_set() { # $1 = key $2 = value (json)
+  jq --arg k "$1" --argjson v "$2" '. + {($k): $v}' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+}
+
+session_queue_push() { # $1 = rule id
+  local q
+  q=$(jq -r '.queue[]' "$SESSION_STATE" 2>/dev/null | grep -xF "$1" || true)
+  if [ -z "$q" ]; then
+    jq --arg id "$1" '.queue += [$id] | .open = 1' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+  fi
+}
+
+session_queue_pop() { # → prints rule id or empty
+  local id
+  id=$(jq -r '.queue[0] // empty' "$SESSION_STATE")
+  if [ -n "$id" ]; then
+    jq 'del(.queue[0])' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+  fi
+  printf '%s' "$id"
+}
+
+session_open_set() { # $1 = 0|1
+  jq --argjson o "$1" '.open = $o' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+}
+
+log_add() { # $1 = rule $2 = event $3 = message
+  printf '%s %s %s %s\n' "$(iso "$(epoch)")" "$1" "$2" "$3" >>"$LOG_FILE"
+}
+
+# ---------------------------------------------------------------- scheduling
+
+random_between() { # $1 min $2 max
+  local min="$1" max="$2"
+  printf '%d' "$(( min + RANDOM % (max - min + 1) ))"
+}
+
+rule_interval_seconds() { # $1 = rule id → prints seconds
+  local r
+  r=$(rules_get "$1")
+  local type minutes min max
+  type=$(printf '%s' "$r" | jq -r '.type')
+  case "$type" in
+    fixed)
+      printf '%d' "$FIXED_SECONDS"
+      ;;
+    random)
+      min=$(printf '%s' "$r" | jq -r '.min')
+      max=$(printf '%s' "$r" | jq -r '.max')
+      printf '%d' "$(( $(random_between "$min" "$max") * 60 ))"
+      ;;
+    *) die "unknown schedule type for rule $1: $type" ;;
+  esac
+}
+
+schedule_recalc() { # $1 = rule id → sets next_due = now + interval
+  local id="$1" now sec
+  now=$(epoch)
+  sec=$(rule_interval_seconds "$id")
+  rules_set_next_due "$id" "$(( now + sec ))"
+}
+
+in_dnd() { # → 0 if in DND window, 1 otherwise
+  local start end now_hm
+  start=$(session_get dnd_start)
+  end=$(session_get dnd_end)
+  [ "$start" = "null" ] || [ -z "$start" ] && return 1
+  [ "$end" = "null" ] || [ -z "$end" ] && return 1
+  now_hm=$(date +%H:%M)
+  # Simple inclusive window; handles same-day windows. Overnight windows not supported.
+  if [ "$now_hm" \> "$start" ] && [ "$now_hm" \< "$end" ]; then
+    return 0
+  fi
+  [ "$now_hm" = "$start" ] && return 0
+  [ "$now_hm" = "$end" ] && return 0
+  return 1
+}
+
+due_rules() { # → prints rule ids due now (enabled, past next_due)
+  local now id r enabled nd
+  now=$(epoch)
+  for id in fixed random; do
+    [ "$(rule_enabled "$id")" = "true" ] || continue
+    nd=$(rule_next_due "$id")
+    [ "$nd" = "null" ] || [ -z "$nd" ] || [ "$nd" = "0" ] && continue
+    [ "$now" -ge "$nd" ] || continue
+    printf '%s\n' "$id"
+  done
+}
+
+# ---------------------------------------------------------------- popup
+
+popup_running() { # → 0 if a popup process is still alive
+  local pid
+  pid=$(session_get open_pid 2>/dev/null || true)
+  [ -n "$pid" ] && [ "$pid" != "null" ] && kill -0 "$pid" 2>/dev/null
+}
+
+launch_popup() { # $1 = rule id
+  local id="$1" app_id
+  case "$id" in
+    fixed) app_id="memoloop-fixed" ;;
+    random) app_id="memoloop-random" ;;
+    *) app_id="memoloop" ;;
+  esac
+  need foot
+  foot --app-id="$app_id" --hold -e "$SELF_DIR/memoloop" ask "$id" &
+  local pid=$!
+  session_set open_pid "$pid"
+  session_open_set 1
+  log_add "$id" "fired" "popup launched (pid $pid)"
+}
+
+process_queue() { # → if no popup open, launch next queued rule
+  if popup_running; then return 0; fi
+  session_open_set 0
+  session_set open_pid "null"
+  local id
+  id=$(session_queue_pop)
+  if [ -n "$id" ] && [ "$id" != "null" ]; then
+    launch_popup "$id"
+  fi
+}
+
+# ---------------------------------------------------------------- ask
+
+cmd_ask() { # $1 = rule id
+  term_init
+  local id="${1:-}"
+  [ -n "$id" ] || die "ask needs a rule id"
+  need jq
+
+  local q json jp en accepted note n idx
+  n=$(jq 'length' "$QUESTIONS")
+  idx=$(( RANDOM % n ))
+  json=$(jq --argjson idx "$idx" -c '.[$idx]' "$QUESTIONS")
+  jp=$(printf '%s' "$json" | jq -r '.japanese')
+  en=$(printf '%s' "$json" | jq -r '.english')
+  note=$(printf '%s' "$json" | jq -r '.note // ""')
+  accepted=$(printf '%s' "$json" | jq -r '.accepted | join("\n")')
+  printf '%s' "$json" >"$CURRENT_STATE"
+
+  local now_hm status_line
+  now_hm=$(date +%H:%M)
+  if [ "$(session_get paused)" = "true" ]; then
+    status_line="Status: PAUSED (all reminders stopped)"
+  elif in_dnd; then
+    status_line="Status: Do Not Disturb ($now_hm)"
+  else
+    status_line="Status: reminders running · next fixed $(iso "$(rule_next_due fixed)") · next random $(iso "$(rule_next_due random)")"
+  fi
+
+  printf '\n'
+  term_header "$TERM_NEUTRAL" "Japanese prompt — $id" ""
+  printf '\n'
+  term_ask_row '' "$jp"
+  [ -n "$note" ] && term_ask_row '' "$note"
+  term_ask_row '' "English: $en"
+  term_ask_row '' "Type your answer, then Enter.  (d)ismiss  (p)ause all  (s)kip"
+  term_ask_row '' "$status_line"
+  term_ask_row '' ''
+  term_ask_row '-' ''
+  TERM_ASK_NO_NEWLINE=1 TERM_ASK_INDENT="$TERM_INDENT  " \
+    term_ask_row '' 'Your answer: '
+  unset TERM_ASK_NO_NEWLINE TERM_ASK_INDENT
+
+  local answer=''
+  IFS= read -r answer || true
+
+  term_ask_close
+  printf '\n'
+
+  local result="dismissed" correct=0
+  case "$answer" in
+    ''|s|S) result="skipped" ;;
+    p|P)
+      session_set paused true
+      result="paused"
+      term_notice "Paused" "All reminders paused. Run 'memoloop resume' to continue."
+      ;;
+    d|D) result="dismissed" ;;
+    *)
+      correct=1
+      local a
+      while IFS= read -r a; do
+        [ -z "$a" ] && continue
+        if [ "$(normalize "$answer")" = "$(normalize "$a")" ]; then correct=0; break; fi
+      done <<<"$accepted"
+      if [ "$correct" -eq 0 ]; then
+        result="accepted"
+        term_ok "Accepted" "Answer: $jp ($en)"
+      else
+        result="rejected"
+        term_bad "Not accepted" "Intended: $jp  ($en)"
+      fi
+      ;;
+  esac
+
+  cat >"$RESULT_STATE" <<EOF
+{"rule": "$id", "result": "$result", "question": $(printf '%s' "$json"), "answered_at": $(epoch)}
+EOF
+  log_add "$id" "answered" "$result (answer: $answer)"
+  return 0
+}
+
+normalize() { # $1 = text → lowercase, trimmed
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+# ---------------------------------------------------------------- watch
+
+cmd_watch() {
+  state_init
+  need foot jq
+  # Seed next_due on first start (consistent restart behaviour: recalculate from now).
+  for id in fixed random; do
+    [ "$(rule_next_due "$id")" = "0" ] && schedule_recalc "$id"
+  done
+
+  term_notice "memoloop watch" "Watching rules: fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
+
+  while :; do
+    process_queue
+    if [ "$(session_get paused)" = "true" ] || in_dnd; then
+      sleep 5
+      continue
+    fi
+    local id
+    while IFS= read -r id; do
+      [ -n "$id" ] || continue
+      if popup_running; then
+        session_queue_push "$id"
+        log_add "$id" "queued" "prompt already open"
+      else
+        launch_popup "$id"
+      fi
+      schedule_recalc "$id"
+    done < <(due_rules)
+    sleep 5
+  done
+}
+
+# ---------------------------------------------------------------- controls
+
+cmd_status() {
+  state_init
+  term_init
+  local paused dnd open
+  paused=$(session_get paused)
+  dnd=$(in_dnd && echo yes || echo no)
+  open=$(session_get open)
+  printf '\n'
+  term_header "$TERM_NEUTRAL" "memoloop status" ""
+  printf '\n'
+  term_ask_row '' "Paused: $paused"
+  term_ask_row '' "Do Not Disturb: $dnd"
+  term_ask_row '' "Prompt open: $open"
+  term_ask_row '' ''
+  term_ask_row '-' ''
+  local id enabled nd
+  for id in fixed random; do
+    enabled=$(rule_enabled "$id")
+    nd=$(rule_next_due "$id")
+    term_ask_row '' "$id: enabled=$enabled next_due=$(iso "$nd")"
+  done
+  term_ask_close
+  printf '\n'
+}
+
+cmd_pause() { session_set paused true; term_notice "Paused" "All reminders paused."; }
+cmd_resume() { session_set paused false; term_notice "Resumed" "Reminders running again."; }
+
+cmd_dnd() { # $1 = start HH:MM $2 = end HH:MM
+  local start="${1:-}" end="${2:-}"
+  [ -n "$start" ] && [ -n "$end" ] || die "usage: memoloop dnd <start HH:MM> <end HH:MM>"
+  session_set dnd_start "\"$start\""
+  session_set dnd_end "\"$end\""
+  term_notice "Do Not Disturb" "DND window $start – $end"
+}
+
+cmd_test() {
+  state_init
+  term_init
+  need foot jq
+  launch_popup fixed
+  term_notice "Test" "Fixed-rule prompt launched. Watch the popup terminal."
+}
+
+# ---------------------------------------------------------------- setup
+
+cmd_setup() {
+  state_init
+  term_notice "Setup" "State directory ready: $STATE_DIR"
+}
+
+usage() {
+  cat <<'EOF'
+Usage: memoloop <command>
+
+  setup       initialize state directory
+  watch       run the reminder daemon (fixed 15 min + random 30–40 min)
+  ask <rule>  show one question popup (used by the daemon)
+  status      show paused/DND/next-due state
+  pause       pause all reminders
+  resume      resume all reminders
+  dnd <s> <e> set Do Not Disturb window (HH:MM HH:MM)
+  test        launch a test prompt immediately
+
+State: state/  Logs: log/  Questions: data/questions/
+EOF
+}
+
+# ---------------------------------------------------------------- main
+
+main() {
+  case "${1:-}" in
+    watch)   shift; cmd_watch "$@" ;;
+    ask)     shift; cmd_ask "$@" ;;
+    status)  cmd_status ;;
+    pause)   cmd_pause ;;
+    resume)  cmd_resume ;;
+    dnd)     shift; cmd_dnd "$@" ;;
+    test)    cmd_test ;;
+    setup)   cmd_setup ;;
+    -h|--help|help) usage ;;
+    *)       usage >&2; exit 1 ;;
+  esac
+}
+
+# Only run the command dispatcher when executed directly, not when sourced
+# (e.g. by the test suite, which calls the functions directly).
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi
