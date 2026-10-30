@@ -21,8 +21,8 @@ STATE_DIR="${MEMOLOOP_STATE:-$SELF_DIR/../state}"
 LOG_DIR="${MEMOLOOP_LOG:-$SELF_DIR/../log}"
 
 CONFIG_CONF="$CONFIG_DIR/config.conf"
-PICKUP_SET="$CONFIG_DIR/pickup.set"
-QUESTIONS_DIR="$CONFIG_DIR/questions"
+PICKUP_SET="$CACHE_DIR/pickup.set"
+QUESTIONS_DIR="$CACHE_DIR/questions"
 ANSWERS_STATE="$CACHE_DIR/answers.json"
 
 RULES_STATE="$STATE_DIR/rules.json"
@@ -398,7 +398,7 @@ cmd_ask() {
 
   json=$(select_question "$groups")
   if [ -z "$json" ] || [ "$json" = "null" ]; then
-    term_notice "No questions available" "Add question files to $CONFIG_DIR/questions/<group>/<file>.json"
+    term_notice "No questions available" "Add question files to $CACHE_DIR/questions/<group>/<file>.json"
     return 0
   fi
 
@@ -639,7 +639,8 @@ Usage: memoloop <command>
   dnd  <e> set Do Not Disturb window (HH:MM HH:MM)
   test        launch a test prompt immediately
 
-Config:  ~/.config/memoloop/  (intervals.conf, pickup.set, questions/)
+Config:  ~/.config/memoloop/  (config.conf, pickup.set)
+Data:    ~/.local/share/memoloop/  (answers.json, questions/)
 Cache:   ~/.cache/memoloop/   (answers.json with point system)
 EOF
 }
