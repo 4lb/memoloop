@@ -431,7 +431,6 @@ cmd_ask() { # $1 = rule id
   case "$qtype" in
     translation)
       term_ask_row '' "$jp"
-      [ -n "$note" ] && term_ask_row '' "$note"
       term_ask_row '' "English: $en"
       answer_label='Japanese: '
       ;;
