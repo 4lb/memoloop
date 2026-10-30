@@ -682,10 +682,14 @@ cmd_status() {
     status_text="reminders running"
   fi
 
-  term_status "Status" \
-    "$status_marker" "$status_text" \
-    "$TERM_MARK_PLAIN" "daemon: $daemon_status (PID $(cat "$PID_FILE" 2>/dev/null || echo -))" \
-    "$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")"
+  local status_args
+  status_args=("$status_marker" "$status_text"
+    "$TERM_MARK_PLAIN" "daemon: $daemon_status (PID $(cat "$PID_FILE" 2>/dev/null || echo -))")
+  if [ "$daemon_status" = "running" ]; then
+    status_args+=("$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")")
+  fi
+
+  term_status "Status" "${status_args[@]}"
 }
 
 cmd_pause() { session_set paused true; term_notice "Paused" "All reminders paused."; }
