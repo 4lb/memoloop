@@ -618,7 +618,7 @@ cmd_start() { # background the daemon and return immediately
   else
     st="reminders running"
   fi
-  term_notice "memoloop started" "PID $watch_pid · $st · next fixed $(iso "$nd_fixed") · next random $(iso "$nd_random")"
+  term_added "memoloop started · PID $watch_pid · $st · next fixed $(iso "$nd_fixed") · next random $(iso "$nd_random")"
 }
 
 cmd_stop() { # stop the background daemon
@@ -645,7 +645,7 @@ cmd_stop() { # stop the background daemon
     kill -9 "$pid" 2>/dev/null
   fi
   rm -f "$PID_FILE"
-  term_notice "memoloop stopped" "PID $pid"
+  term_removed "memoloop stopped · PID $pid"
 }
 
 cmd_status() {
@@ -670,24 +670,21 @@ cmd_status() {
   # Daemon state drives the top-level status
   if [ "$daemon_status" = "stopped" ]; then
     status_marker="$TERM_MARK_PLAIN"
-    status_text="not running"
+    status_text="memoloop is not running"
   elif [ "$paused" = "true" ]; then
     status_marker="$TERM_MARK_NEG"
-    status_text="PAUSED"
+    status_text="memoloop is paused"
   elif [ "$dnd" = "yes" ]; then
     status_marker="$TERM_MARK_WARN"
-    status_text="Do Not Disturb"
+    status_text="memoloop is in do not disturb"
   else
     status_marker="$TERM_MARK_OK"
-    status_text="reminders running"
+    status_text="memoloop is running"
   fi
 
   local status_args
   status_args=("$status_marker" "$status_text")
   if [ "$daemon_status" = "running" ]; then
-    local dp
-    dp=$(cat "$PID_FILE" 2>/dev/null || echo -)
-    status_args+=("$TERM_MARK_PLAIN" "daemon: running (PID $dp)")
     status_args+=("$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")")
   fi
 
