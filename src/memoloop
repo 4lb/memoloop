@@ -507,8 +507,10 @@ cmd_ask() {
       ;;
   esac
 
-  if [ -t 0 ] && [ "$NOHELP" != "true" ]; then
-    printf '\n  Press any key to close...\n'
+  if [ -t 0 ]; then
+    if [ "$NOHELP" != "true" ]; then
+      printf '\n  Press any key to close...\n'
+    fi
     _close_key=''
     read -n1 -r -s _close_key || true
   fi
