@@ -651,8 +651,6 @@ ask_question() {
 EOF
   log_add "$id" "answered" "$result (answer: $answer, qid: $qid)"
 
-  printf '\033[?25h'
-
   if [ -t 0 ]; then
     if ! nohelp_enabled "$NOHELP"; then
       printf '\n  n = new question, any other key = close\n'
@@ -669,6 +667,7 @@ EOF
     fi
   fi
 
+  printf '\033[?25h'
   return 1
 }
 
