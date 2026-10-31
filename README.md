@@ -119,7 +119,8 @@ nouns
 Only groups listed here are in the loop. Lines starting with `#` are comments.
 
 **questions/<group>/<file>.json** — question files grouped by directory.
-Each entry needs `japanese`, `english`, `accepted`, and `type`:
+See [`docs/question-format.md`](docs/question-format.md) for the full format.
+Short version: each entry needs `japanese`, `english`, `accepted`, and `type`:
 
 - `translation` (default) — show Japanese, type the Japanese or romaji answer.
 - `reverse` — show the English meaning, type the Japanese.
