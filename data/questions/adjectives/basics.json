@@ -1,6 +1,36 @@
 [
-  {"id": "adj-001", "type": "translation", "japanese": "大きい", "english": "big", "accepted": ["大きい", "ookii"], "note": "Big."},
-  {"id": "adj-002", "type": "translation", "japanese": "小さい", "english": "small", "accepted": ["小さい", "chiisai"], "note": "Small."},
-  {"id": "adj-003", "type": "translation", "japanese": "新しい", "english": "new", "accepted": ["新しい", "atarashii"], "note": "New."},
-  {"id": "adj-004", "type": "choice", "japanese": "難しい means?", "english": "difficult", "choices": ["A. good", "B. difficult", "C. amazing"], "answer": "B", "accepted": ["B", "b"], "note": "難しい (muzukashii) = difficult."}
+  {
+    "id": "adj-001",
+    "type": "translation",
+    "japanese": "大きい",
+    "english": "big",
+    "accepted": ["大きい", "ookii"],
+    "note": "Big."
+  },
+  {
+    "id": "adj-002",
+    "type": "translation",
+    "japanese": "小さい",
+    "english": "small",
+    "accepted": ["小さい", "chiisai"],
+    "note": "Small."
+  },
+  {
+    "id": "adj-003",
+    "type": "translation",
+    "japanese": "新しい",
+    "english": "new",
+    "accepted": ["新しい", "atarashii"],
+    "note": "New."
+  },
+  {
+    "id": "adj-004",
+    "type": "choice",
+    "japanese": "難しい means?",
+    "english": "difficult",
+    "choices": ["A. good", "B. difficult", "C. amazing"],
+    "answer": "B",
+    "accepted": ["B", "b"],
+    "note": "難しい (muzukashii) = difficult."
+  }
 ]

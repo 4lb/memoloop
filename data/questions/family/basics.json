@@ -1,6 +1,36 @@
 [
-  {"id": "fam-001", "type": "translation", "japanese": "家族", "english": "family", "accepted": ["家族", "かぞく", "kazoku"], "note": "Family members."},
-  {"id": "fam-002", "type": "translation", "japanese": "母", "english": "mother", "accepted": ["母", "かあ", "kaa"], "note": "Mother."},
-  {"id": "fam-003", "type": "translation", "japanese": "父", "english": "father", "accepted": ["父", "ちち", "chichi"], "note": "Father."},
-  {"id": "fam-004", "type": "choice", "japanese": "妻 means?", "english": "wife", "choices": ["A. son", "B. wife", "C. daughter"], "answer": "B", "accepted": ["B", "b"], "note": "妻 (tsuma) = wife."}
+  {
+    "id": "fam-001",
+    "type": "translation",
+    "japanese": "家族",
+    "english": "family",
+    "accepted": ["家族", "かぞく", "kazoku"],
+    "note": "Family members."
+  },
+  {
+    "id": "fam-002",
+    "type": "translation",
+    "japanese": "母",
+    "english": "mother",
+    "accepted": ["母", "かあ", "kaa"],
+    "note": "Mother."
+  },
+  {
+    "id": "fam-003",
+    "type": "translation",
+    "japanese": "父",
+    "english": "father",
+    "accepted": ["父", "ちち", "chichi"],
+    "note": "Father."
+  },
+  {
+    "id": "fam-004",
+    "type": "choice",
+    "japanese": "妻 means?",
+    "english": "wife",
+    "choices": ["A. son", "B. wife", "C. daughter"],
+    "answer": "B",
+    "accepted": ["B", "b"],
+    "note": "妻 (tsuma) = wife."
+  }
 ]

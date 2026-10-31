@@ -4,10 +4,7 @@
     "type": "translation",
     "japanese": "水",
     "english": "water",
-    "accepted": [
-      "水",
-      "mizu"
-    ],
+    "accepted": ["水", "mizu"],
     "note": "Single kanji: water."
   },
   {
@@ -15,10 +12,7 @@
     "type": "translation",
     "japanese": "火",
     "english": "fire",
-    "accepted": [
-      "火",
-      "hi"
-    ],
+    "accepted": ["火", "hi"],
     "note": "Fire."
   },
   {
@@ -26,10 +20,7 @@
     "type": "translation",
     "japanese": "土",
     "english": "ground/soil",
-    "accepted": [
-      "土",
-      "tsuchi"
-    ],
+    "accepted": ["土", "tsuchi"],
     "note": "Ground/soil."
   },
   {
@@ -37,16 +28,9 @@
     "type": "choice",
     "japanese": "水 means?",
     "english": "water",
-    "choices": [
-      "A. fire",
-      "B. water",
-      "C. wood"
-    ],
+    "choices": ["A. fire", "B. water", "C. wood"],
     "answer": "B",
-    "accepted": [
-      "B",
-      "b"
-    ],
+    "accepted": ["B", "b"],
     "note": "水 (mizu) = water."
   }
 ]

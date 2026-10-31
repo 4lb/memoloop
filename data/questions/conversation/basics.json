@@ -1,6 +1,41 @@
 [
-  {"id": "conv-001", "type": "translation", "japanese": "おはようございます", "english": "Good morning", "accepted": ["おはようございます", "ohayou gozaimasu", "ohayou", "おはよう"], "note": "Good morning. Polite and casual forms accepted."},
-  {"id": "conv-002", "type": "translation", "japanese": "おねがいします", "english": "Please / I request", "accepted": ["おねがいします", "onegaishimasu", "onegai shimasu"], "note": "Please / request."},
-  {"id": "conv-003", "type": "reverse", "japanese": "ありがとう", "english": "Thank you", "accepted": ["ありがとう", "arigatou"], "note": "Translate this English to Japanese: Thank you"},
-  {"id": "conv-004", "type": "choice", "japanese": "おはよう means?", "english": "Good morning", "choices": ["A. good evening", "B. good morning", "C. good night"], "answer": "B", "accepted": ["B", "b"], "note": "おはようございます (ohayou gozaimasu) = Good morning."}
+  {
+    "id": "conv-001",
+    "type": "translation",
+    "japanese": "おはようございます",
+    "english": "Good morning",
+    "accepted": [
+      "おはようございます",
+      "ohayou gozaimasu",
+      "ohayou",
+      "おはよう"
+    ],
+    "note": "Good morning. Polite and casual forms accepted."
+  },
+  {
+    "id": "conv-002",
+    "type": "translation",
+    "japanese": "おねがいします",
+    "english": "Please / I request",
+    "accepted": ["おねがいします", "onegaishimasu", "onegai shimasu"],
+    "note": "Please / request."
+  },
+  {
+    "id": "conv-003",
+    "type": "reverse",
+    "japanese": "ありがとう",
+    "english": "Thank you",
+    "accepted": ["ありがとう", "arigatou"],
+    "note": "Translate this English to Japanese: Thank you"
+  },
+  {
+    "id": "conv-004",
+    "type": "choice",
+    "japanese": "おはよう means?",
+    "english": "Good morning",
+    "choices": ["A. good evening", "B. good morning", "C. good night"],
+    "answer": "B",
+    "accepted": ["B", "b"],
+    "note": "おはようございます (ohayou gozaimasu) = Good morning."
+  }
 ]

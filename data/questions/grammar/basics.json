@@ -4,10 +4,7 @@
     "type": "translation",
     "japanese": "どうぞ",
     "english": "please (afterthought)",
-    "accepted": [
-      "どうぞ",
-      "douzo"
-    ],
+    "accepted": ["どうぞ", "douzo"],
     "note": "Please (afterthought)."
   },
   {
@@ -15,10 +12,7 @@
     "type": "translation",
     "japanese": "すみません",
     "english": "excuse me / I'm sorry",
-    "accepted": [
-      "すみません",
-      "sumimasen"
-    ],
+    "accepted": ["すみません", "sumimasen"],
     "note": "Excuse me / sorry."
   },
   {
@@ -26,10 +20,7 @@
     "type": "reverse",
     "japanese": "どうぞ",
     "english": "please (afterthought)",
-    "accepted": [
-      "どうぞ",
-      "douzo"
-    ],
+    "accepted": ["どうぞ", "douzo"],
     "note": "Translate this English to Japanese: please (afterthought)"
   },
   {
@@ -37,16 +28,9 @@
     "type": "choice",
     "japanese": "すみません means?",
     "english": "excuse me",
-    "choices": [
-      "A. thank you",
-      "B. excuse me",
-      "C. hello"
-    ],
+    "choices": ["A. thank you", "B. excuse me", "C. hello"],
     "answer": "B",
-    "accepted": [
-      "B",
-      "b"
-    ],
+    "accepted": ["B", "b"],
     "note": "すみません (sumimasen) = excuse me / I'm sorry."
   }
 ]

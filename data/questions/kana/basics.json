@@ -4,10 +4,7 @@
     "type": "translation",
     "japanese": "あ",
     "english": "a (hiragana)",
-    "accepted": [
-      "あ",
-      "A"
-    ],
+    "accepted": ["あ", "A"],
     "note": "Hiragana a."
   },
   {
@@ -15,10 +12,7 @@
     "type": "translation",
     "japanese": "い",
     "english": "i (hiragana)",
-    "accepted": [
-      "い",
-      "I"
-    ],
+    "accepted": ["い", "I"],
     "note": "Hiragana i."
   },
   {
@@ -26,10 +20,7 @@
     "type": "translation",
     "japanese": "う",
     "english": "u (hiragana)",
-    "accepted": [
-      "う",
-      "U"
-    ],
+    "accepted": ["う", "U"],
     "note": "Hiragana u."
   },
   {
@@ -37,16 +28,9 @@
     "type": "choice",
     "japanese": "あ means?",
     "english": "a",
-    "choices": [
-      "A. い",
-      "B. あ",
-      "C. う"
-    ],
+    "choices": ["A. い", "B. あ", "C. う"],
     "answer": "B",
-    "accepted": [
-      "B",
-      "b"
-    ],
+    "accepted": ["B", "b"],
     "note": "あ (a) = hiragana a."
   }
 ]
