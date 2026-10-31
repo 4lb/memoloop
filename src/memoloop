@@ -289,7 +289,10 @@ load_all_questions() {
       files+=("$file")
     done
   done
-  [ ${#files[@]} -gt 0 ] || { printf '[]'; return 0; }
+  [ ${#files[@]} -gt 0 ] || {
+    printf '[]'
+    return 0
+  }
   jq -s 'add' "${files[@]}"
 }
 
@@ -600,13 +603,13 @@ ask_question() {
   case "$qtype" in
   translation)
     term_ask_row '' "$jp"
-    term_ask_row '' "English: $en"
-    answer_label='Japanese: '
+    term_ask_row '' "英語: $en"
+    answer_label='日本語: '
     ;;
   reverse)
-    term_ask_row '' "English: $en"
+    term_ask_row '' "英語: $en"
     [ -n "$note" ] && term_ask_row '' "$note"
-    answer_label='Japanese: '
+    answer_label='日本語: '
     ;;
   cloze)
     local cloze_prompt
