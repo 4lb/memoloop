@@ -265,15 +265,15 @@ log_add() {
 
 load_all_questions() {
   local groups="$1"
-  local combined="[]"
-  local group file
+  local group file files=()
   for group in $groups; do
     for file in "$QUESTIONS_DIR/$group"/*.json; do
       [ -f "$file" ] || continue
-      combined=$(jq -s '.[0] + .[1]' <(printf '%s' "$combined") "$file")
+      files+=("$file")
     done
   done
-  printf '%s' "$combined"
+  [ ${#files[@]} -gt 0 ] || { printf '[]'; return 0; }
+  jq -s 'add' "${files[@]}"
 }
 
 load_answers() {
@@ -352,53 +352,65 @@ questions_shown_today() {
 
 select_question() {
   local groups="$1"
-  local questions answers now shown_count
+  local questions answers now shown_count today chosen seed
   questions=$(load_all_questions "$groups")
   answers=$(load_answers)
   now=$(epoch)
+  today=$(today_start)
   shown_count=$(questions_shown_today)
 
   local qcount
   qcount=$(printf '%s' "$questions" | jq 'length')
   [ "$qcount" -gt 0 ] || return 1
 
-  local qids=() weights=()
-  local total_weight=0
-  local all_ids qid w
+  seed=$(date +%s%N)
 
-  all_ids=$(printf '%s' "$questions" | jq -r '.[].id')
-  for qid in $all_ids; do
-    if [ "$shown_count" -lt "$MIN_PER_DAY" ]; then
-      local was_shown
-      was_shown=$(printf '%s' "$answers" | jq --arg id "$qid" --argjson start "$(today_start)" '
-        (.[$id].last_shown // 0) >= $start
-      ')
-      [ "$was_shown" = "true" ] && continue
-    fi
+  chosen=$(printf '%s' "$questions" | jq -r --argjson answers "$answers" --argjson start "$today" --argjson shown_count "$shown_count" --argjson min_per_day "$MIN_PER_DAY" --argjson now "$now" --argjson decay_hours "$DECAY_HOURS" '
+    .[] |
+    . as $q |
+    $q.id as $id |
+    ($answers[$id] // {}) as $a |
+    ($a.points // 100) as $points |
+    ($a.last_shown // 0) as $last_shown |
+    "\($points)\t\($last_shown)\t\($q | @json)"
+  ' | awk -v shown_count="$shown_count" -v min_per_day="$MIN_PER_DAY" -v start="$today" -v now="$now" -v decay_hours="$DECAY_HOURS" -v seed="$seed" '
+    BEGIN { FS="\t"; srand(seed); n=0 }
+    {
+      points[n]=$1+0
+      last_shown[n]=$2+0
+      json[n]=$3
+      n++
+    }
+    END {
+      total_weight=0
+      for (i=0; i<n; i++) {
+        if (shown_count < min_per_day && last_shown[i] >= start) continue
+        if (last_shown[i] == 0) decay_factor=1
+        else {
+          hours_diff=int((now-last_shown[i])/3600)
+          if (hours_diff<0) hours_diff=0
+          decay_factor=exp(log(0.5)*hours_diff/decay_hours)
+        }
+        weight[i]=100/(points[i]*decay_factor+100)
+        total_weight+=weight[i]
+      }
+      r=rand()*total_weight
+      cumulative=0
+      chosen=""
+      for (i=0; i<n; i++) {
+        if (shown_count < min_per_day && last_shown[i] >= start) continue
+        cumulative+=weight[i]
+        if (chosen=="" && r<cumulative) chosen=json[i]
+      }
+      print chosen
+    }
+  ')
 
-    w=$(question_weight "$qid" "$answers" "$now")
-    qids+=("$qid")
-    weights+=("$w")
-    total_weight=$(awk -v tw="$total_weight" -v w="$w" 'BEGIN { print tw + w }')
-  done
-
-  [ ${#qids[@]} -gt 0 ] || return 1
-
-  local r cumulative idx seed
-  seed=$(( $(epoch) * 1000000 + RANDOM ))
-  r=$(awk -v tw="$total_weight" -v seed="$seed" 'BEGIN { srand(seed); print rand() * tw }')
-  cumulative=0
-  idx=0
-  for qid in "${qids[@]}"; do
-    cumulative=$(awk -v c="$cumulative" -v w="${weights[$idx]}" 'BEGIN { print c + w }')
-    if [ "$(awk -v r="$r" -v c="$cumulative" 'BEGIN { print (r < c) ? 1 : 0 }')" = "1" ]; then
-      printf '%s' "$questions" | jq --arg id "$qid" '.[] | select(.id == $id)'
-      return 0
-    fi
-    idx=$((idx + 1))
-  done
-
-  printf '%s' "$questions" | jq '.[0]'
+  if [ -z "$chosen" ] || [ "$chosen" = "null" ]; then
+    printf '%s' "$questions" | jq '.[0]'
+    return 0
+  fi
+  printf '%s' "$chosen"
 }
 
 random_between() {
@@ -598,7 +610,7 @@ ask_question() {
   local result="dismissed" correct=0 qid
   qid=$(printf '%s' "$json" | jq -r '.id')
   case "$answer" in
-  '' | s | S) result="skipped" ;;
+  s | S) result="skipped" ;;
   p | P)
     session_set paused true
     result="paused"
@@ -653,13 +665,13 @@ EOF
 
   if [ -t 0 ]; then
     if ! nohelp_enabled "$NOHELP"; then
-      printf '\n  n = new question, any other key = close\n'
+      printf '\n  n / space / enter = new question, any other key = close\n'
     fi
     _close_key=''
-    read -n1 -r -s _close_key || true
+    IFS= read -n1 -r -s _close_key || true
     if [ "$result" != "paused" ]; then
       case "$_close_key" in
-      n | N)
+      n | N | ' ' | '')
         printf '\033[2J\033[H'
         return 0
         ;;
