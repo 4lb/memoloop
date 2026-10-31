@@ -45,11 +45,11 @@ MODES
   --user      install under your own home (default)
   --system    install the script and lib into /usr/local (needs sudo);
               binary only, no user service, config or niri rules
-  --overwrite-data  replace existing config, pickup set, intervals and questions
+  --overwrite-data  replace existing config, pickup set and questions
   --purge-data      (on uninstall) delete MemoLoop config, data and state
 
   By default, install and uninstall preserve all user data (config, pickup set,
-  intervals, questions, answers, state, log).
+  questions, answers, state, log).
 
 HOOKS
   install_tool         copies memoloop and lib/term.sh into <bin>/.. and <bin>/../lib
@@ -112,20 +112,8 @@ UNITEOF
 
   installer_do_section mkdir -p "$CONFIG_DIR" "$DATA_DIR" "$STATE_DIR" "$STATE_DIR/log"
 
-  if [ -f "$DATA_DIR/intervals.conf" ] && [ ! -f "$CONFIG_DIR/intervals.conf" ]; then
-    installer_do_section mv "$DATA_DIR/intervals.conf" "$CONFIG_DIR/intervals.conf"
-  fi
-
-  if [ ! -f "$CONFIG_DIR/intervals.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
-    installer_do_section install -m 644 "$SCRIPT_DIR/data/intervals.conf" "$CONFIG_DIR/intervals.conf"
-  fi
-
   if [ ! -f "$CONFIG_DIR/config.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
     installer_do_section install -m 644 "$SCRIPT_DIR/data/config.conf" "$CONFIG_DIR/config.conf"
-  fi
-
-  if [ ! -f "$CONFIG_DIR/pickup.set" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
-    installer_do_section install -m 644 "$SCRIPT_DIR/data/pickup.set" "$CONFIG_DIR/pickup.set"
   fi
 
   if [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ] && [ -d "$DATA_DIR/questions" ]; then
@@ -134,6 +122,10 @@ UNITEOF
 
   if [ ! -d "$DATA_DIR/questions" ]; then
     installer_do_section cp -r "$SCRIPT_DIR/data/questions" "$DATA_DIR/questions"
+  fi
+
+  if [ ! -f "$DATA_DIR/questions/pickup.set" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
+    installer_do_section install -m 644 "$SCRIPT_DIR/data/pickup.set" "$DATA_DIR/questions/pickup.set"
   fi
 
   local legacy old_state old_log

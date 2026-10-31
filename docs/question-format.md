@@ -21,7 +21,7 @@ badly or be ignored.
 - Only `*.json` files directly inside a group directory are read. Nested
   directories are not scanned.
 - A group is active only when its name is listed in
-  `~/.config/memoloop/pickup.set` (one group per line, `#` starts a comment,
+  `~/.local/share/memoloop/questions/pickup.set` (one group per line, `#` starts a comment,
   blank lines ignored).
 - Files are read in shell glob order and merged, so the order of questions
   inside a group is: filename ascending, then array order.
@@ -248,6 +248,6 @@ jq -s -e '[.[][] | .id] | length == (unique | length)' data/questions/*/*.json
 
 1. Create `~/.local/share/memoloop/questions/<group>/` and add one or more
    `.json` arrays.
-2. Add `<group>` to `~/.config/memoloop/pickup.set`.
+2. Add `<group>` to `~/.local/share/memoloop/questions/pickup.set`.
 3. Check it with `memoloop config` (question counts per group) and
    `memoloop test`.

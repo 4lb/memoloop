@@ -21,8 +21,8 @@ STATE_DIR="${MEMOLOOP_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/memoloop}"
 LOG_DIR="${MEMOLOOP_LOG:-$STATE_DIR/log}"
 
 CONFIG_CONF="$CONFIG_DIR/config.conf"
-PICKUP_SET="$CONFIG_DIR/pickup.set"
 QUESTIONS_DIR="$USER_DATA_DIR/questions"
+PICKUP_SET="$QUESTIONS_DIR/pickup.set"
 ANSWERS_STATE="$USER_DATA_DIR/answers.json"
 
 CURRENT_STATE="$STATE_DIR/current.json"
@@ -92,7 +92,13 @@ load_config() {
 }
 
 require_config() {
-  [ -f "$PICKUP_SET" ] || die "config not found: $PICKUP_SET"
+  if [ -f "$QUESTIONS_DIR/pickup.set" ]; then
+    PICKUP_SET="$QUESTIONS_DIR/pickup.set"
+  elif [ -f "$CONFIG_DIR/pickup.set" ]; then
+    PICKUP_SET="$CONFIG_DIR/pickup.set"
+  else
+    die "config not found: $QUESTIONS_DIR/pickup.set"
+  fi
   local groups
   groups=$(load_enabled_groups)
   [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
@@ -111,9 +117,15 @@ today_start() {
 }
 
 load_enabled_groups() {
-  if [ -f "$PICKUP_SET" ]; then
-    grep -v '^[[:space:]]*#' "$PICKUP_SET" | grep -v '^[[:space:]]*$'
+  local src
+  if [ -f "$QUESTIONS_DIR/pickup.set" ]; then
+    src="$QUESTIONS_DIR/pickup.set"
+  elif [ -f "$CONFIG_DIR/pickup.set" ]; then
+    src="$CONFIG_DIR/pickup.set"
+  else
+    return 0
   fi
+  grep -v '^[[:space:]]*#' "$src" | grep -v '^[[:space:]]*$'
 }
 
 lock_state() {
@@ -125,6 +137,11 @@ lock_state() {
 state_init() {
   mkdir -p "$STATE_DIR" "$LOG_DIR" "$USER_DATA_DIR"
   load_config
+
+  if [ -f "$CONFIG_DIR/pickup.set" ] && [ ! -f "$QUESTIONS_DIR/pickup.set" ]; then
+    mkdir -p "$QUESTIONS_DIR"
+    cp "$CONFIG_DIR/pickup.set" "$QUESTIONS_DIR/pickup.set"
+  fi
 
   if [ ! -f "$ANSWERS_STATE" ] || [ ! -s "$ANSWERS_STATE" ]; then
     printf '{}' >"$ANSWERS_STATE"
@@ -321,7 +338,7 @@ ask_question() {
 
   local groups
   groups=$(load_enabled_groups)
-  [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
+  [ -n "$groups" ] || die "no enabled question groups"
 
   local json
   json=$(select_question "$groups")
@@ -540,13 +557,14 @@ usage() {
   cat <<'EOF'
 Usage: memoloop <command>
 
-  ask [name]      show one question popup (default name: manual)
+  ask             show one question popup
+  ask [label]     show one question (answer is stored with this label)
   test            launch a test prompt immediately
   config          show effective configuration
   setup           initialize state, log, data and config directories
 
-Config: ~/.config/memoloop/       (config.conf, pickup.set)
-Data:    ~/.local/share/memoloop/  (questions/, answers.json)
+Config:  ~/.config/memoloop/       (config.conf)
+Data:    ~/.local/share/memoloop/  (questions/, pickup.set, answers.json)
 State:   ~/.local/state/memoloop/  (current.json, result.json, log/reminders.log)
 
 Scheduling is handled by intervald; configure its jobs in

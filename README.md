@@ -18,8 +18,7 @@ config + scoring design.
 
 Does:
 - Two independent scheduling rules: fixed (every 45 minutes by default) and random
-  (every 15–30 minutes), each tracking its own next-due time. Intervals configured
-  in `~/.config/memoloop/intervals.conf`.
+  (every 15–30 minutes), each tracking its own next-due time.
 - A terminal popup (`foot`) showing a Japanese prompt with its English meaning,
   answer instructions, and current status (running / paused / DND).
 - Answer submission, correctness feedback (accepted vs not accepted, intended
@@ -64,7 +63,7 @@ All commands run from the repo root:
     ./src/memoloop watch        # run the reminder loop in the foreground
     ./src/memoloop start        # start the systemd user service (installed copy)
     ./src/memoloop stop         # stop the systemd user service
-    ./src/memoloop restart      # restart the systemd user service (use after editing intervals.conf)
+    ./src/memoloop restart      # restart the systemd user service (use after editing config)
     ./src/memoloop test         # launch one test prompt immediately
     ./src/memoloop pause        # pause all reminders
     ./src/memoloop resume       # resume all reminders
@@ -82,40 +81,27 @@ Tests:
 
 ## Configuration (`~/.config/memoloop/`)
 
-**intervals.conf** — scheduling parameters:
+**config.conf** — daemon settings:
 
 ```
-fixed_seconds=2700
-random_min=15
-random_max=30
-decay_hours=24
-min_per_day=10
-
-# Anki reminder rule (disabled by default — uncomment to enable,
-# then memoloop restart to apply).
-# anki_enabled=true
-# anki_random_min=15
-# anki_random_max=30
-# anki_fixed_seconds=2700
+nohelp=true
 ```
 
-- `fixed_seconds`: interval between fixed-rule prompts (default 2700 = 45 min)
-- `random_min` / `random_max`: random-rule interval in minutes (default 15–30)
-- `decay_hours`: half-life for answer-point decay in hours (default 24)
-- `min_per_day`: minimum unique questions shown per day (default 10)
-- `anki_enabled`, `anki_type` (`random` \| `fixed`), `anki_random_min`, `anki_random_max`, `anki_fixed_seconds`: optional anki reminder rule (disabled by default)
+- `nohelp`: skip the "press any key to close" prompt after answering
 
 **Changes take effect only after `memoloop restart`** — the daemon reads
-`config.conf` and `intervals.conf` once at startup (`pickup.set` is re-read
-each question, so it needs no restart).
+`config.conf` once at startup (`pickup.set` is re-read each question, so it
+needs no restart).
 
 Override at run time through the environment:
 
-    MEMOLOOP_FIXED_SECONDS=30 ./src/memoloop watch
+    MEMOLOOP_DECAY_HOURS=24 ./src/memoloop watch
 
-The same exists for `MEMOLOOP_RANDOM_MIN`, `MEMOLOOP_RANDOM_MAX`,
-`MEMOLOOP_DECAY_HOURS`, `MEMOLOOP_MIN_PER_DAY` and `MEMOLOOP_NOHELP`.
-Environment values win over `intervals.conf`.
+The same exists for `MEMOLOOP_MIN_PER_DAY` and `MEMOLOOP_NOHELP`.
+Environment values win over `config.conf`.
+
+Scheduling (fixed/random intervals) is handled by `intervald`; configure its
+jobs in `~/.config/intervald/config.yaml`.
 
 **pickup.set** — enabled question groups, one ID per line:
 
@@ -233,7 +219,7 @@ and none is silently merged or discarded.
 - DND window is same-day only (no overnight windows) in this prototype.
 - Follow-up: Tauri proof of concept (see `plans/tech-stack.md`), per-rule
   enable/disable, optional prompt bundling, `config` subcommands to edit
-  intervals/pickup.set interactively.
+  pickup.set interactively.
 
 ## Reference projects (do not modify, no runtime dependency)
 
