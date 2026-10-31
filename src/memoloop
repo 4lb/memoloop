@@ -510,6 +510,14 @@ cmd_ask() {
   need jq
   state_init
 
+  while :; do
+    ask_question "$id" || return 0
+  done
+}
+
+ask_question() {
+  local id="$1"
+
   local groups
   groups=$(load_enabled_groups)
   [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
@@ -629,23 +637,32 @@ cmd_ask() {
     ;;
   esac
 
-  if [ -t 0 ]; then
-    # printf '\n  Press any key to close...\n'
-    if [ "$NOHELP" != "true" ]; then
-      printf '\n  Press any key to close...\n'
-    fi
-    _close_key=''
-    read -n1 -r -s _close_key || true
-  fi
-
   update_points "$qid" "$result"
 
   cat >"$RESULT_STATE" <<EOF
 {"rule": "$id", "result": "$result", "question": $(printf '%s' "$json"), "answered_at": $(epoch)}
 EOF
   log_add "$id" "answered" "$result (answer: $answer, qid: $qid)"
+
   printf '\033[?25h'
-  return 0
+
+  if [ -t 0 ]; then
+    if [ "$NOHELP" != "true" ]; then
+      printf '\n  n = new question, any other key = close\n'
+    fi
+    _close_key=''
+    read -n1 -r -s _close_key || true
+    if [ "$result" != "paused" ]; then
+      case "$_close_key" in
+      n | N)
+        printf '\033[2J\033[H'
+        return 0
+        ;;
+      esac
+    fi
+  fi
+
+  return 1
 }
 
 normalize() {

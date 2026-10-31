@@ -24,6 +24,8 @@ Does:
   answer instructions, and current status (running / paused / DND).
 - Answer submission, correctness feedback (accepted vs not accepted, intended
   answer shown), dismiss without answering, and a global pause-all control.
+  After the feedback, `n` opens another question in the same window; any other
+  key closes it.
 - A configurable Do-Not-Disturb window.
 - No backlog: prompts due while paused or in DND are skipped, not queued.
 - Queueing: if a popup is already open when another rule fires, the second

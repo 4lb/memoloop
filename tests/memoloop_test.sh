@@ -209,6 +209,12 @@ timeout 3 bash -c '
 ' _ "$CLI_ROOT/config" "$CLI_ROOT/data" "$CLI_ROOT/state" "$CLI_ROOT/log" "$REPO/src/memoloop" || popup_rc=$?
 assert_eq "popup renders and waits for input" "124" "$popup_rc"
 
+if command -v script >/dev/null 2>&1; then
+  : >"$CLI_ROOT/log/reminders.log"
+  printf 'wrong\nnwrong2\nx' | script -qec "env FOOT_POPUP=1 MEMOLOOP_CONFIG_DIR='$CLI_ROOT/config' MEMOLOOP_DATA_DIR='$CLI_ROOT/data' MEMOLOOP_STATE='$CLI_ROOT/state' MEMOLOOP_LOG='$CLI_ROOT/log' bash '$REPO/src/memoloop' ask fixed" /dev/null >/dev/null 2>&1 || true
+  assert_eq "n after feedback opens another question" "2" "$(grep -c answered "$CLI_ROOT/log/reminders.log")"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 if [ "$fail" -gt 0 ]; then
   exit 1
