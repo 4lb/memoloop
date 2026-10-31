@@ -103,7 +103,7 @@ min_per_day=10
 - `random_min` / `random_max`: random-rule interval in minutes (default 15–30)
 - `decay_hours`: half-life for answer-point decay in hours (default 24)
 - `min_per_day`: minimum unique questions shown per day (default 10)
-- `anki_enabled`, `anki_random_min`, `anki_random_max`, `anki_fixed_seconds`: optional anki reminder rule (disabled by default)
+- `anki_enabled`, `anki_type` (`random` \| `fixed`), `anki_random_min`, `anki_random_max`, `anki_fixed_seconds`: optional anki reminder rule (disabled by default)
 
 **Changes take effect only after `memoloop restart`** — the daemon reads
 `config.conf` and `intervals.conf` once at startup (`pickup.set` is re-read

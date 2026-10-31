@@ -38,6 +38,7 @@ DECAY_HOURS=24
 MIN_PER_DAY=10
 NOHELP=true
 ANKI_ENABLED=false
+ANKI_TYPE=random
 ANKI_FIXED_SECONDS=2700
 ANKI_RANDOM_MIN=15
 ANKI_RANDOM_MAX=30
@@ -135,6 +136,7 @@ load_intervals() {
       min_per_day) MIN_PER_DAY="$value" ;;
       nohelp) NOHELP="$value" ;;
       anki_enabled) ANKI_ENABLED="$value" ;;
+      anki_type) ANKI_TYPE="$value" ;;
       anki_fixed_seconds) ANKI_FIXED_SECONDS="$value" ;;
       anki_random_min) ANKI_RANDOM_MIN="$value" ;;
       anki_random_max) ANKI_RANDOM_MAX="$value" ;;
@@ -150,6 +152,7 @@ load_intervals() {
   [ -n "${MEMOLOOP_DECAY_HOURS:-}" ] && DECAY_HOURS=$MEMOLOOP_DECAY_HOURS
   [ -n "${MEMOLOOP_MIN_PER_DAY:-}" ] && MIN_PER_DAY=$MEMOLOOP_MIN_PER_DAY
   [ -n "${MEMOLOOP_ANKI_ENABLED:-}" ] && ANKI_ENABLED=$MEMOLOOP_ANKI_ENABLED
+  [ -n "${MEMOLOOP_ANKI_TYPE:-}" ] && ANKI_TYPE=$MEMOLOOP_ANKI_TYPE
   [ -n "${MEMOLOOP_ANKI_FIXED_SECONDS:-}" ] && ANKI_FIXED_SECONDS=$MEMOLOOP_ANKI_FIXED_SECONDS
   [ -n "${MEMOLOOP_ANKI_RANDOM_MIN:-}" ] && ANKI_RANDOM_MIN=$MEMOLOOP_ANKI_RANDOM_MIN
   [ -n "${MEMOLOOP_ANKI_RANDOM_MAX:-}" ] && ANKI_RANDOM_MAX=$MEMOLOOP_ANKI_RANDOM_MAX
@@ -183,9 +186,15 @@ state_init() {
 EOF
   fi
   if [ "$ANKI_ENABLED" = "true" ] && ! jq -e '.rules[] | select(.id=="anki")' "$RULES_STATE" >/dev/null 2>&1; then
-    jq --argjson min "$ANKI_RANDOM_MIN" --argjson max "$ANKI_RANDOM_MAX" '
-      .rules += [{"id": "anki", "type": "random", "min": $min, "max": $max, "enabled": true, "next_due": 0}]
-    ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+    if [ "$ANKI_TYPE" = "fixed" ]; then
+      jq --argjson sec "$ANKI_FIXED_SECONDS" '
+        .rules += [{"id": "anki", "type": "fixed", "seconds": $sec, "enabled": true, "next_due": 0}]
+      ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+    else
+      jq --argjson min "$ANKI_RANDOM_MIN" --argjson max "$ANKI_RANDOM_MAX" '
+        .rules += [{"id": "anki", "type": "random", "min": $min, "max": $max, "enabled": true, "next_due": 0}]
+      ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+    fi
   fi
   if [ ! -f "$SESSION_STATE" ]; then
     cat >"$SESSION_STATE" <<EOF
@@ -757,7 +766,7 @@ cmd_watch() {
     esac
   done
 
-  term_notice "memoloop watch · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min · anki ${ANKI_RANDOM_MIN}–${ANKI_RANDOM_MAX}min"
+  term_notice "memoloop watch · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min · anki ${ANKI_TYPE} ${ANKI_ENABLED}"
 
   while :; do
     process_queue
@@ -875,6 +884,7 @@ cmd_config() {
   printf '  decay_hours: %s\n' "$DECAY_HOURS"
   printf '  min_per_day: %s\n' "$MIN_PER_DAY"
   printf '  anki_enabled: %s\n' "$ANKI_ENABLED"
+  printf '  anki_type: %s\n' "$ANKI_TYPE"
   printf '  anki_random_min: %s\n' "$ANKI_RANDOM_MIN"
   printf '  anki_random_max: %s\n' "$ANKI_RANDOM_MAX"
   printf '  anki_fixed_seconds: %s\n' "$ANKI_FIXED_SECONDS"
