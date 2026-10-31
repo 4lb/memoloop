@@ -15,25 +15,15 @@ SELF_DIR=$(SELF_DIR)
 unset -f SELF_DIR
 
 CONFIG_DIR="${MEMOLOOP_CONFIG_DIR:-$HOME/.config/memoloop}"
-CACHE_DIR="${MEMOLOOP_CACHE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/memoloop}"
-STATE_DIR="${MEMOLOOP_STATE:-$SELF_DIR/../state}"
-LOG_DIR="${MEMOLOOP_LOG:-$SELF_DIR/../log}"
-
-# Set default USER_DATA_DIR before using it for QUESTIONS_DIR
-USER_DATA_DIR="${USER_DATA_DIR:-$HOME/.local/share/memoloop}"
+DATA_DIR_EXPLICIT="${MEMOLOOP_DATA_DIR:-${USER_DATA_DIR:-}}"
+USER_DATA_DIR="${DATA_DIR_EXPLICIT:-${XDG_DATA_HOME:-$HOME/.local/share}/memoloop}"
+STATE_DIR="${MEMOLOOP_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/memoloop}"
+LOG_DIR="${MEMOLOOP_LOG:-$STATE_DIR/log}"
 
 CONFIG_CONF="$CONFIG_DIR/config.conf"
 PICKUP_SET="$CONFIG_DIR/pickup.set"
 QUESTIONS_DIR="$USER_DATA_DIR/questions"
-
-# Load config.conf for USER_DATA_DIR if present
-if [ -f "$CONFIG_DIR/config.conf" ]; then
-  . "$CONFIG_DIR/config.conf"
-fi
-
-# Recalculate QUESTIONS_DIR after config load (USER_DATA_DIR may be overridden)
-QUESTIONS_DIR="$USER_DATA_DIR/questions"
-ANSWERS_STATE="$CACHE_DIR/answers.json"
+ANSWERS_STATE="$USER_DATA_DIR/answers.json"
 
 RULES_STATE="$STATE_DIR/rules.json"
 SESSION_STATE="$STATE_DIR/session.json"
@@ -48,22 +38,56 @@ DECAY_HOURS=24
 MIN_PER_DAY=10
 NOHELP=true
 
-RULE_FIXED_ID="fixed"
-RULE_RANDOM_ID="random"
-
 . "$SELF_DIR/../lib/term.sh"
 
 die() {
   printf 'memoloop: %s\n' "$1" >&2
 
   if [ -t 0 ]; then
-    printf '\n  Press any key to close...\n'
-    read -n1 -r -s _dummy || true
+    if [ -n "${FOOT_POPUP:-}" ]; then
+      printf '\n  Closing in 5s...\n'
+      sleep 5
+    else
+      printf '\n  Press any key to close...\n'
+      read -n1 -r -s _dummy || true
+    fi
   fi
 
   exit 1
 }
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
+
+config_value() {
+  _cv=${1%\"}
+  _cv=${_cv#\"}
+  _cv=${_cv%\'}
+  _cv=${_cv#\'}
+  case "$_cv" in
+  '~/'*) _cv="$HOME/${_cv#\~/}" ;;
+  '$HOME/'*) _cv="$HOME/${_cv#\$HOME/}" ;;
+  esac
+  printf '%s' "$_cv"
+}
+
+load_config() {
+  local key value
+  [ -f "$CONFIG_CONF" ] || return 0
+  while IFS='=' read -r key value; do
+    key=${key#*[[:space:]]}
+    key=${key%[[:space:]]}
+    case "$key" in
+    USER_DATA_DIR | data_dir)
+      [ -z "$DATA_DIR_EXPLICIT" ] || continue
+      value=$(config_value "$value")
+      [ -n "$value" ] || continue
+      USER_DATA_DIR=$value
+      QUESTIONS_DIR="$USER_DATA_DIR/questions"
+      ANSWERS_STATE="$USER_DATA_DIR/answers.json"
+      ;;
+    nohelp) [ -n "${MEMOLOOP_NOHELP:-}" ] || NOHELP=$(config_value "$value") ;;
+    esac
+  done <"$CONFIG_CONF"
+}
 
 require_config() {
   [ -f "$PICKUP_SET" ] || die "config not found: $PICKUP_SET"
@@ -85,10 +109,13 @@ today_start() {
 }
 
 load_intervals() {
-  local intervals_conf="$USER_DATA_DIR/intervals.conf"
+  local intervals_conf="$CONFIG_DIR/intervals.conf"
+  local legacy_conf="$USER_DATA_DIR/intervals.conf"
+  local key value
+  [ -f "$intervals_conf" ] || intervals_conf=$legacy_conf
   if [ -f "$intervals_conf" ]; then
-    local key value
     while IFS='=' read -r key value; do
+      value=$(config_value "$value")
       case "$key" in
       fixed_seconds) FIXED_SECONDS="$value" ;;
       random_min) RANDOM_MIN="$value" ;;
@@ -99,6 +126,14 @@ load_intervals() {
       esac
     done <"$intervals_conf"
   fi
+  if [ -n "${MEMOLOOP_NOHELP:-}" ]; then
+    NOHELP=$MEMOLOOP_NOHELP
+  fi
+  [ -n "${MEMOLOOP_FIXED_SECONDS:-}" ] && FIXED_SECONDS=$MEMOLOOP_FIXED_SECONDS
+  [ -n "${MEMOLOOP_RANDOM_MIN:-}" ] && RANDOM_MIN=$MEMOLOOP_RANDOM_MIN
+  [ -n "${MEMOLOOP_RANDOM_MAX:-}" ] && RANDOM_MAX=$MEMOLOOP_RANDOM_MAX
+  [ -n "${MEMOLOOP_DECAY_HOURS:-}" ] && DECAY_HOURS=$MEMOLOOP_DECAY_HOURS
+  [ -n "${MEMOLOOP_MIN_PER_DAY:-}" ] && MIN_PER_DAY=$MEMOLOOP_MIN_PER_DAY
 }
 
 load_enabled_groups() {
@@ -107,8 +142,15 @@ load_enabled_groups() {
   fi
 }
 
+lock_state() {
+  command -v flock >/dev/null 2>&1 || return 0
+  exec 9>"$STATE_DIR/.lock" 2>/dev/null || return 0
+  flock -w 5 9 || true
+}
+
 state_init() {
-  mkdir -p "$STATE_DIR" "$LOG_DIR" "$CACHE_DIR"
+  mkdir -p "$STATE_DIR" "$LOG_DIR" "$USER_DATA_DIR"
+  load_config
   load_intervals
 
   if [ ! -f "$RULES_STATE" ]; then
@@ -137,15 +179,21 @@ rules_get() {
 }
 
 rules_set_next_due() {
-  jq --arg id "$1" --argjson nd "$2" '
-    (.rules[] | select(.id==$id)).next_due = $nd
-  ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+  (
+    lock_state
+    jq --arg id "$1" --argjson nd "$2" '
+      (.rules[] | select(.id==$id)).next_due = $nd
+    ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+  )
 }
 
 rules_set_enabled() {
-  jq --arg id "$1" --argjson en "$2" '
-    (.rules[] | select(.id==$id)).enabled = $en
-  ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+  (
+    lock_state
+    jq --arg id "$1" --argjson en "$2" '
+      (.rules[] | select(.id==$id)).enabled = $en
+    ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
+  )
 }
 
 rule_next_due() {
@@ -161,14 +209,27 @@ session_get() {
 }
 
 session_set() {
-  jq --arg k "$1" --argjson v "$2" '. + {($k): $v}' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+  (
+    lock_state
+    jq --arg k "$1" --argjson v "$2" '. + {($k): $v}' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+  )
+}
+
+session_set_str() {
+  (
+    lock_state
+    jq --arg k "$1" --arg v "$2" '. + {($k): $v}' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+  )
 }
 
 session_queue_push() {
   local q
   q=$(jq -r '.queue[]' "$SESSION_STATE" 2>/dev/null | grep -xF "$1" || true)
   if [ -z "$q" ]; then
-    jq --arg id "$1" '.queue += [$id] | .open = 1' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+    (
+      lock_state
+      jq --arg id "$1" '.queue += [$id] | .open = 1' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+    )
   fi
 }
 
@@ -176,13 +237,19 @@ session_queue_pop() {
   local id
   id=$(jq -r '.queue[0] // empty' "$SESSION_STATE")
   if [ -n "$id" ]; then
-    jq 'del(.queue[0])' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+    (
+      lock_state
+      jq 'del(.queue[0])' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+    )
   fi
   printf '%s' "$id"
 }
 
 session_open_set() {
-  jq --argjson o "$1" '.open = $o' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+  (
+    lock_state
+    jq --argjson o "$1" '.open = $o' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
+  )
 }
 
 log_add() {
@@ -211,8 +278,11 @@ load_answers() {
 }
 
 save_answers() {
-  mkdir -p "$CACHE_DIR"
-  printf '%s' "$1" >"$ANSWERS_STATE"
+  mkdir -p "$USER_DATA_DIR"
+  (
+    lock_state
+    printf '%s' "$1" >"$ANSWERS_STATE.tmp" && mv "$ANSWERS_STATE.tmp" "$ANSWERS_STATE"
+  )
 }
 
 update_points() {
@@ -255,6 +325,7 @@ question_weight() {
     decay_factor=1
   else
     hours_diff=$(((now - last_shown) / 3600))
+    [ "$hours_diff" -lt 0 ] && hours_diff=0
     decay_factor=$(awk -v hd="$hours_diff" -v dh="$DECAY_HOURS" 'BEGIN { print exp(log(0.5) * hd / dh) }')
   fi
 
@@ -306,9 +377,9 @@ select_question() {
 
   [ ${#qids[@]} -gt 0 ] || return 1
 
-  local r cumulative idx now
-  now=$(epoch)
-  r=$(awk -v tw="$total_weight" -v seed="$now" 'BEGIN { srand(seed); print rand() * tw }')
+  local r cumulative idx seed
+  seed=$(( $(epoch) * 1000000 + RANDOM ))
+  r=$(awk -v tw="$total_weight" -v seed="$seed" 'BEGIN { srand(seed); print rand() * tw }')
   cumulative=0
   idx=0
   for qid in "${qids[@]}"; do
@@ -329,17 +400,14 @@ random_between() {
 }
 
 rule_interval_seconds() {
-  local r type min max
-  r=$(rules_get "$1")
-  type=$(printf '%s' "$r" | jq -r '.type')
+  local type
+  type=$(rules_get "$1" | jq -r '.type')
   case "$type" in
   fixed)
     printf '%d' "$FIXED_SECONDS"
     ;;
   random)
-    min=$(printf '%s' "$r" | jq -r '.min')
-    max=$(printf '%s' "$r" | jq -r '.max')
-    printf '%d' "$(($(random_between "$min" "$max") * 60))"
+    printf '%d' "$(($(random_between "$RANDOM_MIN" "$RANDOM_MAX") * 60))"
     ;;
   *) die "unknown schedule type for rule $1: $type" ;;
   esac
@@ -353,29 +421,35 @@ schedule_recalc() {
 }
 
 in_dnd() {
-  local start end now_hm
+  local now_hm="${1:-$(date +%H:%M)}" start end
   start=$(session_get dnd_start)
   end=$(session_get dnd_end)
-  [ "$start" = "null" ] || [ -z "$start" ] && return 1
-  [ "$end" = "null" ] || [ -z "$end" ] && return 1
-  now_hm=$(date +%H:%M)
-  if [ "$now_hm" \> "$start" ] && [ "$now_hm" \< "$end" ]; then
-    return 0
+  case "$start" in "" | null) return 1 ;; esac
+  case "$end" in "" | null) return 1 ;; esac
+  [ "$start" = "$end" ] && return 1
+  if [ "$start" \< "$end" ]; then
+    [ ! "$now_hm" \< "$start" ] && [ "$now_hm" \< "$end" ]
+    return
   fi
-  [ "$now_hm" = "$start" ] && return 0
-  [ "$now_hm" = "$end" ] && return 0
-  return 1
+  [ ! "$now_hm" \< "$start" ] || [ "$now_hm" \< "$end" ]
+  return
 }
 
 due_rules() {
-  local now id r enabled nd
+  local now id nd
   now=$(epoch)
   for id in fixed random; do
     [ "$(rule_enabled "$id")" = "true" ] || continue
     nd=$(rule_next_due "$id")
-    [ "$nd" = "null" ] || [ -z "$nd" ] || [ "$nd" = "0" ] && continue
-    [ "$now" -ge "$nd" ] || continue
-    printf '%s\n' "$id"
+    case "$nd" in
+    "" | null) continue ;;
+    0) printf '%s\n' "$id" ;;
+    *)
+      if [ "$now" -ge "$nd" ]; then
+        printf '%s\n' "$id"
+      fi
+      ;;
+    esac
   done
 }
 
@@ -385,10 +459,19 @@ popup_running() {
   [ -n "$pid" ] && [ "$pid" != "null" ] && kill -0 "$pid" 2>/dev/null
 }
 
-launch_popup() {
+popup_spawn() {
   local id="$1"
   need foot
-  FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
+  if [ -t 0 ]; then
+    FOOT_POPUP=1 setsid --fork foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" </dev/null >/dev/null 2>&1
+  else
+    FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" </dev/null &
+  fi
+}
+
+launch_popup() {
+  local id="$1"
+  popup_spawn "$id"
   local pid=$!
   session_set open_pid "$pid"
   session_open_set 1
@@ -397,8 +480,15 @@ launch_popup() {
 
 process_queue() {
   if popup_running; then return 0; fi
-  session_open_set 0
-  session_set open_pid "null"
+  local open pid
+  open=$(session_get open)
+  pid=$(session_get open_pid 2>/dev/null || true)
+  if [ "$open" != "0" ]; then
+    session_open_set 0
+  fi
+  if [ -n "$pid" ] && [ "$pid" != "null" ]; then
+    session_set open_pid "null"
+  fi
   local id
   id=$(session_queue_pop)
   if [ -n "$id" ] && [ "$id" != "null" ]; then
@@ -410,12 +500,8 @@ cmd_ask() {
   term_init
   local id="${1:-manual}"
 
-  # Niri może uruchomić skrypt bez terminala.
-  # W takim przypadku najpierw otwieramy foot, a walidację
-  # wykonujemy dopiero wewnątrz jego procesu.
-  if [ -z "${FOOT_POPUP:-}" ] && [ ! -t 0 ]; then
-    need foot
-    FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
+  if [ -z "${FOOT_POPUP:-}" ]; then
+    popup_spawn "$id"
     return 0
   fi
 
@@ -430,12 +516,6 @@ cmd_ask() {
   json=$(select_question "$groups")
   if [ -z "$json" ] || [ "$json" = "null" ]; then
     die "no question files found for enabled groups in $QUESTIONS_DIR"
-  fi
-
-  if [ -z "${FOOT_POPUP:-}" ]; then
-    need foot
-    FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
-    return 0
   fi
 
   local qtype jp en target note answer_label choices answer_letter
@@ -592,11 +672,14 @@ cmd_watch() {
   state_init
   require_config
   need foot jq
+  local id
   for id in fixed random; do
-    [ "$(rule_next_due "$id")" = "0" ] && schedule_recalc "$id"
+    case "$(rule_next_due "$id")" in
+    "" | null | 0) schedule_recalc "$id" ;;
+    esac
   done
 
-  term_notice "memoloop watch" "Watching rules: fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
+  term_notice "memoloop watch" "fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
 
   while :; do
     process_queue
@@ -604,7 +687,6 @@ cmd_watch() {
       sleep 5
       continue
     fi
-    local id
     while IFS= read -r id; do
       [ -n "$id" ] || continue
       if popup_running; then
@@ -642,25 +724,42 @@ cmd_stop() {
   term_removed "memoloop stopped"
 }
 
+due_label() {
+  local nd
+  nd=$(rule_next_due "$1")
+  case "$nd" in
+  "" | null) printf 'not scheduled' ;;
+  0) printf 'due now' ;;
+  *)
+    if [ "$nd" -le "$(epoch)" ]; then
+      printf 'due now'
+    else
+      printf '%s' "$(iso "$nd")"
+    fi
+    ;;
+  esac
+}
+
 cmd_status() {
   state_init
   require_config
   term_init
-  local paused dnd nd_fixed nd_random
+  local paused dnd
   paused=$(session_get paused)
   dnd=$(in_dnd && echo yes || echo no)
-  nd_fixed=$(rule_next_due fixed)
-  nd_random=$(rule_next_due random)
 
   if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
     local status_text="memoloop is running"
     local status_marker="$TERM_MARK_OK"
-    local extra=("$TERM_MARK_PLAIN" "next: fixed $(iso "$nd_fixed") | random $(iso "$nd_random")")
   else
     local status_text="memoloop is not running"
     local status_marker="$TERM_MARK_PLAIN"
-    local extra=()
   fi
+
+  local extra=(
+    "$TERM_MARK_PLAIN" "paused: $paused | dnd: $dnd"
+    "$TERM_MARK_PLAIN" "next: fixed $(due_label fixed) | random $(due_label random)"
+  )
 
   local status_args=("$status_marker" "$status_text" "${extra[@]}")
   term_status "Status" "${status_args[@]}"
@@ -673,11 +772,10 @@ cmd_config() {
   printf '\nMemoLoop configuration:\n\n'
   printf 'Directories:\n'
   printf '  CONFIG_DIR: %s\n' "$CONFIG_DIR"
-  printf '  CACHE_DIR: %s\n' "$CACHE_DIR"
-  printf '  STATE_DIR: %s\n' "$STATE_DIR"
-  printf '  LOG_DIR: %s\n' "$LOG_DIR"
   printf '  USER_DATA_DIR: %s\n' "$USER_DATA_DIR"
   printf '  QUESTIONS_DIR: %s\n' "$QUESTIONS_DIR"
+  printf '  STATE_DIR: %s\n' "$STATE_DIR"
+  printf '  LOG_DIR: %s\n' "$LOG_DIR"
   printf '\nInterval settings:\n'
   printf '  fixed_seconds: %s\n' "$FIXED_SECONDS"
   printf '  random_min: %s\n' "$RANDOM_MIN"
@@ -687,8 +785,9 @@ cmd_config() {
   printf '\nSettings:\n'
   printf '  nohelp: %s\n' "$NOHELP"
   printf '\nEnabled groups (%s):\n' "$(load_enabled_groups | wc -l)"
-  printf '\nConfiguration file: %s\n' "$CONFIG_DIR/config.conf"
-  if [ -f "$CONFIG_DIR/config.conf" ]; then
+  printf '\nInterval file: %s\n' "$CONFIG_DIR/intervals.conf"
+  printf 'Config file:   %s\n' "$CONFIG_CONF"
+  if [ -f "$CONFIG_CONF" ]; then
     printf '  (loaded from config.conf)\n'
   fi
   printf 'Pickup set: %s\n' "$PICKUP_SET"
@@ -696,11 +795,10 @@ cmd_config() {
     cat "$PICKUP_SET"
   fi
   printf '\nQuestions available:\n'
-  local groups
+  local groups group qcount file
   groups=$(load_enabled_groups)
   if [ -n "$groups" ]; then
     for group in $groups; do
-      local qcount
       qcount=0
       for file in "$QUESTIONS_DIR/$group"/*.json; do
         [ -f "$file" ] && qcount=$((qcount + 1))
@@ -725,16 +823,45 @@ cmd_resume() {
   term_notice "Resumed" "All reminders resumed."
 }
 
+valid_time() {
+  case "$1" in
+  [0-9][0-9]:[0-9][0-9]) ;;
+  *) return 1 ;;
+  esac
+  [ "${1%%:*}" -le 23 ] || return 1
+  [ "${1#*:}" -le 59 ] || return 1
+  return 0
+}
+
 cmd_dnd() {
-  local args=("$@")
-  if [ ${#args[@]} -lt 2 ]; then
+  local start_time="${1:-}" end_time="${2:-}"
+  if [ -z "$start_time" ] || [ -z "$end_time" ]; then
     die "dnd requires two HH:MM times: memoloop dnd HH:MM HH:MM"
   fi
-  local start_time="${args[0]}"
-  local end_time="${args[1]}"
-  session_set dnd_start "$start_time"
-  session_set dnd_end "$end_time"
+  valid_time "$start_time" || die "invalid start time: $start_time (expected HH:MM)"
+  valid_time "$end_time" || die "invalid end time: $end_time (expected HH:MM)"
+  state_init
+  session_set_str dnd_start "$start_time"
+  session_set_str dnd_end "$end_time"
   term_notice "DND set" "Do Not Disturb window: $start_time - $end_time"
+}
+
+cmd_dnd_off() {
+  state_init
+  session_set dnd_start null
+  session_set dnd_end null
+  term_notice "DND cleared"
+}
+
+cmd_setup() {
+  state_init
+  term_init
+  term_status "Setup complete" \
+    "$TERM_MARK_OK" "state, log, data and config are initialised" \
+    "$TERM_MARK_PLAIN" "state: $STATE_DIR" \
+    "$TERM_MARK_PLAIN" "log:   $LOG_FILE" \
+    "$TERM_MARK_PLAIN" "data:  $USER_DATA_DIR" \
+    "$TERM_MARK_PLAIN" "config: $CONFIG_DIR"
 }
 
 cmd_test() {
@@ -755,19 +882,22 @@ usage() {
   cat <<'EOF'
 Usage: memoloop <command>
 
-  setup       initialize state/cache/config directories
-  start       start the reminder daemon in the background
-  stop        stop the background reminder daemon
-  ask <rule>  show one question popup (used by the daemon)
-  status      show paused/DND/next-due/state
+  setup       initialize state, log, data and config directories
+  start       start the reminder daemon (systemd user service)
+  stop        stop the reminder daemon
+  watch       run the reminder loop in the foreground (used by the service)
+  ask [rule]  show one question popup (used by the daemon and bindings)
+  test        launch a test prompt immediately
+  status      show running/paused/DND/next-due state
   config      show effective configuration
   pause       pause all reminders
   resume      resume all reminders
-  dnd <e>   set Do Not Disturb window (HH:MM HH:MM)
-  test        launch a test prompt immediately
+  dnd HH:MM HH:MM   set the Do Not Disturb window
+  dnd off           clear the Do Not Disturb window
 
-Config:  ~/.config/memoloop/  (intervals.conf, pickup.set, questions/)
-Cache:   ~/.cache/memoloop/   (answers.json with point system)
+Config:  ~/.config/memoloop/       (config.conf, intervals.conf, pickup.set)
+Data:    ~/.local/share/memoloop/  (questions/, answers.json)
+State:   ~/.local/state/memoloop/  (rules.json, session.json, log/reminders.log)
 EOF
 }
 
@@ -792,7 +922,11 @@ main() {
   resume) cmd_resume ;;
   dnd)
     shift
-    cmd_dnd "$@"
+    if [ "${1:-}" = "off" ]; then
+      cmd_dnd_off
+    else
+      cmd_dnd "$@"
+    fi
     ;;
   test) cmd_test ;;
   setup) cmd_setup ;;
@@ -803,6 +937,10 @@ main() {
     ;;
   esac
 }
+
+load_config
+load_intervals
+[ -n "${MEMOLOOP_NOHELP:-}" ] && NOHELP=$MEMOLOOP_NOHELP
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   main "$@"
