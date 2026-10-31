@@ -3,15 +3,15 @@
 set -u
 
 SELF_DIR() {
-	_sd=${BASH_SOURCE[0]}
-	while [ -L "$_sd" ]; do
-		_sd_l=$(readlink "$_sd")
-		case "$_sd_l" in
-		/*) _sd=$_sd_l ;;
-		*) _sd=$(dirname -- "$_sd")/$_sd_l ;;
-		esac
-	done
-	(CDPATH='' cd -- "$(dirname -- "$_sd")/.." && pwd -P)
+  _sd=${BASH_SOURCE[0]}
+  while [ -L "$_sd" ]; do
+    _sd_l=$(readlink "$_sd")
+    case "$_sd_l" in
+    /*) _sd=$_sd_l ;;
+    *) _sd=$(dirname -- "$_sd")/$_sd_l ;;
+    esac
+  done
+  (CDPATH='' cd -- "$(dirname -- "$_sd")/.." && pwd -P)
 }
 REPO=$(SELF_DIR)
 unset -f SELF_DIR
@@ -20,7 +20,8 @@ export MEMOLOOP_CONFIG_DIR="$(mktemp -d)"
 export MEMOLOOP_CACHE_DIR="$(mktemp -d)"
 export MEMOLOOP_STATE="$(mktemp -d)"
 export MEMOLOOP_LOG="$(mktemp -d)"
-trap 'rm -rf "$MEMOLOOP_CONFIG_DIR" "$MEMOLOOP_CACHE_DIR" "$MEMOLOOP_STATE" "$MEMOLOOP_LOG"' EXIT
+export USER_DATA_DIR="$(mktemp -d)"
+trap 'rm -rf "$MEMOLOOP_CONFIG_DIR" "$MEMOLOOP_CACHE_DIR" "$MEMOLOOP_STATE" "$MEMOLOOP_LOG" "$USER_DATA_DIR"' EXIT
 
 . "$REPO/src/memoloop"
 
@@ -28,12 +29,12 @@ pass=0
 fail=0
 
 assert_eq() {
-	if [ "$2" = "$3" ]; then
-		pass=$((pass + 1))
-	else
-		fail=$((fail + 1))
-		printf 'FAIL: %s\n  expected: %s\n  actual:   %s\n' "$1" "$2" "$3" >&2
-	fi
+  if [ "$2" = "$3" ]; then
+    pass=$((pass + 1))
+  else
+    fail=$((fail + 1))
+    printf 'FAIL: %s\n  expected: %s\n  actual:   %s\n' "$1" "$2" "$3" >&2
+  fi
 }
 
 cat >$MEMOLOOP_CONFIG_DIR/config.conf <<'EOF'
@@ -44,7 +45,7 @@ decay_hours=24
 min_per_day=10
 EOF
 
-cat >"$MEMOLOOP_CACHE_DIR/pickup.set" <<'EOF'
+cat >$MEMOLOOP_CONFIG_DIR/pickup.set <<'EOF'
 greetings
 family
 weather
@@ -54,8 +55,8 @@ verbs
 nouns
 EOF
 
-mkdir -p $MEMOLOOP_CACHE_DIR/questions/greetings
-cat >"$MEMOLOOP_CACHE_DIR/questions/greetings/basics.json" <<'EOF'
+mkdir -p "$USER_DATA_DIR/questions/greetings"
+cat >"$USER_DATA_DIR/questions/greetings/basics.json" <<'EOF'
 [
   {"id": "t-greet-1", "type": "translation", "japanese": "こんにちは", "english": "Hello", "accepted": ["こんにちは", "konnichiwa"]},
   {"id": "t-greet-2", "type": "reverse", "japanese": "ありがとう", "english": "Thank you", "accepted": ["ありがとう", "arigatou"]},
@@ -83,11 +84,11 @@ assert_eq "question set non-empty" "0" $([ "$qcount" -gt 0 ] && echo 0 || echo 1
 
 all_valid=1
 while IFS= read -r line; do
-	[ -z "$line" ] && continue
-	id=$(printf '%s' "$line" | jq -r '.id // empty')
-	jp=$(printf '%s' "$line" | jq -r '.japanese // empty')
-	en=$(printf '%s' "$line" | jq -r '.english // empty')
-	[ -n "$id" ] && [ -n "$jp" ] && [ -n "$en" ] || all_valid=0
+  [ -z "$line" ] && continue
+  id=$(printf '%s' "$line" | jq -r '.id // empty')
+  jp=$(printf '%s' "$line" | jq -r '.japanese // empty')
+  en=$(printf '%s' "$line" | jq -r '.english // empty')
+  [ -n "$id" ] && [ -n "$jp" ] && [ -n "$en" ] || all_valid=0
 done < <(printf '%s' "$questions" | jq -c '.[]')
 assert_eq "all questions have required fields" "1" "$all_valid"
 
@@ -131,6 +132,6 @@ assert_eq "selected group is greetings" "t-greet" "$sel_prefix"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 if [ "$fail" -gt 0 ]; then
-	exit 1
+  exit 1
 fi
 exit 0

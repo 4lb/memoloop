@@ -5,8 +5,8 @@ SELF_DIR() {
   while [ -L "$_sd" ]; do
     _sd_l=$(readlink "$_sd")
     case "$_sd_l" in
-      /*) _sd=$_sd_l ;;
-      *) _sd=$(dirname -- "$_sd")/$_sd_l ;;
+    /*) _sd=$_sd_l ;;
+    *) _sd=$(dirname -- "$_sd")/$_sd_l ;;
     esac
   done
   (CDPATH='' cd -- "$(dirname -- "$_sd")" && pwd -P)
@@ -22,28 +22,24 @@ LOG_DIR="${MEMOLOOP_LOG:-$SELF_DIR/../log}"
 # Set default USER_DATA_DIR before using it for QUESTIONS_DIR
 USER_DATA_DIR="${USER_DATA_DIR:-$HOME/.local/share/memoloop}"
 
-
-CONFIG_CONF="$CONFIG_DIR/intervals.conf"
+CONFIG_CONF="$CONFIG_DIR/config.conf"
 PICKUP_SET="$CONFIG_DIR/pickup.set"
 QUESTIONS_DIR="$USER_DATA_DIR/questions"
 
-
 # Load config.conf for USER_DATA_DIR if present
-if [ -f "$CONFIG_DIR/conf.conf" ]; then
-  . "$CONFIG_DIR/conf.conf"
+if [ -f "$CONFIG_DIR/config.conf" ]; then
+  . "$CONFIG_DIR/config.conf"
 fi
 
 # Recalculate QUESTIONS_DIR after config load (USER_DATA_DIR may be overridden)
 QUESTIONS_DIR="$USER_DATA_DIR/questions"
 ANSWERS_STATE="$CACHE_DIR/answers.json"
 
-
 RULES_STATE="$STATE_DIR/rules.json"
 SESSION_STATE="$STATE_DIR/session.json"
 CURRENT_STATE="$STATE_DIR/current.json"
 RESULT_STATE="$STATE_DIR/result.json"
 LOG_FILE="$LOG_DIR/reminders.log"
-
 
 FIXED_SECONDS=2700
 RANDOM_MIN=15
@@ -88,19 +84,18 @@ today_start() {
   date -d "$(date +%F)" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$(date +%F)" +%s
 }
 
-
 load_intervals() {
   local intervals_conf="$USER_DATA_DIR/intervals.conf"
   if [ -f "$intervals_conf" ]; then
     local key value
     while IFS='=' read -r key value; do
       case "$key" in
-        fixed_seconds) FIXED_SECONDS="$value" ;;
-        random_min) RANDOM_MIN="$value" ;;
-        random_max) RANDOM_MAX="$value" ;;
-        decay_hours) DECAY_HOURS="$value" ;;
-        min_per_day) MIN_PER_DAY="$value" ;;
-        nohelp) NOHELP="$value" ;;
+      fixed_seconds) FIXED_SECONDS="$value" ;;
+      random_min) RANDOM_MIN="$value" ;;
+      random_max) RANDOM_MAX="$value" ;;
+      decay_hours) DECAY_HOURS="$value" ;;
+      min_per_day) MIN_PER_DAY="$value" ;;
+      nohelp) NOHELP="$value" ;;
       esac
     done <"$intervals_conf"
   fi
@@ -111,7 +106,6 @@ load_enabled_groups() {
     grep -v '^[[:space:]]*#' "$PICKUP_SET" | grep -v '^[[:space:]]*$'
   fi
 }
-
 
 state_init() {
   mkdir -p "$STATE_DIR" "$LOG_DIR" "$CACHE_DIR"
@@ -195,7 +189,6 @@ log_add() {
   printf '%s %s %s %s\n' "$(iso "$(epoch)")" "$1" "$2" "$3" >>"$LOG_FILE"
 }
 
-
 load_all_questions() {
   local groups="$1"
   local combined="[]"
@@ -208,7 +201,6 @@ load_all_questions() {
   done
   printf '%s' "$combined"
 }
-
 
 load_answers() {
   if [ -f "$ANSWERS_STATE" ]; then
@@ -233,8 +225,11 @@ update_points() {
   points=$(printf '%s' "$answers" | jq --arg id "$qid" '.[$id].points // 100')
 
   case "$result" in
-    accepted) points=$(( points + 10 )) ;;
-    rejected) points=$(( points - 10 )); [ "$points" -lt 0 ] && points=0 ;;
+  accepted) points=$((points + 10)) ;;
+  rejected)
+    points=$((points - 10))
+    [ "$points" -lt 0 ] && points=0
+    ;;
   esac
 
   answers=$(printf '%s' "$answers" | jq --arg id "$qid" --arg result "$result" --argjson pts "$points" --argjson now "$now" '
@@ -259,7 +254,7 @@ question_weight() {
   if [ "$last_shown" = "0" ] || [ "$last_shown" = "null" ]; then
     decay_factor=1
   else
-    hours_diff=$(( (now - last_shown) / 3600 ))
+    hours_diff=$(((now - last_shown) / 3600))
     decay_factor=$(awk -v hd="$hours_diff" -v dh="$DECAY_HOURS" 'BEGIN { print exp(log(0.5) * hd / dh) }')
   fi
 
@@ -328,10 +323,9 @@ select_question() {
   printf '%s' "$questions" | jq '.[0]'
 }
 
-
 random_between() {
   local min="$1" max="$2"
-  printf '%d' "$(( min + RANDOM % (max - min + 1) ))"
+  printf '%d' "$((min + RANDOM % (max - min + 1)))"
 }
 
 rule_interval_seconds() {
@@ -339,15 +333,15 @@ rule_interval_seconds() {
   r=$(rules_get "$1")
   type=$(printf '%s' "$r" | jq -r '.type')
   case "$type" in
-    fixed)
-      printf '%d' "$FIXED_SECONDS"
-      ;;
-    random)
-      min=$(printf '%s' "$r" | jq -r '.min')
-      max=$(printf '%s' "$r" | jq -r '.max')
-      printf '%d' "$(( $(random_between "$min" "$max") * 60 ))"
-      ;;
-    *) die "unknown schedule type for rule $1: $type" ;;
+  fixed)
+    printf '%d' "$FIXED_SECONDS"
+    ;;
+  random)
+    min=$(printf '%s' "$r" | jq -r '.min')
+    max=$(printf '%s' "$r" | jq -r '.max')
+    printf '%d' "$(($(random_between "$min" "$max") * 60))"
+    ;;
+  *) die "unknown schedule type for rule $1: $type" ;;
   esac
 }
 
@@ -355,7 +349,7 @@ schedule_recalc() {
   local id="$1" now sec
   now=$(epoch)
   sec=$(rule_interval_seconds "$id")
-  rules_set_next_due "$id" "$(( now + sec ))"
+  rules_set_next_due "$id" "$((now + sec))"
 }
 
 in_dnd() {
@@ -385,7 +379,6 @@ due_rules() {
   done
 }
 
-
 popup_running() {
   local pid
   pid=$(session_get open_pid 2>/dev/null || true)
@@ -412,7 +405,6 @@ process_queue() {
     launch_popup "$id"
   fi
 }
-
 
 cmd_ask() {
   term_init
@@ -459,38 +451,38 @@ cmd_ask() {
   printf '\n'
 
   case "$qtype" in
-    translation)
-      term_ask_row '' "$jp"
-      term_ask_row '' "English: $en"
-      answer_label='Japanese: '
-      ;;
-    reverse)
-      term_ask_row '' "English: $en"
-      [ -n "$note" ] && term_ask_row '' "$note"
-      answer_label='Japanese: '
-      ;;
-    cloze)
-      local cloze_prompt
-      cloze_prompt=$(printf '%s' "$jp" | sed "s|$target|___|")
-      term_ask_row '' "$cloze_prompt"
-      [ -n "$note" ] && term_ask_row '' "$note"
-      term_ask_row '' "Meaning: $en"
-      answer_label='Fill in the blank: '
-      ;;
-    choice)
-      choices=$(printf '%s' "$json" | jq -r '.choices | join("\n")')
-      answer_letter=$(printf '%s' "$json" | jq -r '.answer')
-      term_ask_row '' "$jp"
-      term_ask_row '' ''
-      while IFS= read -r c; do
-        [ -n "$c" ] && term_ask_row '' "  $c"
-      done <<<"$choices"
-      term_ask_row '' ''
-      answer_label='Answer (A/B/C): '
-      ;;
-    *)
-      die "unknown question type: $qtype"
-      ;;
+  translation)
+    term_ask_row '' "$jp"
+    term_ask_row '' "English: $en"
+    answer_label='Japanese: '
+    ;;
+  reverse)
+    term_ask_row '' "English: $en"
+    [ -n "$note" ] && term_ask_row '' "$note"
+    answer_label='Japanese: '
+    ;;
+  cloze)
+    local cloze_prompt
+    cloze_prompt=$(printf '%s' "$jp" | sed "s|$target|___|")
+    term_ask_row '' "$cloze_prompt"
+    [ -n "$note" ] && term_ask_row '' "$note"
+    term_ask_row '' "Meaning: $en"
+    answer_label='Fill in the blank: '
+    ;;
+  choice)
+    choices=$(printf '%s' "$json" | jq -r '.choices | join("\n")')
+    answer_letter=$(printf '%s' "$json" | jq -r '.answer')
+    term_ask_row '' "$jp"
+    term_ask_row '' ''
+    while IFS= read -r c; do
+      [ -n "$c" ] && term_ask_row '' "  $c"
+    done <<<"$choices"
+    term_ask_row '' ''
+    answer_label='Answer (A/B/C): '
+    ;;
+  *)
+    die "unknown question type: $qtype"
+    ;;
   esac
 
   term_ask_row '' ''
@@ -509,57 +501,60 @@ cmd_ask() {
   local result="dismissed" correct=0 qid
   qid=$(printf '%s' "$json" | jq -r '.id')
   case "$answer" in
-    ''|s|S) result="skipped" ;;
-    p|P)
-      session_set paused true
-      result="paused"
-      term_notice "Paused" "All reminders paused. Run 'memoloop resume' to continue."
-      ;;
-    d|D) result="dismissed" ;;
-    *)
-      correct=1
-      if [ "$qtype" = "choice" ]; then
-        if [ "$(normalize "$answer")" = "$(normalize "$answer_letter")" ]; then
-          correct=0
-        fi
-      else
-        local accepted a
-        accepted=$(printf '%s' "$json" | jq -r '.accepted | join("\n")')
-        while IFS= read -r a; do
-          [ -z "$a" ] && continue
-          if [ "$(normalize "$answer")" = "$(normalize "$a")" ]; then correct=0; break; fi
-        done <<<"$accepted"
+  '' | s | S) result="skipped" ;;
+  p | P)
+    session_set paused true
+    result="paused"
+    term_notice "Paused" "All reminders paused. Run 'memoloop resume' to continue."
+    ;;
+  d | D) result="dismissed" ;;
+  *)
+    correct=1
+    if [ "$qtype" = "choice" ]; then
+      if [ "$(normalize "$answer")" = "$(normalize "$answer_letter")" ]; then
+        correct=0
       fi
-  if [ "$correct" -eq 0 ]; then
-    result="accepted"
-    accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
-    msg="Answer: $accepted_display ($en)"
-    local rows=()
-    while IFS= read -r line; do
-      [ -n "$line" ] && rows+=("$line")
-    done < <(wrap_text "$msg" "$TERM_ROW")
-    term_rows_box "$TERM_OK" "$TERM_OK" "Accepted" "$TERM_MARK_OK" "${rows[@]}"
-  else
-    result="rejected"
-    accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
-    msg="Intended: $accepted_display ($en)"
-    local rows=()
-    while IFS= read -r line; do
-      [ -n "$line" ] && rows+=("$line")
-    done < <(wrap_text "$msg" "$TERM_ROW")
-    term_rows_box "$TERM_NEG" "$TERM_NEG" "Not accepted" "$TERM_MARK_NEG" "${rows[@]}"
-  fi
-      ;;
+    else
+      local accepted a
+      accepted=$(printf '%s' "$json" | jq -r '.accepted | join("\n")')
+      while IFS= read -r a; do
+        [ -z "$a" ] && continue
+        if [ "$(normalize "$answer")" = "$(normalize "$a")" ]; then
+          correct=0
+          break
+        fi
+      done <<<"$accepted"
+    fi
+    if [ "$correct" -eq 0 ]; then
+      result="accepted"
+      accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
+      msg="Answer: $accepted_display ($en)"
+      local rows=()
+      while IFS= read -r line; do
+        [ -n "$line" ] && rows+=("$line")
+      done < <(wrap_text "$msg" "$TERM_ROW")
+      term_rows_box "$TERM_OK" "$TERM_OK" "Accepted" "$TERM_MARK_OK" "${rows[@]}"
+    else
+      result="rejected"
+      accepted_display=$(printf '%s' "$json" | jq -r '.accepted | join(" / ")')
+      msg="Intended: $accepted_display ($en)"
+      local rows=()
+      while IFS= read -r line; do
+        [ -n "$line" ] && rows+=("$line")
+      done < <(wrap_text "$msg" "$TERM_ROW")
+      term_rows_box "$TERM_NEG" "$TERM_NEG" "Not accepted" "$TERM_MARK_NEG" "${rows[@]}"
+    fi
+    ;;
   esac
 
   if [ -t 0 ]; then
-# printf '\n  Press any key to close...\n'
-  if [ "$NOHELP" != "true" ]; then
-    printf '\n  Press any key to close...\n'
+    # printf '\n  Press any key to close...\n'
+    if [ "$NOHELP" != "true" ]; then
+      printf '\n  Press any key to close...\n'
+    fi
+    _close_key=''
+    read -n1 -r -s _close_key || true
   fi
-  _close_key=''
-  read -n1 -r -s _close_key || true
-fi
 
   update_points "$qid" "$result"
 
@@ -581,7 +576,7 @@ wrap_text() {
   for word in $text; do
     if [ -z "$line" ]; then
       line="$word"
-    elif [ $(( ${#line} + 1 + ${#word} )) -le "$max" ]; then
+    elif [ $((${#line} + 1 + ${#word})) -le "$max" ]; then
       line="$line $word"
     else
       printf '%s\n' "$line"
@@ -590,7 +585,6 @@ wrap_text() {
   done
   [ -n "$line" ] && printf '%s\n' "$line"
 }
-
 
 SERVICE_UNIT="memoloop.service"
 
@@ -672,6 +666,90 @@ cmd_status() {
   term_status "Status" "${status_args[@]}"
 }
 
+cmd_config() {
+  state_init
+  require_config
+  term_init
+  printf '\nMemoLoop configuration:\n\n'
+  printf 'Directories:\n'
+  printf '  CONFIG_DIR: %s\n' "$CONFIG_DIR"
+  printf '  CACHE_DIR: %s\n' "$CACHE_DIR"
+  printf '  STATE_DIR: %s\n' "$STATE_DIR"
+  printf '  LOG_DIR: %s\n' "$LOG_DIR"
+  printf '  USER_DATA_DIR: %s\n' "$USER_DATA_DIR"
+  printf '  QUESTIONS_DIR: %s\n' "$QUESTIONS_DIR"
+  printf '\nInterval settings:\n'
+  printf '  fixed_seconds: %s\n' "$FIXED_SECONDS"
+  printf '  random_min: %s\n' "$RANDOM_MIN"
+  printf '  random_max: %s\n' "$RANDOM_MAX"
+  printf '  decay_hours: %s\n' "$DECAY_HOURS"
+  printf '  min_per_day: %s\n' "$MIN_PER_DAY"
+  printf '\nSettings:\n'
+  printf '  nohelp: %s\n' "$NOHELP"
+  printf '\nEnabled groups (%s):\n' "$(load_enabled_groups | wc -l)"
+  printf '\nConfiguration file: %s\n' "$CONFIG_DIR/config.conf"
+  if [ -f "$CONFIG_DIR/config.conf" ]; then
+    printf '  (loaded from config.conf)\n'
+  fi
+  printf 'Pickup set: %s\n' "$PICKUP_SET"
+  if [ -f "$PICKUP_SET" ]; then
+    cat "$PICKUP_SET"
+  fi
+  printf '\nQuestions available:\n'
+  local groups
+  groups=$(load_enabled_groups)
+  if [ -n "$groups" ]; then
+    for group in $groups; do
+      local qcount
+      qcount=0
+      for file in "$QUESTIONS_DIR/$group"/*.json; do
+        [ -f "$file" ] && qcount=$((qcount + 1))
+      done
+      printf '  %s: %d question(s)\n' "$group" "$qcount"
+    done
+  else
+    printf '  (no enabled groups)\n'
+  fi
+  printf '\n'
+}
+
+cmd_pause() {
+  state_init
+  session_set paused true
+  term_notice "Paused" "All reminders paused. Run 'memoloop resume' to continue."
+}
+
+cmd_resume() {
+  state_init
+  session_set paused false
+  term_notice "Resumed" "All reminders resumed."
+}
+
+cmd_dnd() {
+  local args=("$@")
+  if [ ${#args[@]} -lt 2 ]; then
+    die "dnd requires two HH:MM times: memoloop dnd HH:MM HH:MM"
+  fi
+  local start_time="${args[0]}"
+  local end_time="${args[1]}"
+  session_set dnd_start "$start_time"
+  session_set dnd_end "$end_time"
+  term_notice "DND set" "Do Not Disturb window: $start_time - $end_time"
+}
+
+cmd_test() {
+  state_init
+  require_config
+  local groups
+  groups=$(load_enabled_groups)
+  [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
+  local json
+  json=$(select_question "$groups")
+  if [ -z "$json" ] || [ "$json" = "null" ]; then
+    die "no question files found for enabled groups in $QUESTIONS_DIR"
+  fi
+  cmd_ask "$(printf '%s' "$json" | jq -r '.id')"
+}
 
 usage() {
   cat <<'EOF'
@@ -685,7 +763,7 @@ Usage: memoloop <command>
   config      show effective configuration
   pause       pause all reminders
   resume      resume all reminders
-  dnd  <e> set Do Not Disturb window (HH:MM HH:MM)
+  dnd <e>   set Do Not Disturb window (HH:MM HH:MM)
   test        launch a test prompt immediately
 
 Config:  ~/.config/memoloop/  (intervals.conf, pickup.set, questions/)
@@ -695,19 +773,34 @@ EOF
 
 main() {
   case "${1:-}" in
-    start)    shift; cmd_start "$@" ;;
-    stop)     shift; cmd_stop "$@" ;;
-    watch)    cmd_watch ;;
-    ask)      shift; cmd_ask "$@" ;;
-    status)   cmd_status ;;
-    config)   cmd_config ;;
-    pause)    cmd_pause ;;
-    resume)   cmd_resume ;;
-    dnd)      shift; cmd_dnd "$@" ;;
-    test)     cmd_test ;;
-    setup)    cmd_setup ;;
-    -h|--help|help) usage ;;
-    *)        usage >&2; exit 1 ;;
+  start)
+    shift
+    cmd_start "$@"
+    ;;
+  stop)
+    shift
+    cmd_stop "$@"
+    ;;
+  watch) cmd_watch ;;
+  ask)
+    shift
+    cmd_ask "$@"
+    ;;
+  status) cmd_status ;;
+  config) cmd_config ;;
+  pause) cmd_pause ;;
+  resume) cmd_resume ;;
+  dnd)
+    shift
+    cmd_dnd "$@"
+    ;;
+  test) cmd_test ;;
+  setup) cmd_setup ;;
+  -h | --help | help) usage ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
   esac
 }
 
