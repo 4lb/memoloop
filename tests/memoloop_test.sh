@@ -36,8 +36,7 @@ assert_eq() {
 	fi
 }
 
-
-cat >"$MEMOLOOP_CONFIG_DIR/intervals.conf" <<'EOF'
+cat >$MEMOLOOP_CONFIG_DIR/config.conf <<'EOF'
 fixed_seconds=2700
 random_min=15
 random_max=30
@@ -45,7 +44,7 @@ decay_hours=24
 min_per_day=10
 EOF
 
-cat >"$MEMOLOOP_CONFIG_DIR/pickup.set" <<'EOF'
+cat >"$MEMOLOOP_CACHE_DIR/pickup.set" <<'EOF'
 greetings
 family
 weather
@@ -55,8 +54,8 @@ verbs
 nouns
 EOF
 
-mkdir -p "$MEMOLOOP_CONFIG_DIR/questions/greetings"
-cat >"$MEMOLOOP_CONFIG_DIR/questions/greetings/basics.json" <<'EOF'
+mkdir -p $MEMOLOOP_CACHE_DIR/questions/greetings
+cat >"$MEMOLOOP_CACHE_DIR/questions/greetings/basics.json" <<'EOF'
 [
   {"id": "t-greet-1", "type": "translation", "japanese": "こんにちは", "english": "Hello", "accepted": ["こんにちは", "konnichiwa"]},
   {"id": "t-greet-2", "type": "reverse", "japanese": "ありがとう", "english": "Thank you", "accepted": ["ありがとう", "arigatou"]},
@@ -73,7 +72,6 @@ assert_eq "random_min loaded" "15" "$RANDOM_MIN"
 assert_eq "random_max loaded" "30" "$RANDOM_MAX"
 assert_eq "decay_hours loaded" "24" "$DECAY_HOURS"
 assert_eq "min_per_day loaded" "10" "$MIN_PER_DAY"
-
 
 groups=$(load_enabled_groups)
 gcount=$(printf '%s' "$groups" | grep -c .)
@@ -92,7 +90,6 @@ while IFS= read -r line; do
 	[ -n "$id" ] && [ -n "$jp" ] && [ -n "$en" ] || all_valid=0
 done < <(printf '%s' "$questions" | jq -c '.[]')
 assert_eq "all questions have required fields" "1" "$all_valid"
-
 
 printf '{}' >"$ANSWERS_STATE"
 
@@ -113,7 +110,6 @@ tc=$(printf '%s' "$(load_answers)" | jq -r '.["t-greet-1"].times_correct // 0')
 assert_eq "times_shown tracked" "1" "$ts"
 assert_eq "times_correct tracked" "1" "$tc"
 
-
 w=$(question_weight "t-greet-3" "$(load_answers)" "$(epoch)")
 assert_eq "new question weight" "0.5" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
 
@@ -123,10 +119,8 @@ assert_eq "high points lower weight" "0.5" "$(awk -v w="$w" 'BEGIN { printf "%.1
 w=$(question_weight "t-greet-2" "$(load_answers)" "$(epoch)")
 assert_eq "zero points max weight" "1.0" "$(awk -v w="$w" 'BEGIN { printf "%.1f", w }')"
 
-
 shown_count=$(questions_shown_today)
 assert_eq "questions shown today (2 answered)" "2" "$shown_count"
-
 
 sel=$(select_question "$groups")
 sel_id=$(printf '%s' "$sel" | jq -r '.id // empty')
@@ -134,7 +128,6 @@ sel_id=$(printf '%s' "$sel" | jq -r '.id // empty')
 
 sel_prefix=$(printf '%s' "$sel_id" | cut -d- -f1-2)
 assert_eq "selected group is greetings" "t-greet" "$sel_prefix"
-
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 if [ "$fail" -gt 0 ]; then
