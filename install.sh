@@ -121,23 +121,11 @@ UNITEOF
   fi
 
   if [ ! -f "$CONFIG_DIR/config.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
-    write_default "$CONFIG_DIR/config.conf" <<CONFEOF
-nohelp=true
-USER_DATA_DIR=$DATA_DIR
-CONFEOF
+    installer_do_section install -m 644 "$SCRIPT_DIR/data/config.conf" "$CONFIG_DIR/config.conf"
   fi
 
   if [ ! -f "$CONFIG_DIR/pickup.set" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
-    write_default "$CONFIG_DIR/pickup.set" <<'PICKUPEOF'
-greetings
-family
-weather
-conversation
-adjectives
-verbs
-nouns
-jlpt
-PICKUPEOF
+    installer_do_section install -m 644 "$SCRIPT_DIR/data/pickup.set" "$CONFIG_DIR/pickup.set"
   fi
 
   if [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ] && [ -d "$DATA_DIR/questions" ]; then
