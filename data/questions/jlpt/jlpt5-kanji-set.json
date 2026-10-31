@@ -1,0 +1,4625 @@
+[
+  {
+    "id": "jlpt5-kanji-001-reading",
+    "type": "translation",
+    "japanese": "一",
+    "english": "one",
+    "accepted": [
+      "hitotsu",
+      "ichi",
+      "itsu"
+    ],
+    "note": "一人 (hitori)"
+  },
+  {
+    "id": "jlpt5-kanji-001-kanji",
+    "type": "reverse",
+    "japanese": "一",
+    "english": "one",
+    "accepted": [
+      "一",
+      "hitotsu",
+      "ichi",
+      "itsu",
+      "ひとつ",
+      "イチ",
+      "イツ",
+      "いち",
+      "いつ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-001-meaning",
+    "type": "choice",
+    "japanese": "一 means?",
+    "english": "one",
+    "choices": [
+      "A. one",
+      "B. soil, earth",
+      "C. child"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: ICHI, ITSU · Kun: hitotsu"
+  },
+  {
+    "id": "jlpt5-kanji-002-reading",
+    "type": "translation",
+    "japanese": "二",
+    "english": "two",
+    "accepted": [
+      "futatsu",
+      "ni"
+    ],
+    "note": "二人 (futari)"
+  },
+  {
+    "id": "jlpt5-kanji-002-kanji",
+    "type": "reverse",
+    "japanese": "二",
+    "english": "two",
+    "accepted": [
+      "二",
+      "futatsu",
+      "ni",
+      "ふたつ",
+      "ニ",
+      "に"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-002-meaning",
+    "type": "choice",
+    "japanese": "二 means?",
+    "english": "two",
+    "choices": [
+      "A. north",
+      "B. two",
+      "C. small"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: NI · Kun: futatsu"
+  },
+  {
+    "id": "jlpt5-kanji-003-reading",
+    "type": "translation",
+    "japanese": "三",
+    "english": "three",
+    "accepted": [
+      "mittsu",
+      "san"
+    ],
+    "note": "三日 (mikka)"
+  },
+  {
+    "id": "jlpt5-kanji-003-kanji",
+    "type": "reverse",
+    "japanese": "三",
+    "english": "three",
+    "accepted": [
+      "三",
+      "mittsu",
+      "san",
+      "みっつ",
+      "サン",
+      "さん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-003-meaning",
+    "type": "choice",
+    "japanese": "三 means?",
+    "english": "three",
+    "choices": [
+      "A. east",
+      "B. middle, inside",
+      "C. three"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SAN · Kun: mittsu"
+  },
+  {
+    "id": "jlpt5-kanji-004-reading",
+    "type": "translation",
+    "japanese": "四",
+    "english": "four",
+    "accepted": [
+      "shi",
+      "yon",
+      "yottsu"
+    ],
+    "note": "四日 (yokka)"
+  },
+  {
+    "id": "jlpt5-kanji-004-kanji",
+    "type": "reverse",
+    "japanese": "四",
+    "english": "four",
+    "accepted": [
+      "四",
+      "shi",
+      "yon",
+      "yottsu",
+      "よっつ",
+      "よん",
+      "シ",
+      "し"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-004-meaning",
+    "type": "choice",
+    "japanese": "四 means?",
+    "english": "four",
+    "choices": [
+      "A. four",
+      "B. west",
+      "C. big"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SHI · Kun: yottsu, yon"
+  },
+  {
+    "id": "jlpt5-kanji-005-reading",
+    "type": "translation",
+    "japanese": "五",
+    "english": "five",
+    "accepted": [
+      "go",
+      "itsutsu"
+    ],
+    "note": "五日 (itsuka)"
+  },
+  {
+    "id": "jlpt5-kanji-005-kanji",
+    "type": "reverse",
+    "japanese": "五",
+    "english": "five",
+    "accepted": [
+      "五",
+      "go",
+      "itsutsu",
+      "いつつ",
+      "ゴ",
+      "ご"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-005-meaning",
+    "type": "choice",
+    "japanese": "五 means?",
+    "english": "five",
+    "choices": [
+      "A. south",
+      "B. five",
+      "C. above, up"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: GO · Kun: itsutsu"
+  },
+  {
+    "id": "jlpt5-kanji-006-reading",
+    "type": "translation",
+    "japanese": "六",
+    "english": "six",
+    "accepted": [
+      "muttsu",
+      "roku"
+    ],
+    "note": "六日 (muika)"
+  },
+  {
+    "id": "jlpt5-kanji-006-kanji",
+    "type": "reverse",
+    "japanese": "六",
+    "english": "six",
+    "accepted": [
+      "六",
+      "muttsu",
+      "roku",
+      "むっつ",
+      "ロク",
+      "ろく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-006-meaning",
+    "type": "choice",
+    "japanese": "六 means?",
+    "english": "six",
+    "choices": [
+      "A. left",
+      "B. below, down",
+      "C. six"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: ROKU · Kun: muttsu"
+  },
+  {
+    "id": "jlpt5-kanji-007-reading",
+    "type": "translation",
+    "japanese": "七",
+    "english": "seven",
+    "accepted": [
+      "nanatsu",
+      "shichi"
+    ],
+    "note": "七日 (nanoka)"
+  },
+  {
+    "id": "jlpt5-kanji-007-kanji",
+    "type": "reverse",
+    "japanese": "七",
+    "english": "seven",
+    "accepted": [
+      "七",
+      "nanatsu",
+      "shichi",
+      "ななつ",
+      "シチ",
+      "しち"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-007-meaning",
+    "type": "choice",
+    "japanese": "七 means?",
+    "english": "seven",
+    "choices": [
+      "A. seven",
+      "B. right",
+      "C. what"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SHICHI · Kun: nanatsu"
+  },
+  {
+    "id": "jlpt5-kanji-008-reading",
+    "type": "translation",
+    "japanese": "八",
+    "english": "eight",
+    "accepted": [
+      "hachi",
+      "yattsu"
+    ],
+    "note": "八日 (youka)"
+  },
+  {
+    "id": "jlpt5-kanji-008-kanji",
+    "type": "reverse",
+    "japanese": "八",
+    "english": "eight",
+    "accepted": [
+      "八",
+      "hachi",
+      "yattsu",
+      "やっつ",
+      "ハチ",
+      "はち"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-008-meaning",
+    "type": "choice",
+    "japanese": "八 means?",
+    "english": "eight",
+    "choices": [
+      "A. day, sun",
+      "B. eight",
+      "C. go"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: HACHI · Kun: yattsu"
+  },
+  {
+    "id": "jlpt5-kanji-009-reading",
+    "type": "translation",
+    "japanese": "九",
+    "english": "nine",
+    "accepted": [
+      "kokonotsu",
+      "ku",
+      "kyu",
+      "kyuu",
+      "kyū"
+    ],
+    "note": "九日 (kokonoka)"
+  },
+  {
+    "id": "jlpt5-kanji-009-kanji",
+    "type": "reverse",
+    "japanese": "九",
+    "english": "nine",
+    "accepted": [
+      "九",
+      "kokonotsu",
+      "ku",
+      "kyu",
+      "kyuu",
+      "kyū",
+      "ここのつ",
+      "キュウ",
+      "ク",
+      "きゅう",
+      "く"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-009-meaning",
+    "type": "choice",
+    "japanese": "九 means?",
+    "english": "nine",
+    "choices": [
+      "A. month, moon",
+      "B. see",
+      "C. nine"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KYŪ, KU · Kun: kokonotsu"
+  },
+  {
+    "id": "jlpt5-kanji-010-reading",
+    "type": "translation",
+    "japanese": "十",
+    "english": "ten",
+    "accepted": [
+      "ju",
+      "juu",
+      "jū",
+      "to",
+      "too",
+      "tou",
+      "tō"
+    ],
+    "note": "十日 (tōka)"
+  },
+  {
+    "id": "jlpt5-kanji-010-kanji",
+    "type": "reverse",
+    "japanese": "十",
+    "english": "ten",
+    "accepted": [
+      "十",
+      "ju",
+      "juu",
+      "jū",
+      "to",
+      "too",
+      "tou",
+      "tō",
+      "と",
+      "とう",
+      "とお",
+      "ジュウ",
+      "じゅう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-010-meaning",
+    "type": "choice",
+    "japanese": "十 means?",
+    "english": "ten",
+    "choices": [
+      "A. ten",
+      "B. flower",
+      "C. say, word"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: JŪ · Kun: tō, to"
+  },
+  {
+    "id": "jlpt5-kanji-011-reading",
+    "type": "translation",
+    "japanese": "百",
+    "english": "hundred",
+    "accepted": [
+      "hyaku"
+    ],
+    "note": "百円 (hyakuen)"
+  },
+  {
+    "id": "jlpt5-kanji-011-kanji",
+    "type": "reverse",
+    "japanese": "百",
+    "english": "hundred",
+    "accepted": [
+      "百",
+      "hyaku",
+      "ヒャク",
+      "ひゃく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-011-meaning",
+    "type": "choice",
+    "japanese": "百 means?",
+    "english": "hundred",
+    "choices": [
+      "A. fish",
+      "B. hundred",
+      "C. language"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: HYAKU"
+  },
+  {
+    "id": "jlpt5-kanji-012-reading",
+    "type": "translation",
+    "japanese": "千",
+    "english": "thousand",
+    "accepted": [
+      "chi",
+      "sen"
+    ],
+    "note": "千円 (senen)"
+  },
+  {
+    "id": "jlpt5-kanji-012-kanji",
+    "type": "reverse",
+    "japanese": "千",
+    "english": "thousand",
+    "accepted": [
+      "千",
+      "chi",
+      "sen",
+      "ち",
+      "セン",
+      "せん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-012-meaning",
+    "type": "choice",
+    "japanese": "千 means?",
+    "english": "thousand",
+    "choices": [
+      "A. sky",
+      "B. eat",
+      "C. thousand"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SEN · Kun: chi"
+  },
+  {
+    "id": "jlpt5-kanji-013-reading",
+    "type": "translation",
+    "japanese": "万",
+    "english": "ten thousand",
+    "accepted": [
+      "man"
+    ],
+    "note": "一万 (ichiman)"
+  },
+  {
+    "id": "jlpt5-kanji-013-kanji",
+    "type": "reverse",
+    "japanese": "万",
+    "english": "ten thousand",
+    "accepted": [
+      "万",
+      "man",
+      "マン",
+      "まん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-013-meaning",
+    "type": "choice",
+    "japanese": "万 means?",
+    "english": "ten thousand",
+    "choices": [
+      "A. ten thousand",
+      "B. mountain",
+      "C. drink"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: MAN"
+  },
+  {
+    "id": "jlpt5-kanji-014-reading",
+    "type": "translation",
+    "japanese": "水",
+    "english": "water",
+    "accepted": [
+      "mizu",
+      "sui"
+    ],
+    "note": "水曜日 (suiyōbi)"
+  },
+  {
+    "id": "jlpt5-kanji-014-kanji",
+    "type": "reverse",
+    "japanese": "水",
+    "english": "water",
+    "accepted": [
+      "水",
+      "mizu",
+      "sui",
+      "みず",
+      "スイ",
+      "すい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-014-meaning",
+    "type": "choice",
+    "japanese": "水 means?",
+    "english": "water",
+    "choices": [
+      "A. river",
+      "B. water",
+      "C. meet"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: SUI · Kun: mizu"
+  },
+  {
+    "id": "jlpt5-kanji-015-reading",
+    "type": "translation",
+    "japanese": "火",
+    "english": "fire",
+    "accepted": [
+      "hi",
+      "ka"
+    ],
+    "note": "火曜日 (kayōbi)"
+  },
+  {
+    "id": "jlpt5-kanji-015-kanji",
+    "type": "reverse",
+    "japanese": "火",
+    "english": "fire",
+    "accepted": [
+      "火",
+      "hi",
+      "ka",
+      "ひ",
+      "カ",
+      "か"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-015-meaning",
+    "type": "choice",
+    "japanese": "火 means?",
+    "english": "fire",
+    "choices": [
+      "A. rain",
+      "B. study",
+      "C. fire"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KA · Kun: hi"
+  },
+  {
+    "id": "jlpt5-kanji-016-reading",
+    "type": "translation",
+    "japanese": "木",
+    "english": "tree, wood",
+    "accepted": [
+      "boku",
+      "ki",
+      "moku"
+    ],
+    "note": "木曜日 (mokuyōbi)"
+  },
+  {
+    "id": "jlpt5-kanji-016-kanji",
+    "type": "reverse",
+    "japanese": "木",
+    "english": "tree, wood",
+    "accepted": [
+      "木",
+      "boku",
+      "ki",
+      "moku",
+      "き",
+      "ボク",
+      "モク",
+      "ぼく",
+      "もく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-016-meaning",
+    "type": "choice",
+    "japanese": "木 means?",
+    "english": "tree, wood",
+    "choices": [
+      "A. tree, wood",
+      "B. book, origin",
+      "C. rest"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: BOKU, MOKU · Kun: ki"
+  },
+  {
+    "id": "jlpt5-kanji-017-reading",
+    "type": "translation",
+    "japanese": "天",
+    "english": "heaven, sky",
+    "accepted": [
+      "ama",
+      "ame",
+      "ten"
+    ],
+    "note": "天気 (tenki)"
+  },
+  {
+    "id": "jlpt5-kanji-017-kanji",
+    "type": "reverse",
+    "japanese": "天",
+    "english": "heaven, sky",
+    "accepted": [
+      "天",
+      "ama",
+      "ame",
+      "ten",
+      "あま",
+      "あめ",
+      "テン",
+      "てん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-017-meaning",
+    "type": "choice",
+    "japanese": "天 means?",
+    "english": "heaven, sky",
+    "choices": [
+      "A. eye",
+      "B. heaven, sky",
+      "C. buy"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: TEN · Kun: ame, ama"
+  },
+  {
+    "id": "jlpt5-kanji-018-reading",
+    "type": "translation",
+    "japanese": "土",
+    "english": "soil, earth",
+    "accepted": [
+      "do",
+      "to",
+      "tsuchi"
+    ],
+    "note": "土曜日 (doyōbi)"
+  },
+  {
+    "id": "jlpt5-kanji-018-kanji",
+    "type": "reverse",
+    "japanese": "土",
+    "english": "soil, earth",
+    "accepted": [
+      "土",
+      "do",
+      "to",
+      "tsuchi",
+      "つち",
+      "ト",
+      "ド",
+      "と",
+      "ど"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-018-meaning",
+    "type": "choice",
+    "japanese": "土 means?",
+    "english": "soil, earth",
+    "choices": [
+      "A. mouth",
+      "B. hear",
+      "C. soil, earth"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: DO, TO · Kun: tsuchi"
+  },
+  {
+    "id": "jlpt5-kanji-019-reading",
+    "type": "translation",
+    "japanese": "北",
+    "english": "north",
+    "accepted": [
+      "hoku",
+      "kita"
+    ],
+    "note": "北 (kita)"
+  },
+  {
+    "id": "jlpt5-kanji-019-kanji",
+    "type": "reverse",
+    "japanese": "北",
+    "english": "north",
+    "accepted": [
+      "北",
+      "hoku",
+      "kita",
+      "きた",
+      "ホク",
+      "ほく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-019-meaning",
+    "type": "choice",
+    "japanese": "北 means?",
+    "english": "north",
+    "choices": [
+      "A. north",
+      "B. ear",
+      "C. come"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: HOKU · Kun: kita"
+  },
+  {
+    "id": "jlpt5-kanji-020-reading",
+    "type": "translation",
+    "japanese": "東",
+    "english": "east",
+    "accepted": [
+      "higashi",
+      "to",
+      "too",
+      "tou",
+      "tō"
+    ],
+    "note": "東 (higashi)"
+  },
+  {
+    "id": "jlpt5-kanji-020-kanji",
+    "type": "reverse",
+    "japanese": "東",
+    "english": "east",
+    "accepted": [
+      "東",
+      "higashi",
+      "to",
+      "too",
+      "tou",
+      "tō",
+      "ひがし",
+      "トウ",
+      "トオ",
+      "とう",
+      "とお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-020-meaning",
+    "type": "choice",
+    "japanese": "東 means?",
+    "english": "east",
+    "choices": [
+      "A. hand",
+      "B. east",
+      "C. stand"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: TŌ · Kun: higashi"
+  },
+  {
+    "id": "jlpt5-kanji-021-reading",
+    "type": "translation",
+    "japanese": "西",
+    "english": "west",
+    "accepted": [
+      "nishi",
+      "sei"
+    ],
+    "note": "西 (nishi)"
+  },
+  {
+    "id": "jlpt5-kanji-021-kanji",
+    "type": "reverse",
+    "japanese": "西",
+    "english": "west",
+    "accepted": [
+      "西",
+      "nishi",
+      "sei",
+      "にし",
+      "セイ",
+      "せい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-021-meaning",
+    "type": "choice",
+    "japanese": "西 means?",
+    "english": "west",
+    "choices": [
+      "A. foot, sufficient",
+      "B. life, raw, student",
+      "C. west"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SEI · Kun: nishi"
+  },
+  {
+    "id": "jlpt5-kanji-022-reading",
+    "type": "translation",
+    "japanese": "南",
+    "english": "south",
+    "accepted": [
+      "minami",
+      "nan"
+    ],
+    "note": "南 (minami)"
+  },
+  {
+    "id": "jlpt5-kanji-022-kanji",
+    "type": "reverse",
+    "japanese": "南",
+    "english": "south",
+    "accepted": [
+      "南",
+      "minami",
+      "nan",
+      "みなみ",
+      "ナン",
+      "なん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-022-meaning",
+    "type": "choice",
+    "japanese": "南 means?",
+    "english": "south",
+    "choices": [
+      "A. south",
+      "B. person",
+      "C. talk"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: NAN · Kun: minami"
+  },
+  {
+    "id": "jlpt5-kanji-023-reading",
+    "type": "translation",
+    "japanese": "左",
+    "english": "left",
+    "accepted": [
+      "hidari",
+      "sa"
+    ],
+    "note": "左 (hidari)"
+  },
+  {
+    "id": "jlpt5-kanji-023-kanji",
+    "type": "reverse",
+    "japanese": "左",
+    "english": "left",
+    "accepted": [
+      "左",
+      "hidari",
+      "sa",
+      "ひだり",
+      "サ",
+      "さ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-023-meaning",
+    "type": "choice",
+    "japanese": "左 means?",
+    "english": "left",
+    "choices": [
+      "A. mother",
+      "B. left",
+      "C. exit"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: SA · Kun: hidari"
+  },
+  {
+    "id": "jlpt5-kanji-024-reading",
+    "type": "translation",
+    "japanese": "右",
+    "english": "right",
+    "accepted": [
+      "migi",
+      "u",
+      "yu",
+      "yuu",
+      "yū"
+    ],
+    "note": "右 (migi)"
+  },
+  {
+    "id": "jlpt5-kanji-024-kanji",
+    "type": "reverse",
+    "japanese": "右",
+    "english": "right",
+    "accepted": [
+      "右",
+      "migi",
+      "u",
+      "yu",
+      "yuu",
+      "yū",
+      "みぎ",
+      "ウ",
+      "ユウ",
+      "う",
+      "ゆう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-024-meaning",
+    "type": "choice",
+    "japanese": "右 means?",
+    "english": "right",
+    "choices": [
+      "A. father",
+      "B. read",
+      "C. right"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: U, YŪ · Kun: migi"
+  },
+  {
+    "id": "jlpt5-kanji-025-reading",
+    "type": "translation",
+    "japanese": "日",
+    "english": "day, sun",
+    "accepted": [
+      "bi",
+      "hi",
+      "jitsu",
+      "nichi"
+    ],
+    "note": "日曜日 (nichiyōbi)"
+  },
+  {
+    "id": "jlpt5-kanji-025-kanji",
+    "type": "reverse",
+    "japanese": "日",
+    "english": "day, sun",
+    "accepted": [
+      "日",
+      "bi",
+      "hi",
+      "jitsu",
+      "nichi",
+      "ひ",
+      "び",
+      "ジツ",
+      "ニチ",
+      "じつ",
+      "にち"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-025-meaning",
+    "type": "choice",
+    "japanese": "日 means?",
+    "english": "day, sun",
+    "choices": [
+      "A. day, sun",
+      "B. female",
+      "C. enter"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: NICHI, JITSU · Kun: hi, -bi"
+  },
+  {
+    "id": "jlpt5-kanji-026-reading",
+    "type": "translation",
+    "japanese": "月",
+    "english": "month, moon",
+    "accepted": [
+      "gatsu",
+      "getsu",
+      "tsuki"
+    ],
+    "note": "月曜日 (getsuyōbi)"
+  },
+  {
+    "id": "jlpt5-kanji-026-kanji",
+    "type": "reverse",
+    "japanese": "月",
+    "english": "month, moon",
+    "accepted": [
+      "月",
+      "gatsu",
+      "getsu",
+      "tsuki",
+      "つき",
+      "ガツ",
+      "ゲツ",
+      "がつ",
+      "げつ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-026-meaning",
+    "type": "choice",
+    "japanese": "月 means?",
+    "english": "month, moon",
+    "choices": [
+      "A. male",
+      "B. month, moon",
+      "C. write, book"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: GETSU, GATSU · Kun: tsuki"
+  },
+  {
+    "id": "jlpt5-kanji-027-reading",
+    "type": "translation",
+    "japanese": "花",
+    "english": "flower",
+    "accepted": [
+      "hana",
+      "ka"
+    ],
+    "note": "花 (hana)"
+  },
+  {
+    "id": "jlpt5-kanji-027-kanji",
+    "type": "reverse",
+    "japanese": "花",
+    "english": "flower",
+    "accepted": [
+      "花",
+      "hana",
+      "ka",
+      "はな",
+      "カ",
+      "か"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-027-meaning",
+    "type": "choice",
+    "japanese": "花 means?",
+    "english": "flower",
+    "choices": [
+      "A. child",
+      "B. after",
+      "C. flower"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KA · Kun: hana"
+  },
+  {
+    "id": "jlpt5-kanji-028-reading",
+    "type": "translation",
+    "japanese": "魚",
+    "english": "fish",
+    "accepted": [
+      "gyo",
+      "sakana"
+    ],
+    "note": "魚 (sakana)"
+  },
+  {
+    "id": "jlpt5-kanji-028-kanji",
+    "type": "reverse",
+    "japanese": "魚",
+    "english": "fish",
+    "accepted": [
+      "魚",
+      "gyo",
+      "sakana",
+      "さかな",
+      "ギョ",
+      "ぎょ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-028-meaning",
+    "type": "choice",
+    "japanese": "魚 means?",
+    "english": "fish",
+    "choices": [
+      "A. fish",
+      "B. small",
+      "C. old"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: GYO · Kun: sakana"
+  },
+  {
+    "id": "jlpt5-kanji-029-reading",
+    "type": "translation",
+    "japanese": "空",
+    "english": "sky",
+    "accepted": [
+      "ku",
+      "kuu",
+      "kū",
+      "sora"
+    ],
+    "note": "空 (sora)"
+  },
+  {
+    "id": "jlpt5-kanji-029-kanji",
+    "type": "reverse",
+    "japanese": "空",
+    "english": "sky",
+    "accepted": [
+      "空",
+      "ku",
+      "kuu",
+      "kū",
+      "sora",
+      "そら",
+      "クウ",
+      "くう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-029-meaning",
+    "type": "choice",
+    "japanese": "空 means?",
+    "english": "sky",
+    "choices": [
+      "A. middle, inside",
+      "B. sky",
+      "C. high, expensive"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: KŪ · Kun: sora"
+  },
+  {
+    "id": "jlpt5-kanji-030-reading",
+    "type": "translation",
+    "japanese": "山",
+    "english": "mountain",
+    "accepted": [
+      "san",
+      "yama"
+    ],
+    "note": "山 (yama)"
+  },
+  {
+    "id": "jlpt5-kanji-030-kanji",
+    "type": "reverse",
+    "japanese": "山",
+    "english": "mountain",
+    "accepted": [
+      "山",
+      "san",
+      "yama",
+      "やま",
+      "サン",
+      "さん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-030-meaning",
+    "type": "choice",
+    "japanese": "山 means?",
+    "english": "mountain",
+    "choices": [
+      "A. big",
+      "B. cheap, safe",
+      "C. mountain"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SAN · Kun: yama"
+  },
+  {
+    "id": "jlpt5-kanji-031-reading",
+    "type": "translation",
+    "japanese": "川",
+    "english": "river",
+    "accepted": [
+      "kawa",
+      "sen"
+    ],
+    "note": "川 (kawa)"
+  },
+  {
+    "id": "jlpt5-kanji-031-kanji",
+    "type": "reverse",
+    "japanese": "川",
+    "english": "river",
+    "accepted": [
+      "川",
+      "kawa",
+      "sen",
+      "かわ",
+      "セン",
+      "せん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-031-meaning",
+    "type": "choice",
+    "japanese": "川 means?",
+    "english": "river",
+    "choices": [
+      "A. river",
+      "B. above, up",
+      "C. many"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SEN · Kun: kawa"
+  },
+  {
+    "id": "jlpt5-kanji-032-reading",
+    "type": "translation",
+    "japanese": "雨",
+    "english": "rain",
+    "accepted": [
+      "ame",
+      "u"
+    ],
+    "note": "雨 (ame)"
+  },
+  {
+    "id": "jlpt5-kanji-032-kanji",
+    "type": "reverse",
+    "japanese": "雨",
+    "english": "rain",
+    "accepted": [
+      "雨",
+      "ame",
+      "u",
+      "あめ",
+      "ウ",
+      "う"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-032-meaning",
+    "type": "choice",
+    "japanese": "雨 means?",
+    "english": "rain",
+    "choices": [
+      "A. below, down",
+      "B. rain",
+      "C. new"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: U · Kun: ame"
+  },
+  {
+    "id": "jlpt5-kanji-033-reading",
+    "type": "translation",
+    "japanese": "本",
+    "english": "book, origin",
+    "accepted": [
+      "hon",
+      "moto"
+    ],
+    "note": "本 (hon)"
+  },
+  {
+    "id": "jlpt5-kanji-033-kanji",
+    "type": "reverse",
+    "japanese": "本",
+    "english": "book, origin",
+    "accepted": [
+      "本",
+      "hon",
+      "moto",
+      "もと",
+      "ホン",
+      "ほん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-033-meaning",
+    "type": "choice",
+    "japanese": "本 means?",
+    "english": "book, origin",
+    "choices": [
+      "A. what",
+      "B. few, little",
+      "C. book, origin"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: HON · Kun: moto"
+  },
+  {
+    "id": "jlpt5-kanji-034-reading",
+    "type": "translation",
+    "japanese": "目",
+    "english": "eye",
+    "accepted": [
+      "me",
+      "moku"
+    ],
+    "note": "目 (me)"
+  },
+  {
+    "id": "jlpt5-kanji-034-kanji",
+    "type": "reverse",
+    "japanese": "目",
+    "english": "eye",
+    "accepted": [
+      "目",
+      "me",
+      "moku",
+      "め",
+      "モク",
+      "もく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-034-meaning",
+    "type": "choice",
+    "japanese": "目 means?",
+    "english": "eye",
+    "choices": [
+      "A. eye",
+      "B. go",
+      "C. long"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: MOKU · Kun: me"
+  },
+  {
+    "id": "jlpt5-kanji-035-reading",
+    "type": "translation",
+    "japanese": "口",
+    "english": "mouth",
+    "accepted": [
+      "ko",
+      "koo",
+      "kou",
+      "ku",
+      "kuchi",
+      "kō"
+    ],
+    "note": "口 (kuchi)"
+  },
+  {
+    "id": "jlpt5-kanji-035-kanji",
+    "type": "reverse",
+    "japanese": "口",
+    "english": "mouth",
+    "accepted": [
+      "口",
+      "ko",
+      "koo",
+      "kou",
+      "ku",
+      "kuchi",
+      "kō",
+      "くち",
+      "ク",
+      "コウ",
+      "コオ",
+      "く",
+      "こう",
+      "こお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-035-meaning",
+    "type": "choice",
+    "japanese": "口 means?",
+    "english": "mouth",
+    "choices": [
+      "A. see",
+      "B. mouth",
+      "C. white"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: KŌ, KU · Kun: kuchi"
+  },
+  {
+    "id": "jlpt5-kanji-036-reading",
+    "type": "translation",
+    "japanese": "耳",
+    "english": "ear",
+    "accepted": [
+      "ji",
+      "mimi"
+    ],
+    "note": "耳 (mimi)"
+  },
+  {
+    "id": "jlpt5-kanji-036-kanji",
+    "type": "reverse",
+    "japanese": "耳",
+    "english": "ear",
+    "accepted": [
+      "耳",
+      "ji",
+      "mimi",
+      "みみ",
+      "ジ",
+      "じ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-036-meaning",
+    "type": "choice",
+    "japanese": "耳 means?",
+    "english": "ear",
+    "choices": [
+      "A. say, word",
+      "B. minute, understand",
+      "C. ear"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: JI · Kun: mimi"
+  },
+  {
+    "id": "jlpt5-kanji-037-reading",
+    "type": "translation",
+    "japanese": "手",
+    "english": "hand",
+    "accepted": [
+      "shu",
+      "te"
+    ],
+    "note": "手 (te)"
+  },
+  {
+    "id": "jlpt5-kanji-037-kanji",
+    "type": "reverse",
+    "japanese": "手",
+    "english": "hand",
+    "accepted": [
+      "手",
+      "shu",
+      "te",
+      "て",
+      "シュ",
+      "しゅ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-037-meaning",
+    "type": "choice",
+    "japanese": "手 means?",
+    "english": "hand",
+    "choices": [
+      "A. hand",
+      "B. language",
+      "C. time, hour"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SHU · Kun: te"
+  },
+  {
+    "id": "jlpt5-kanji-038-reading",
+    "type": "translation",
+    "japanese": "足",
+    "english": "foot, sufficient",
+    "accepted": [
+      "ashi",
+      "soku"
+    ],
+    "note": "足 (ashi)"
+  },
+  {
+    "id": "jlpt5-kanji-038-kanji",
+    "type": "reverse",
+    "japanese": "足",
+    "english": "foot, sufficient",
+    "accepted": [
+      "足",
+      "ashi",
+      "soku",
+      "あし",
+      "ソク",
+      "そく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-038-meaning",
+    "type": "choice",
+    "japanese": "足 means?",
+    "english": "foot, sufficient",
+    "choices": [
+      "A. eat",
+      "B. foot, sufficient",
+      "C. interval"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: SOKU · Kun: ashi"
+  },
+  {
+    "id": "jlpt5-kanji-039-reading",
+    "type": "translation",
+    "japanese": "人",
+    "english": "person",
+    "accepted": [
+      "hito",
+      "jin",
+      "nin"
+    ],
+    "note": "人 (hito)"
+  },
+  {
+    "id": "jlpt5-kanji-039-kanji",
+    "type": "reverse",
+    "japanese": "人",
+    "english": "person",
+    "accepted": [
+      "人",
+      "hito",
+      "jin",
+      "nin",
+      "ひと",
+      "ジン",
+      "ニン",
+      "じん",
+      "にん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-039-meaning",
+    "type": "choice",
+    "japanese": "人 means?",
+    "english": "person",
+    "choices": [
+      "A. drink",
+      "B. week",
+      "C. person"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: JIN, NIN · Kun: hito"
+  },
+  {
+    "id": "jlpt5-kanji-040-reading",
+    "type": "translation",
+    "japanese": "母",
+    "english": "mother",
+    "accepted": [
+      "bo",
+      "haha"
+    ],
+    "note": "母 (haha)"
+  },
+  {
+    "id": "jlpt5-kanji-040-kanji",
+    "type": "reverse",
+    "japanese": "母",
+    "english": "mother",
+    "accepted": [
+      "母",
+      "bo",
+      "haha",
+      "はは",
+      "ボ",
+      "ぼ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-040-meaning",
+    "type": "choice",
+    "japanese": "母 means?",
+    "english": "mother",
+    "choices": [
+      "A. mother",
+      "B. meet",
+      "C. year"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: BO · Kun: haha"
+  },
+  {
+    "id": "jlpt5-kanji-041-reading",
+    "type": "translation",
+    "japanese": "父",
+    "english": "father",
+    "accepted": [
+      "chichi",
+      "fu"
+    ],
+    "note": "父 (chichi)"
+  },
+  {
+    "id": "jlpt5-kanji-041-kanji",
+    "type": "reverse",
+    "japanese": "父",
+    "english": "father",
+    "accepted": [
+      "父",
+      "chichi",
+      "fu",
+      "ちち",
+      "フ",
+      "ふ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-041-meaning",
+    "type": "choice",
+    "japanese": "父 means?",
+    "english": "father",
+    "choices": [
+      "A. study",
+      "B. father",
+      "C. now"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: FU · Kun: chichi"
+  },
+  {
+    "id": "jlpt5-kanji-042-reading",
+    "type": "translation",
+    "japanese": "女",
+    "english": "female",
+    "accepted": [
+      "jo",
+      "nyo",
+      "onna"
+    ],
+    "note": "女 (onna)"
+  },
+  {
+    "id": "jlpt5-kanji-042-kanji",
+    "type": "reverse",
+    "japanese": "女",
+    "english": "female",
+    "accepted": [
+      "女",
+      "jo",
+      "nyo",
+      "onna",
+      "おんな",
+      "ジョ",
+      "ニョ",
+      "じょ",
+      "にょ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-042-meaning",
+    "type": "choice",
+    "japanese": "女 means?",
+    "english": "female",
+    "choices": [
+      "A. rest",
+      "B. previous, ahead",
+      "C. female"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: JO, NYO · Kun: onna"
+  },
+  {
+    "id": "jlpt5-kanji-043-reading",
+    "type": "translation",
+    "japanese": "男",
+    "english": "male",
+    "accepted": [
+      "dan",
+      "nan",
+      "otoko"
+    ],
+    "note": "男 (otoko)"
+  },
+  {
+    "id": "jlpt5-kanji-043-kanji",
+    "type": "reverse",
+    "japanese": "男",
+    "english": "male",
+    "accepted": [
+      "男",
+      "dan",
+      "nan",
+      "otoko",
+      "おとこ",
+      "ダン",
+      "ナン",
+      "だん",
+      "なん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-043-meaning",
+    "type": "choice",
+    "japanese": "男 means?",
+    "english": "male",
+    "choices": [
+      "A. male",
+      "B. buy",
+      "C. before"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: DAN, NAN · Kun: otoko"
+  },
+  {
+    "id": "jlpt5-kanji-044-reading",
+    "type": "translation",
+    "japanese": "子",
+    "english": "child",
+    "accepted": [
+      "ko",
+      "shi",
+      "su"
+    ],
+    "note": "子 (ko)"
+  },
+  {
+    "id": "jlpt5-kanji-044-kanji",
+    "type": "reverse",
+    "japanese": "子",
+    "english": "child",
+    "accepted": [
+      "子",
+      "ko",
+      "shi",
+      "su",
+      "こ",
+      "シ",
+      "ス",
+      "し",
+      "す"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-044-meaning",
+    "type": "choice",
+    "japanese": "子 means?",
+    "english": "child",
+    "choices": [
+      "A. hear",
+      "B. child",
+      "C. noon"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: SHI, SU · Kun: ko"
+  },
+  {
+    "id": "jlpt5-kanji-045-reading",
+    "type": "translation",
+    "japanese": "小",
+    "english": "small",
+    "accepted": [
+      "chiisai",
+      "ko",
+      "sho",
+      "shoo",
+      "shou",
+      "shō"
+    ],
+    "note": "小さい (chiisai)"
+  },
+  {
+    "id": "jlpt5-kanji-045-kanji",
+    "type": "reverse",
+    "japanese": "小",
+    "english": "small",
+    "accepted": [
+      "小",
+      "chiisai",
+      "ko",
+      "sho",
+      "shoo",
+      "shou",
+      "shō",
+      "こ",
+      "ちいさい",
+      "ショウ",
+      "ショオ",
+      "しょう",
+      "しょお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-045-meaning",
+    "type": "choice",
+    "japanese": "小 means?",
+    "english": "small",
+    "choices": [
+      "A. come",
+      "B. half",
+      "C. small"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SHŌ · Kun: chiisai, ko"
+  },
+  {
+    "id": "jlpt5-kanji-046-reading",
+    "type": "translation",
+    "japanese": "中",
+    "english": "middle, inside",
+    "accepted": [
+      "chu",
+      "chuu",
+      "chū",
+      "naka"
+    ],
+    "note": "中 (naka)"
+  },
+  {
+    "id": "jlpt5-kanji-046-kanji",
+    "type": "reverse",
+    "japanese": "中",
+    "english": "middle, inside",
+    "accepted": [
+      "中",
+      "chu",
+      "chuu",
+      "chū",
+      "naka",
+      "なか",
+      "チュウ",
+      "ちゅう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-046-meaning",
+    "type": "choice",
+    "japanese": "中 means?",
+    "english": "middle, inside",
+    "choices": [
+      "A. middle, inside",
+      "B. stand",
+      "C. store"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: CHŪ · Kun: naka"
+  },
+  {
+    "id": "jlpt5-kanji-047-reading",
+    "type": "translation",
+    "japanese": "大",
+    "english": "big",
+    "accepted": [
+      "dai",
+      "okii",
+      "ookii",
+      "oukii",
+      "tai",
+      "ōkii"
+    ],
+    "note": "大きい (ōkii)"
+  },
+  {
+    "id": "jlpt5-kanji-047-kanji",
+    "type": "reverse",
+    "japanese": "大",
+    "english": "big",
+    "accepted": [
+      "大",
+      "dai",
+      "okii",
+      "ookii",
+      "oukii",
+      "tai",
+      "ōkii",
+      "おうきい",
+      "おおきい",
+      "タイ",
+      "ダイ",
+      "たい",
+      "だい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-047-meaning",
+    "type": "choice",
+    "japanese": "大 means?",
+    "english": "big",
+    "choices": [
+      "A. life, raw, student",
+      "B. big",
+      "C. outside"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: DAI, TAI · Kun: ōkii"
+  },
+  {
+    "id": "jlpt5-kanji-048-reading",
+    "type": "translation",
+    "japanese": "上",
+    "english": "above, up",
+    "accepted": [
+      "ageru",
+      "jo",
+      "joo",
+      "jou",
+      "jō",
+      "kami",
+      "sho",
+      "shoo",
+      "shou",
+      "shō",
+      "ue"
+    ],
+    "note": "上 (ue)"
+  },
+  {
+    "id": "jlpt5-kanji-048-kanji",
+    "type": "reverse",
+    "japanese": "上",
+    "english": "above, up",
+    "accepted": [
+      "上",
+      "ageru",
+      "jo",
+      "joo",
+      "jou",
+      "jō",
+      "kami",
+      "sho",
+      "shoo",
+      "shou",
+      "shō",
+      "ue",
+      "あげる",
+      "うえ",
+      "かみ",
+      "ショウ",
+      "ショオ",
+      "ジョウ",
+      "ジョオ",
+      "しょう",
+      "しょお",
+      "じょう",
+      "じょお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-048-meaning",
+    "type": "choice",
+    "japanese": "上 means?",
+    "english": "above, up",
+    "choices": [
+      "A. talk",
+      "B. electricity",
+      "C. above, up"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: JŌ, SHŌ · Kun: ue, kami, ageru"
+  },
+  {
+    "id": "jlpt5-kanji-049-reading",
+    "type": "translation",
+    "japanese": "下",
+    "english": "below, down",
+    "accepted": [
+      "ge",
+      "ka",
+      "sageru",
+      "shita"
+    ],
+    "note": "下 (shita)"
+  },
+  {
+    "id": "jlpt5-kanji-049-kanji",
+    "type": "reverse",
+    "japanese": "下",
+    "english": "below, down",
+    "accepted": [
+      "下",
+      "ge",
+      "ka",
+      "sageru",
+      "shita",
+      "さげる",
+      "した",
+      "カ",
+      "ゲ",
+      "か",
+      "げ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-049-meaning",
+    "type": "choice",
+    "japanese": "下 means?",
+    "english": "below, down",
+    "choices": [
+      "A. below, down",
+      "B. exit",
+      "C. road"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: GE, KA · Kun: shita, sageru"
+  },
+  {
+    "id": "jlpt5-kanji-050-reading",
+    "type": "translation",
+    "japanese": "何",
+    "english": "what",
+    "accepted": [
+      "ka",
+      "nani"
+    ],
+    "note": "何 (nani)"
+  },
+  {
+    "id": "jlpt5-kanji-050-kanji",
+    "type": "reverse",
+    "japanese": "何",
+    "english": "what",
+    "accepted": [
+      "何",
+      "ka",
+      "nani",
+      "なに",
+      "カ",
+      "か"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-050-meaning",
+    "type": "choice",
+    "japanese": "何 means?",
+    "english": "what",
+    "choices": [
+      "A. read",
+      "B. what",
+      "C. every"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: KA · Kun: nani"
+  },
+  {
+    "id": "jlpt5-kanji-051-reading",
+    "type": "translation",
+    "japanese": "行",
+    "english": "go",
+    "accepted": [
+      "gyo",
+      "gyoo",
+      "gyou",
+      "gyō",
+      "iku",
+      "ko",
+      "koo",
+      "kou",
+      "kō"
+    ],
+    "note": "行く (iku)"
+  },
+  {
+    "id": "jlpt5-kanji-051-kanji",
+    "type": "reverse",
+    "japanese": "行",
+    "english": "go",
+    "accepted": [
+      "行",
+      "gyo",
+      "gyoo",
+      "gyou",
+      "gyō",
+      "iku",
+      "ko",
+      "koo",
+      "kou",
+      "kō",
+      "いく",
+      "ギョウ",
+      "ギョオ",
+      "コウ",
+      "コオ",
+      "ぎょう",
+      "ぎょお",
+      "こう",
+      "こお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-051-meaning",
+    "type": "choice",
+    "japanese": "行 means?",
+    "english": "go",
+    "choices": [
+      "A. enter",
+      "B. friend",
+      "C. go"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KŌ, GYŌ · Kun: iku"
+  },
+  {
+    "id": "jlpt5-kanji-052-reading",
+    "type": "translation",
+    "japanese": "見",
+    "english": "see",
+    "accepted": [
+      "ken",
+      "miru"
+    ],
+    "note": "見る (miru)"
+  },
+  {
+    "id": "jlpt5-kanji-052-kanji",
+    "type": "reverse",
+    "japanese": "見",
+    "english": "see",
+    "accepted": [
+      "見",
+      "ken",
+      "miru",
+      "みる",
+      "ケン",
+      "けん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-052-meaning",
+    "type": "choice",
+    "japanese": "見 means?",
+    "english": "see",
+    "choices": [
+      "A. see",
+      "B. write, book",
+      "C. name"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: KEN · Kun: miru"
+  },
+  {
+    "id": "jlpt5-kanji-053-reading",
+    "type": "translation",
+    "japanese": "言",
+    "english": "say, word",
+    "accepted": [
+      "gen",
+      "gon",
+      "iu"
+    ],
+    "note": "言う (iu)"
+  },
+  {
+    "id": "jlpt5-kanji-053-kanji",
+    "type": "reverse",
+    "japanese": "言",
+    "english": "say, word",
+    "accepted": [
+      "言",
+      "gen",
+      "gon",
+      "iu",
+      "いう",
+      "ゲン",
+      "ゴン",
+      "げん",
+      "ごん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-053-meaning",
+    "type": "choice",
+    "japanese": "言 means?",
+    "english": "say, word",
+    "choices": [
+      "A. after",
+      "B. say, word",
+      "C. gold, money, metal"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: GEN, GON · Kun: iu"
+  },
+  {
+    "id": "jlpt5-kanji-054-reading",
+    "type": "translation",
+    "japanese": "語",
+    "english": "language",
+    "accepted": [
+      "go",
+      "kataru"
+    ],
+    "note": "日本語 (Nihongo)"
+  },
+  {
+    "id": "jlpt5-kanji-054-kanji",
+    "type": "reverse",
+    "japanese": "語",
+    "english": "language",
+    "accepted": [
+      "語",
+      "go",
+      "kataru",
+      "かたる",
+      "ゴ",
+      "ご"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-054-meaning",
+    "type": "choice",
+    "japanese": "語 means?",
+    "english": "language",
+    "choices": [
+      "A. old",
+      "B. circle, yen",
+      "C. language"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: GO · Kun: kataru"
+  },
+  {
+    "id": "jlpt5-kanji-055-reading",
+    "type": "translation",
+    "japanese": "食",
+    "english": "eat",
+    "accepted": [
+      "kuu",
+      "shoku",
+      "taberu"
+    ],
+    "note": "食べる (taberu)"
+  },
+  {
+    "id": "jlpt5-kanji-055-kanji",
+    "type": "reverse",
+    "japanese": "食",
+    "english": "eat",
+    "accepted": [
+      "食",
+      "kuu",
+      "shoku",
+      "taberu",
+      "くう",
+      "たべる",
+      "ショク",
+      "しょく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-055-meaning",
+    "type": "choice",
+    "japanese": "食 means?",
+    "english": "eat",
+    "choices": [
+      "A. eat",
+      "B. high, expensive",
+      "C. car"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SHOKU · Kun: taberu, kuu"
+  },
+  {
+    "id": "jlpt5-kanji-056-reading",
+    "type": "translation",
+    "japanese": "飲",
+    "english": "drink",
+    "accepted": [
+      "in",
+      "nomu"
+    ],
+    "note": "飲む (nomu)"
+  },
+  {
+    "id": "jlpt5-kanji-056-kanji",
+    "type": "reverse",
+    "japanese": "飲",
+    "english": "drink",
+    "accepted": [
+      "飲",
+      "in",
+      "nomu",
+      "のむ",
+      "イン",
+      "いん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-056-meaning",
+    "type": "choice",
+    "japanese": "飲 means?",
+    "english": "drink",
+    "choices": [
+      "A. cheap, safe",
+      "B. drink",
+      "C. station"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: IN · Kun: nomu"
+  },
+  {
+    "id": "jlpt5-kanji-057-reading",
+    "type": "translation",
+    "japanese": "会",
+    "english": "meet",
+    "accepted": [
+      "au",
+      "kai"
+    ],
+    "note": "会う (au)"
+  },
+  {
+    "id": "jlpt5-kanji-057-kanji",
+    "type": "reverse",
+    "japanese": "会",
+    "english": "meet",
+    "accepted": [
+      "会",
+      "au",
+      "kai",
+      "あう",
+      "カイ",
+      "かい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-057-meaning",
+    "type": "choice",
+    "japanese": "会 means?",
+    "english": "meet",
+    "choices": [
+      "A. many",
+      "B. spirit, air",
+      "C. meet"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KAI · Kun: au"
+  },
+  {
+    "id": "jlpt5-kanji-058-reading",
+    "type": "translation",
+    "japanese": "学",
+    "english": "study",
+    "accepted": [
+      "gaku",
+      "manabu"
+    ],
+    "note": "学校 (gakkō)"
+  },
+  {
+    "id": "jlpt5-kanji-058-kanji",
+    "type": "reverse",
+    "japanese": "学",
+    "english": "study",
+    "accepted": [
+      "学",
+      "gaku",
+      "manabu",
+      "まなぶ",
+      "ガク",
+      "がく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-058-meaning",
+    "type": "choice",
+    "japanese": "学 means?",
+    "english": "study",
+    "choices": [
+      "A. study",
+      "B. new",
+      "C. country"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: GAKU · Kun: manabu"
+  },
+  {
+    "id": "jlpt5-kanji-059-reading",
+    "type": "translation",
+    "japanese": "休",
+    "english": "rest",
+    "accepted": [
+      "kyu",
+      "kyuu",
+      "kyū",
+      "yasumu"
+    ],
+    "note": "休む (yasumu)"
+  },
+  {
+    "id": "jlpt5-kanji-059-kanji",
+    "type": "reverse",
+    "japanese": "休",
+    "english": "rest",
+    "accepted": [
+      "休",
+      "kyu",
+      "kyuu",
+      "kyū",
+      "yasumu",
+      "やすむ",
+      "キュウ",
+      "きゅう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-059-meaning",
+    "type": "choice",
+    "japanese": "休 means?",
+    "english": "rest",
+    "choices": [
+      "A. few, little",
+      "B. rest",
+      "C. company, shrine"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: KYŪ · Kun: yasumu"
+  },
+  {
+    "id": "jlpt5-kanji-060-reading",
+    "type": "translation",
+    "japanese": "買",
+    "english": "buy",
+    "accepted": [
+      "bai",
+      "kau"
+    ],
+    "note": "買う (kau)"
+  },
+  {
+    "id": "jlpt5-kanji-060-kanji",
+    "type": "reverse",
+    "japanese": "買",
+    "english": "buy",
+    "accepted": [
+      "買",
+      "bai",
+      "kau",
+      "かう",
+      "バイ",
+      "ばい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-060-meaning",
+    "type": "choice",
+    "japanese": "買 means?",
+    "english": "buy",
+    "choices": [
+      "A. long",
+      "B. school",
+      "C. buy"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: BAI · Kun: kau"
+  },
+  {
+    "id": "jlpt5-kanji-061-reading",
+    "type": "translation",
+    "japanese": "聞",
+    "english": "hear",
+    "accepted": [
+      "bun",
+      "kiku",
+      "mon"
+    ],
+    "note": "聞く (kiku)"
+  },
+  {
+    "id": "jlpt5-kanji-061-kanji",
+    "type": "reverse",
+    "japanese": "聞",
+    "english": "hear",
+    "accepted": [
+      "聞",
+      "bun",
+      "kiku",
+      "mon",
+      "きく",
+      "ブン",
+      "モン",
+      "ぶん",
+      "もん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-061-meaning",
+    "type": "choice",
+    "japanese": "聞 means?",
+    "english": "hear",
+    "choices": [
+      "A. hear",
+      "B. white",
+      "C. one"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: BUN, MON · Kun: kiku"
+  },
+  {
+    "id": "jlpt5-kanji-062-reading",
+    "type": "translation",
+    "japanese": "来",
+    "english": "come",
+    "accepted": [
+      "kuru",
+      "rai"
+    ],
+    "note": "来る (kuru)"
+  },
+  {
+    "id": "jlpt5-kanji-062-kanji",
+    "type": "reverse",
+    "japanese": "来",
+    "english": "come",
+    "accepted": [
+      "来",
+      "kuru",
+      "rai",
+      "くる",
+      "ライ",
+      "らい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-062-meaning",
+    "type": "choice",
+    "japanese": "来 means?",
+    "english": "come",
+    "choices": [
+      "A. minute, understand",
+      "B. come",
+      "C. two"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: RAI · Kun: kuru"
+  },
+  {
+    "id": "jlpt5-kanji-063-reading",
+    "type": "translation",
+    "japanese": "立",
+    "english": "stand",
+    "accepted": [
+      "ritsu",
+      "tatsu"
+    ],
+    "note": "立つ (tatsu)"
+  },
+  {
+    "id": "jlpt5-kanji-063-kanji",
+    "type": "reverse",
+    "japanese": "立",
+    "english": "stand",
+    "accepted": [
+      "立",
+      "ritsu",
+      "tatsu",
+      "たつ",
+      "リツ",
+      "りつ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-063-meaning",
+    "type": "choice",
+    "japanese": "立 means?",
+    "english": "stand",
+    "choices": [
+      "A. time, hour",
+      "B. three",
+      "C. stand"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: RITSU · Kun: tatsu"
+  },
+  {
+    "id": "jlpt5-kanji-064-reading",
+    "type": "translation",
+    "japanese": "生",
+    "english": "life, raw, student",
+    "accepted": [
+      "ikiru",
+      "nama",
+      "sei",
+      "sho",
+      "shoo",
+      "shou",
+      "shō",
+      "umareru"
+    ],
+    "note": "学生 (gakusei)"
+  },
+  {
+    "id": "jlpt5-kanji-064-kanji",
+    "type": "reverse",
+    "japanese": "生",
+    "english": "life, raw, student",
+    "accepted": [
+      "生",
+      "ikiru",
+      "nama",
+      "sei",
+      "sho",
+      "shoo",
+      "shou",
+      "shō",
+      "umareru",
+      "いきる",
+      "うまれる",
+      "なま",
+      "ショウ",
+      "ショオ",
+      "セイ",
+      "しょう",
+      "しょお",
+      "せい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-064-meaning",
+    "type": "choice",
+    "japanese": "生 means?",
+    "english": "life, raw, student",
+    "choices": [
+      "A. life, raw, student",
+      "B. interval",
+      "C. four"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SEI, SHŌ · Kun: ikiru, umareru, nama"
+  },
+  {
+    "id": "jlpt5-kanji-065-reading",
+    "type": "translation",
+    "japanese": "話",
+    "english": "talk",
+    "accepted": [
+      "hanashi",
+      "hanasu",
+      "wa"
+    ],
+    "note": "話す (hanasu)"
+  },
+  {
+    "id": "jlpt5-kanji-065-kanji",
+    "type": "reverse",
+    "japanese": "話",
+    "english": "talk",
+    "accepted": [
+      "話",
+      "hanashi",
+      "hanasu",
+      "wa",
+      "はなし",
+      "はなす",
+      "ワ",
+      "わ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-065-meaning",
+    "type": "choice",
+    "japanese": "話 means?",
+    "english": "talk",
+    "choices": [
+      "A. week",
+      "B. talk",
+      "C. five"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: WA · Kun: hanasu, hanashi"
+  },
+  {
+    "id": "jlpt5-kanji-066-reading",
+    "type": "translation",
+    "japanese": "出",
+    "english": "exit",
+    "accepted": [
+      "deru",
+      "shutsu"
+    ],
+    "note": "出る (deru)"
+  },
+  {
+    "id": "jlpt5-kanji-066-kanji",
+    "type": "reverse",
+    "japanese": "出",
+    "english": "exit",
+    "accepted": [
+      "出",
+      "deru",
+      "shutsu",
+      "でる",
+      "シュツ",
+      "しゅつ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-066-meaning",
+    "type": "choice",
+    "japanese": "出 means?",
+    "english": "exit",
+    "choices": [
+      "A. year",
+      "B. six",
+      "C. exit"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SHUTSU · Kun: deru"
+  },
+  {
+    "id": "jlpt5-kanji-067-reading",
+    "type": "translation",
+    "japanese": "読",
+    "english": "read",
+    "accepted": [
+      "doku",
+      "yomu"
+    ],
+    "note": "読む (yomu)"
+  },
+  {
+    "id": "jlpt5-kanji-067-kanji",
+    "type": "reverse",
+    "japanese": "読",
+    "english": "read",
+    "accepted": [
+      "読",
+      "doku",
+      "yomu",
+      "よむ",
+      "ドク",
+      "どく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-067-meaning",
+    "type": "choice",
+    "japanese": "読 means?",
+    "english": "read",
+    "choices": [
+      "A. read",
+      "B. now",
+      "C. seven"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: DOKU · Kun: yomu"
+  },
+  {
+    "id": "jlpt5-kanji-068-reading",
+    "type": "translation",
+    "japanese": "入",
+    "english": "enter",
+    "accepted": [
+      "hairu",
+      "ireru",
+      "nyu",
+      "nyuu",
+      "nyū"
+    ],
+    "note": "入る (hairu)"
+  },
+  {
+    "id": "jlpt5-kanji-068-kanji",
+    "type": "reverse",
+    "japanese": "入",
+    "english": "enter",
+    "accepted": [
+      "入",
+      "hairu",
+      "ireru",
+      "nyu",
+      "nyuu",
+      "nyū",
+      "いれる",
+      "はいる",
+      "ニュウ",
+      "にゅう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-068-meaning",
+    "type": "choice",
+    "japanese": "入 means?",
+    "english": "enter",
+    "choices": [
+      "A. previous, ahead",
+      "B. enter",
+      "C. eight"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: NYŪ · Kun: hairu, ireru"
+  },
+  {
+    "id": "jlpt5-kanji-069-reading",
+    "type": "translation",
+    "japanese": "書",
+    "english": "write, book",
+    "accepted": [
+      "kaku",
+      "sho"
+    ],
+    "note": "書く (kaku)"
+  },
+  {
+    "id": "jlpt5-kanji-069-kanji",
+    "type": "reverse",
+    "japanese": "書",
+    "english": "write, book",
+    "accepted": [
+      "書",
+      "kaku",
+      "sho",
+      "かく",
+      "ショ",
+      "しょ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-069-meaning",
+    "type": "choice",
+    "japanese": "書 means?",
+    "english": "write, book",
+    "choices": [
+      "A. before",
+      "B. nine",
+      "C. write, book"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SHO · Kun: kaku"
+  },
+  {
+    "id": "jlpt5-kanji-070-reading",
+    "type": "translation",
+    "japanese": "後",
+    "english": "after",
+    "accepted": [
+      "ato",
+      "go",
+      "ko",
+      "koo",
+      "kou",
+      "kō",
+      "ushiro"
+    ],
+    "note": "後 (ato)"
+  },
+  {
+    "id": "jlpt5-kanji-070-kanji",
+    "type": "reverse",
+    "japanese": "後",
+    "english": "after",
+    "accepted": [
+      "後",
+      "ato",
+      "go",
+      "ko",
+      "koo",
+      "kou",
+      "kō",
+      "ushiro",
+      "あと",
+      "うしろ",
+      "コウ",
+      "コオ",
+      "ゴ",
+      "こう",
+      "こお",
+      "ご"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-070-meaning",
+    "type": "choice",
+    "japanese": "後 means?",
+    "english": "after",
+    "choices": [
+      "A. after",
+      "B. noon",
+      "C. ten"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: GO, KŌ · Kun: ato, ushiro"
+  },
+  {
+    "id": "jlpt5-kanji-071-reading",
+    "type": "translation",
+    "japanese": "古",
+    "english": "old",
+    "accepted": [
+      "furui",
+      "ko"
+    ],
+    "note": "古い (furui)"
+  },
+  {
+    "id": "jlpt5-kanji-071-kanji",
+    "type": "reverse",
+    "japanese": "古",
+    "english": "old",
+    "accepted": [
+      "古",
+      "furui",
+      "ko",
+      "ふるい",
+      "コ",
+      "こ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-071-meaning",
+    "type": "choice",
+    "japanese": "古 means?",
+    "english": "old",
+    "choices": [
+      "A. half",
+      "B. old",
+      "C. hundred"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: KO · Kun: furui"
+  },
+  {
+    "id": "jlpt5-kanji-072-reading",
+    "type": "translation",
+    "japanese": "高",
+    "english": "high, expensive",
+    "accepted": [
+      "ko",
+      "koo",
+      "kou",
+      "kō",
+      "takai"
+    ],
+    "note": "高い (takai)"
+  },
+  {
+    "id": "jlpt5-kanji-072-kanji",
+    "type": "reverse",
+    "japanese": "高",
+    "english": "high, expensive",
+    "accepted": [
+      "高",
+      "ko",
+      "koo",
+      "kou",
+      "kō",
+      "takai",
+      "たかい",
+      "コウ",
+      "コオ",
+      "こう",
+      "こお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-072-meaning",
+    "type": "choice",
+    "japanese": "高 means?",
+    "english": "high, expensive",
+    "choices": [
+      "A. store",
+      "B. thousand",
+      "C. high, expensive"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KŌ · Kun: takai"
+  },
+  {
+    "id": "jlpt5-kanji-073-reading",
+    "type": "translation",
+    "japanese": "安",
+    "english": "cheap, safe",
+    "accepted": [
+      "an",
+      "yasui"
+    ],
+    "note": "安い (yasui)"
+  },
+  {
+    "id": "jlpt5-kanji-073-kanji",
+    "type": "reverse",
+    "japanese": "安",
+    "english": "cheap, safe",
+    "accepted": [
+      "安",
+      "an",
+      "yasui",
+      "やすい",
+      "アン",
+      "あん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-073-meaning",
+    "type": "choice",
+    "japanese": "安 means?",
+    "english": "cheap, safe",
+    "choices": [
+      "A. cheap, safe",
+      "B. outside",
+      "C. ten thousand"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: AN · Kun: yasui"
+  },
+  {
+    "id": "jlpt5-kanji-074-reading",
+    "type": "translation",
+    "japanese": "多",
+    "english": "many",
+    "accepted": [
+      "ooi",
+      "ta"
+    ],
+    "note": "多い (ooi)"
+  },
+  {
+    "id": "jlpt5-kanji-074-kanji",
+    "type": "reverse",
+    "japanese": "多",
+    "english": "many",
+    "accepted": [
+      "多",
+      "ooi",
+      "ta",
+      "おおい",
+      "タ",
+      "た"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-074-meaning",
+    "type": "choice",
+    "japanese": "多 means?",
+    "english": "many",
+    "choices": [
+      "A. electricity",
+      "B. many",
+      "C. water"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: TA · Kun: ooi"
+  },
+  {
+    "id": "jlpt5-kanji-075-reading",
+    "type": "translation",
+    "japanese": "新",
+    "english": "new",
+    "accepted": [
+      "atarashii",
+      "shin"
+    ],
+    "note": "新しい (atarashii)"
+  },
+  {
+    "id": "jlpt5-kanji-075-kanji",
+    "type": "reverse",
+    "japanese": "新",
+    "english": "new",
+    "accepted": [
+      "新",
+      "atarashii",
+      "shin",
+      "あたらしい",
+      "シン",
+      "しん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-075-meaning",
+    "type": "choice",
+    "japanese": "新 means?",
+    "english": "new",
+    "choices": [
+      "A. road",
+      "B. fire",
+      "C. new"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SHIN · Kun: atarashii"
+  },
+  {
+    "id": "jlpt5-kanji-076-reading",
+    "type": "translation",
+    "japanese": "少",
+    "english": "few, little",
+    "accepted": [
+      "sho",
+      "shoo",
+      "shou",
+      "shō",
+      "sukoshi",
+      "sukunai"
+    ],
+    "note": "少ない (sukunai)"
+  },
+  {
+    "id": "jlpt5-kanji-076-kanji",
+    "type": "reverse",
+    "japanese": "少",
+    "english": "few, little",
+    "accepted": [
+      "少",
+      "sho",
+      "shoo",
+      "shou",
+      "shō",
+      "sukoshi",
+      "sukunai",
+      "すくない",
+      "すこし",
+      "ショウ",
+      "ショオ",
+      "しょう",
+      "しょお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-076-meaning",
+    "type": "choice",
+    "japanese": "少 means?",
+    "english": "few, little",
+    "choices": [
+      "A. few, little",
+      "B. every",
+      "C. tree, wood"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SHŌ · Kun: sukunai, sukoshi"
+  },
+  {
+    "id": "jlpt5-kanji-077-reading",
+    "type": "translation",
+    "japanese": "長",
+    "english": "long",
+    "accepted": [
+      "cho",
+      "choo",
+      "chou",
+      "chō",
+      "nagai"
+    ],
+    "note": "長い (nagai)"
+  },
+  {
+    "id": "jlpt5-kanji-077-kanji",
+    "type": "reverse",
+    "japanese": "長",
+    "english": "long",
+    "accepted": [
+      "長",
+      "cho",
+      "choo",
+      "chou",
+      "chō",
+      "nagai",
+      "ながい",
+      "チョウ",
+      "チョオ",
+      "ちょう",
+      "ちょお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-077-meaning",
+    "type": "choice",
+    "japanese": "長 means?",
+    "english": "long",
+    "choices": [
+      "A. friend",
+      "B. long",
+      "C. heaven, sky"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: CHŌ · Kun: nagai"
+  },
+  {
+    "id": "jlpt5-kanji-078-reading",
+    "type": "translation",
+    "japanese": "白",
+    "english": "white",
+    "accepted": [
+      "byaku",
+      "haku",
+      "shiroi"
+    ],
+    "note": "白い (shiroi)"
+  },
+  {
+    "id": "jlpt5-kanji-078-kanji",
+    "type": "reverse",
+    "japanese": "白",
+    "english": "white",
+    "accepted": [
+      "白",
+      "byaku",
+      "haku",
+      "shiroi",
+      "しろい",
+      "ハク",
+      "ビャク",
+      "はく",
+      "びゃく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-078-meaning",
+    "type": "choice",
+    "japanese": "白 means?",
+    "english": "white",
+    "choices": [
+      "A. name",
+      "B. soil, earth",
+      "C. white"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: HAKU, BYAKU · Kun: shiroi"
+  },
+  {
+    "id": "jlpt5-kanji-079-reading",
+    "type": "translation",
+    "japanese": "分",
+    "english": "minute, understand",
+    "accepted": [
+      "bun",
+      "fun",
+      "wakaru"
+    ],
+    "note": "分 (fun)"
+  },
+  {
+    "id": "jlpt5-kanji-079-kanji",
+    "type": "reverse",
+    "japanese": "分",
+    "english": "minute, understand",
+    "accepted": [
+      "分",
+      "bun",
+      "fun",
+      "wakaru",
+      "わかる",
+      "フン",
+      "ブン",
+      "ふん",
+      "ぶん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-079-meaning",
+    "type": "choice",
+    "japanese": "分 means?",
+    "english": "minute, understand",
+    "choices": [
+      "A. minute, understand",
+      "B. gold, money, metal",
+      "C. north"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: FUN, BUN · Kun: wakaru"
+  },
+  {
+    "id": "jlpt5-kanji-080-reading",
+    "type": "translation",
+    "japanese": "時",
+    "english": "time, hour",
+    "accepted": [
+      "ji",
+      "toki"
+    ],
+    "note": "時間 (jikan)"
+  },
+  {
+    "id": "jlpt5-kanji-080-kanji",
+    "type": "reverse",
+    "japanese": "時",
+    "english": "time, hour",
+    "accepted": [
+      "時",
+      "ji",
+      "toki",
+      "とき",
+      "ジ",
+      "じ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-080-meaning",
+    "type": "choice",
+    "japanese": "時 means?",
+    "english": "time, hour",
+    "choices": [
+      "A. circle, yen",
+      "B. time, hour",
+      "C. east"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: JI · Kun: toki"
+  },
+  {
+    "id": "jlpt5-kanji-081-reading",
+    "type": "translation",
+    "japanese": "間",
+    "english": "interval",
+    "accepted": [
+      "aida",
+      "kan",
+      "ken",
+      "ma"
+    ],
+    "note": "間 (aida)"
+  },
+  {
+    "id": "jlpt5-kanji-081-kanji",
+    "type": "reverse",
+    "japanese": "間",
+    "english": "interval",
+    "accepted": [
+      "間",
+      "aida",
+      "kan",
+      "ken",
+      "ma",
+      "あいだ",
+      "ま",
+      "カン",
+      "ケン",
+      "かん",
+      "けん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-081-meaning",
+    "type": "choice",
+    "japanese": "間 means?",
+    "english": "interval",
+    "choices": [
+      "A. car",
+      "B. west",
+      "C. interval"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KAN, KEN · Kun: aida, ma"
+  },
+  {
+    "id": "jlpt5-kanji-082-reading",
+    "type": "translation",
+    "japanese": "週",
+    "english": "week",
+    "accepted": [
+      "shu",
+      "shuu",
+      "shū"
+    ],
+    "note": "週間 (shūkan)"
+  },
+  {
+    "id": "jlpt5-kanji-082-kanji",
+    "type": "reverse",
+    "japanese": "週",
+    "english": "week",
+    "accepted": [
+      "週",
+      "shu",
+      "shuu",
+      "shū",
+      "シュウ",
+      "しゅう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-082-meaning",
+    "type": "choice",
+    "japanese": "週 means?",
+    "english": "week",
+    "choices": [
+      "A. week",
+      "B. station",
+      "C. south"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SHŪ"
+  },
+  {
+    "id": "jlpt5-kanji-083-reading",
+    "type": "translation",
+    "japanese": "年",
+    "english": "year",
+    "accepted": [
+      "nen",
+      "toshi"
+    ],
+    "note": "年 (toshi)"
+  },
+  {
+    "id": "jlpt5-kanji-083-kanji",
+    "type": "reverse",
+    "japanese": "年",
+    "english": "year",
+    "accepted": [
+      "年",
+      "nen",
+      "toshi",
+      "とし",
+      "ネン",
+      "ねん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-083-meaning",
+    "type": "choice",
+    "japanese": "年 means?",
+    "english": "year",
+    "choices": [
+      "A. spirit, air",
+      "B. year",
+      "C. left"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: NEN · Kun: toshi"
+  },
+  {
+    "id": "jlpt5-kanji-084-reading",
+    "type": "translation",
+    "japanese": "今",
+    "english": "now",
+    "accepted": [
+      "ima",
+      "kin",
+      "kon"
+    ],
+    "note": "今 (ima)"
+  },
+  {
+    "id": "jlpt5-kanji-084-kanji",
+    "type": "reverse",
+    "japanese": "今",
+    "english": "now",
+    "accepted": [
+      "今",
+      "ima",
+      "kin",
+      "kon",
+      "いま",
+      "キン",
+      "コン",
+      "きん",
+      "こん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-084-meaning",
+    "type": "choice",
+    "japanese": "今 means?",
+    "english": "now",
+    "choices": [
+      "A. country",
+      "B. right",
+      "C. now"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KON, KIN · Kun: ima"
+  },
+  {
+    "id": "jlpt5-kanji-085-reading",
+    "type": "translation",
+    "japanese": "先",
+    "english": "previous, ahead",
+    "accepted": [
+      "saki",
+      "sen"
+    ],
+    "note": "先 (saki)"
+  },
+  {
+    "id": "jlpt5-kanji-085-kanji",
+    "type": "reverse",
+    "japanese": "先",
+    "english": "previous, ahead",
+    "accepted": [
+      "先",
+      "saki",
+      "sen",
+      "さき",
+      "セン",
+      "せん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-085-meaning",
+    "type": "choice",
+    "japanese": "先 means?",
+    "english": "previous, ahead",
+    "choices": [
+      "A. previous, ahead",
+      "B. company, shrine",
+      "C. day, sun"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: SEN · Kun: saki"
+  },
+  {
+    "id": "jlpt5-kanji-086-reading",
+    "type": "translation",
+    "japanese": "前",
+    "english": "before",
+    "accepted": [
+      "mae",
+      "zen"
+    ],
+    "note": "前 (mae)"
+  },
+  {
+    "id": "jlpt5-kanji-086-kanji",
+    "type": "reverse",
+    "japanese": "前",
+    "english": "before",
+    "accepted": [
+      "前",
+      "mae",
+      "zen",
+      "まえ",
+      "ゼン",
+      "ぜん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-086-meaning",
+    "type": "choice",
+    "japanese": "前 means?",
+    "english": "before",
+    "choices": [
+      "A. school",
+      "B. before",
+      "C. month, moon"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: ZEN · Kun: mae"
+  },
+  {
+    "id": "jlpt5-kanji-087-reading",
+    "type": "translation",
+    "japanese": "午",
+    "english": "noon",
+    "accepted": [
+      "go"
+    ],
+    "note": "午前 (gozen)"
+  },
+  {
+    "id": "jlpt5-kanji-087-kanji",
+    "type": "reverse",
+    "japanese": "午",
+    "english": "noon",
+    "accepted": [
+      "午",
+      "go",
+      "ゴ",
+      "ご"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-087-meaning",
+    "type": "choice",
+    "japanese": "午 means?",
+    "english": "noon",
+    "choices": [
+      "A. one",
+      "B. flower",
+      "C. noon"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: GO"
+  },
+  {
+    "id": "jlpt5-kanji-088-reading",
+    "type": "translation",
+    "japanese": "半",
+    "english": "half",
+    "accepted": [
+      "han",
+      "nakaba"
+    ],
+    "note": "半分 (hanbun)"
+  },
+  {
+    "id": "jlpt5-kanji-088-kanji",
+    "type": "reverse",
+    "japanese": "半",
+    "english": "half",
+    "accepted": [
+      "半",
+      "han",
+      "nakaba",
+      "なかば",
+      "ハン",
+      "はん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-088-meaning",
+    "type": "choice",
+    "japanese": "半 means?",
+    "english": "half",
+    "choices": [
+      "A. half",
+      "B. two",
+      "C. fish"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: HAN · Kun: nakaba"
+  },
+  {
+    "id": "jlpt5-kanji-089-reading",
+    "type": "translation",
+    "japanese": "店",
+    "english": "store",
+    "accepted": [
+      "mise",
+      "ten"
+    ],
+    "note": "店 (mise)"
+  },
+  {
+    "id": "jlpt5-kanji-089-kanji",
+    "type": "reverse",
+    "japanese": "店",
+    "english": "store",
+    "accepted": [
+      "店",
+      "mise",
+      "ten",
+      "みせ",
+      "テン",
+      "てん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-089-meaning",
+    "type": "choice",
+    "japanese": "店 means?",
+    "english": "store",
+    "choices": [
+      "A. three",
+      "B. store",
+      "C. sky"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: TEN · Kun: mise"
+  },
+  {
+    "id": "jlpt5-kanji-090-reading",
+    "type": "translation",
+    "japanese": "外",
+    "english": "outside",
+    "accepted": [
+      "gai",
+      "soto"
+    ],
+    "note": "外 (soto)"
+  },
+  {
+    "id": "jlpt5-kanji-090-kanji",
+    "type": "reverse",
+    "japanese": "外",
+    "english": "outside",
+    "accepted": [
+      "外",
+      "gai",
+      "soto",
+      "そと",
+      "ガイ",
+      "がい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-090-meaning",
+    "type": "choice",
+    "japanese": "外 means?",
+    "english": "outside",
+    "choices": [
+      "A. four",
+      "B. mountain",
+      "C. outside"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: GAI · Kun: soto"
+  },
+  {
+    "id": "jlpt5-kanji-091-reading",
+    "type": "translation",
+    "japanese": "電",
+    "english": "electricity",
+    "accepted": [
+      "den"
+    ],
+    "note": "電話 (denwa)"
+  },
+  {
+    "id": "jlpt5-kanji-091-kanji",
+    "type": "reverse",
+    "japanese": "電",
+    "english": "electricity",
+    "accepted": [
+      "電",
+      "den",
+      "デン",
+      "でん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-091-meaning",
+    "type": "choice",
+    "japanese": "電 means?",
+    "english": "electricity",
+    "choices": [
+      "A. electricity",
+      "B. five",
+      "C. river"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: DEN"
+  },
+  {
+    "id": "jlpt5-kanji-092-reading",
+    "type": "translation",
+    "japanese": "道",
+    "english": "road",
+    "accepted": [
+      "do",
+      "doo",
+      "dou",
+      "dō",
+      "michi"
+    ],
+    "note": "道 (michi)"
+  },
+  {
+    "id": "jlpt5-kanji-092-kanji",
+    "type": "reverse",
+    "japanese": "道",
+    "english": "road",
+    "accepted": [
+      "道",
+      "do",
+      "doo",
+      "dou",
+      "dō",
+      "michi",
+      "みち",
+      "ドウ",
+      "ドオ",
+      "どう",
+      "どお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-092-meaning",
+    "type": "choice",
+    "japanese": "道 means?",
+    "english": "road",
+    "choices": [
+      "A. six",
+      "B. road",
+      "C. rain"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: DŌ · Kun: michi"
+  },
+  {
+    "id": "jlpt5-kanji-093-reading",
+    "type": "translation",
+    "japanese": "毎",
+    "english": "every",
+    "accepted": [
+      "mai"
+    ],
+    "note": "毎日 (mainichi)"
+  },
+  {
+    "id": "jlpt5-kanji-093-kanji",
+    "type": "reverse",
+    "japanese": "毎",
+    "english": "every",
+    "accepted": [
+      "毎",
+      "mai",
+      "マイ",
+      "まい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-093-meaning",
+    "type": "choice",
+    "japanese": "毎 means?",
+    "english": "every",
+    "choices": [
+      "A. seven",
+      "B. book, origin",
+      "C. every"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: MAI"
+  },
+  {
+    "id": "jlpt5-kanji-094-reading",
+    "type": "translation",
+    "japanese": "友",
+    "english": "friend",
+    "accepted": [
+      "tomo",
+      "yu",
+      "yuu",
+      "yū"
+    ],
+    "note": "友達 (tomodachi)"
+  },
+  {
+    "id": "jlpt5-kanji-094-kanji",
+    "type": "reverse",
+    "japanese": "友",
+    "english": "friend",
+    "accepted": [
+      "友",
+      "tomo",
+      "yu",
+      "yuu",
+      "yū",
+      "とも",
+      "ユウ",
+      "ゆう"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-094-meaning",
+    "type": "choice",
+    "japanese": "友 means?",
+    "english": "friend",
+    "choices": [
+      "A. friend",
+      "B. eight",
+      "C. eye"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: YŪ · Kun: tomo"
+  },
+  {
+    "id": "jlpt5-kanji-095-reading",
+    "type": "translation",
+    "japanese": "名",
+    "english": "name",
+    "accepted": [
+      "mei",
+      "myo",
+      "myoo",
+      "myou",
+      "myō",
+      "na"
+    ],
+    "note": "名前 (namae)"
+  },
+  {
+    "id": "jlpt5-kanji-095-kanji",
+    "type": "reverse",
+    "japanese": "名",
+    "english": "name",
+    "accepted": [
+      "名",
+      "mei",
+      "myo",
+      "myoo",
+      "myou",
+      "myō",
+      "na",
+      "な",
+      "ミョウ",
+      "ミョオ",
+      "メイ",
+      "みょう",
+      "みょお",
+      "めい"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-095-meaning",
+    "type": "choice",
+    "japanese": "名 means?",
+    "english": "name",
+    "choices": [
+      "A. nine",
+      "B. name",
+      "C. mouth"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: MEI, MYŌ · Kun: na"
+  },
+  {
+    "id": "jlpt5-kanji-096-reading",
+    "type": "translation",
+    "japanese": "金",
+    "english": "gold, money, metal",
+    "accepted": [
+      "kane",
+      "kin",
+      "kon"
+    ],
+    "note": "金曜日 (kinyōbi)"
+  },
+  {
+    "id": "jlpt5-kanji-096-kanji",
+    "type": "reverse",
+    "japanese": "金",
+    "english": "gold, money, metal",
+    "accepted": [
+      "金",
+      "kane",
+      "kin",
+      "kon",
+      "かね",
+      "キン",
+      "コン",
+      "きん",
+      "こん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-096-meaning",
+    "type": "choice",
+    "japanese": "金 means?",
+    "english": "gold, money, metal",
+    "choices": [
+      "A. ten",
+      "B. ear",
+      "C. gold, money, metal"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: KIN, KON · Kun: kane"
+  },
+  {
+    "id": "jlpt5-kanji-097-reading",
+    "type": "translation",
+    "japanese": "円",
+    "english": "circle, yen",
+    "accepted": [
+      "en",
+      "marui"
+    ],
+    "note": "円 (en)"
+  },
+  {
+    "id": "jlpt5-kanji-097-kanji",
+    "type": "reverse",
+    "japanese": "円",
+    "english": "circle, yen",
+    "accepted": [
+      "円",
+      "en",
+      "marui",
+      "まるい",
+      "エン",
+      "えん"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-097-meaning",
+    "type": "choice",
+    "japanese": "円 means?",
+    "english": "circle, yen",
+    "choices": [
+      "A. circle, yen",
+      "B. hundred",
+      "C. hand"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: EN · Kun: marui"
+  },
+  {
+    "id": "jlpt5-kanji-098-reading",
+    "type": "translation",
+    "japanese": "車",
+    "english": "car",
+    "accepted": [
+      "kuruma",
+      "sha"
+    ],
+    "note": "車 (kuruma)"
+  },
+  {
+    "id": "jlpt5-kanji-098-kanji",
+    "type": "reverse",
+    "japanese": "車",
+    "english": "car",
+    "accepted": [
+      "車",
+      "kuruma",
+      "sha",
+      "くるま",
+      "シャ",
+      "しゃ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-098-meaning",
+    "type": "choice",
+    "japanese": "車 means?",
+    "english": "car",
+    "choices": [
+      "A. thousand",
+      "B. car",
+      "C. foot, sufficient"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: SHA · Kun: kuruma"
+  },
+  {
+    "id": "jlpt5-kanji-099-reading",
+    "type": "translation",
+    "japanese": "駅",
+    "english": "station",
+    "accepted": [
+      "eki"
+    ],
+    "note": "駅 (eki)"
+  },
+  {
+    "id": "jlpt5-kanji-099-kanji",
+    "type": "reverse",
+    "japanese": "駅",
+    "english": "station",
+    "accepted": [
+      "駅",
+      "eki",
+      "エキ",
+      "えき"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-099-meaning",
+    "type": "choice",
+    "japanese": "駅 means?",
+    "english": "station",
+    "choices": [
+      "A. ten thousand",
+      "B. person",
+      "C. station"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: EKI"
+  },
+  {
+    "id": "jlpt5-kanji-100-reading",
+    "type": "translation",
+    "japanese": "気",
+    "english": "spirit, air",
+    "accepted": [
+      "ke",
+      "ki"
+    ],
+    "note": "元気 (genki)"
+  },
+  {
+    "id": "jlpt5-kanji-100-kanji",
+    "type": "reverse",
+    "japanese": "気",
+    "english": "spirit, air",
+    "accepted": [
+      "気",
+      "ke",
+      "ki",
+      "キ",
+      "ケ",
+      "き",
+      "け"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-100-meaning",
+    "type": "choice",
+    "japanese": "気 means?",
+    "english": "spirit, air",
+    "choices": [
+      "A. spirit, air",
+      "B. water",
+      "C. mother"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: KI, KE"
+  },
+  {
+    "id": "jlpt5-kanji-101-reading",
+    "type": "translation",
+    "japanese": "国",
+    "english": "country",
+    "accepted": [
+      "koku",
+      "kuni"
+    ],
+    "note": "国 (kuni)"
+  },
+  {
+    "id": "jlpt5-kanji-101-kanji",
+    "type": "reverse",
+    "japanese": "国",
+    "english": "country",
+    "accepted": [
+      "国",
+      "koku",
+      "kuni",
+      "くに",
+      "コク",
+      "こく"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-101-meaning",
+    "type": "choice",
+    "japanese": "国 means?",
+    "english": "country",
+    "choices": [
+      "A. fire",
+      "B. country",
+      "C. father"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "On: KOKU · Kun: kuni"
+  },
+  {
+    "id": "jlpt5-kanji-102-reading",
+    "type": "translation",
+    "japanese": "社",
+    "english": "company, shrine",
+    "accepted": [
+      "sha",
+      "yashiro"
+    ],
+    "note": "会社 (kaisha)"
+  },
+  {
+    "id": "jlpt5-kanji-102-kanji",
+    "type": "reverse",
+    "japanese": "社",
+    "english": "company, shrine",
+    "accepted": [
+      "社",
+      "sha",
+      "yashiro",
+      "やしろ",
+      "シャ",
+      "しゃ"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-102-meaning",
+    "type": "choice",
+    "japanese": "社 means?",
+    "english": "company, shrine",
+    "choices": [
+      "A. tree, wood",
+      "B. female",
+      "C. company, shrine"
+    ],
+    "answer": "C",
+    "accepted": [
+      "C",
+      "c"
+    ],
+    "note": "On: SHA · Kun: yashiro"
+  },
+  {
+    "id": "jlpt5-kanji-103-reading",
+    "type": "translation",
+    "japanese": "校",
+    "english": "school",
+    "accepted": [
+      "ko",
+      "koo",
+      "kou",
+      "kō"
+    ],
+    "note": "学校 (gakkō)"
+  },
+  {
+    "id": "jlpt5-kanji-103-kanji",
+    "type": "reverse",
+    "japanese": "校",
+    "english": "school",
+    "accepted": [
+      "校",
+      "ko",
+      "koo",
+      "kou",
+      "kō",
+      "コウ",
+      "コオ",
+      "こう",
+      "こお"
+    ]
+  },
+  {
+    "id": "jlpt5-kanji-103-meaning",
+    "type": "choice",
+    "japanese": "校 means?",
+    "english": "school",
+    "choices": [
+      "A. school",
+      "B. heaven, sky",
+      "C. male"
+    ],
+    "answer": "A",
+    "accepted": [
+      "A",
+      "a"
+    ],
+    "note": "On: KŌ"
+  }
+]

@@ -142,6 +142,7 @@ conversation
 adjectives
 verbs
 nouns
+jlpt
 PICKUPEOF
   fi
 
