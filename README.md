@@ -64,6 +64,7 @@ All commands run from the repo root:
     ./src/memoloop watch        # run the reminder loop in the foreground
     ./src/memoloop start        # start the systemd user service (installed copy)
     ./src/memoloop stop         # stop the systemd user service
+    ./src/memoloop restart      # restart the systemd user service (use after editing intervals.conf)
     ./src/memoloop test         # launch one test prompt immediately
     ./src/memoloop pause        # pause all reminders
     ./src/memoloop resume       # resume all reminders
@@ -89,12 +90,24 @@ random_min=15
 random_max=30
 decay_hours=24
 min_per_day=10
+
+# Anki reminder rule (disabled by default — uncomment to enable,
+# then memoloop restart to apply).
+# anki_enabled=true
+# anki_random_min=15
+# anki_random_max=30
+# anki_fixed_seconds=2700
 ```
 
 - `fixed_seconds`: interval between fixed-rule prompts (default 2700 = 45 min)
 - `random_min` / `random_max`: random-rule interval in minutes (default 15–30)
 - `decay_hours`: half-life for answer-point decay in hours (default 24)
 - `min_per_day`: minimum unique questions shown per day (default 10)
+- `anki_enabled`, `anki_random_min`, `anki_random_max`, `anki_fixed_seconds`: optional anki reminder rule (disabled by default)
+
+**Changes take effect only after `memoloop restart`** — the daemon reads
+`config.conf` and `intervals.conf` once at startup (`pickup.set` is re-read
+each question, so it needs no restart).
 
 Override at run time through the environment:
 

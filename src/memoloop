@@ -801,6 +801,13 @@ cmd_stop() {
   term_removed "memoloop stopped"
 }
 
+cmd_restart() {
+  state_init
+  need systemctl
+  cmd_stop
+  cmd_start
+}
+
 due_label() {
   local nd
   nd=$(rule_next_due "$1")
@@ -971,6 +978,7 @@ Usage: memoloop <command>
   setup       initialize state, log, data and config directories
   start       start the reminder daemon (systemd user service)
   stop        stop the reminder daemon
+  restart     stop and start the reminder daemon (use after editing config.conf or intervals.conf)
   watch       run the reminder loop in the foreground (used by the service)
   ask [rule]  show one question popup (used by the daemon and bindings)
   test        launch a test prompt immediately
@@ -996,6 +1004,10 @@ main() {
   stop)
     shift
     cmd_stop "$@"
+    ;;
+  restart)
+    shift
+    cmd_restart "$@"
     ;;
   watch) cmd_watch ;;
   ask)
