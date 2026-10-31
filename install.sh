@@ -30,11 +30,8 @@ set -- ${rest[@]+"${rest[@]}"}
 CONFIG_DIR="${MEMOLOOP_CONFIG_DIR:-$HOME/.config/memoloop}"
 DATA_DIR="${MEMOLOOP_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/memoloop}"
 STATE_DIR="${MEMOLOOP_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/memoloop}"
-SYSTEMD_DIR="$HOME/.config/systemd/user"
 NIRI_DIR="$HOME/.config/niri"
 ZSH_ALIASES="$HOME/.config/zsh/my_zsh_aliases"
-SERVICE_UNIT="memoloop.service"
-
 . "$SCRIPT_DIR/lib/term.sh"
 . "$SCRIPT_DIR/lib/installer.sh"
 
@@ -83,33 +80,6 @@ uninstall_tool() {
 }
 
 install_integration() {
-  local unit_tmp
-  unit_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop.service.XXXXXX")
-  cat >"$unit_tmp" <<UNITEOF
-[Unit]
-Description=MemoLoop Japanese study reminders
-After=graphical-session.target
-Wants=graphical-session.target
-StartLimitIntervalSec=300
-StartLimitBurst=5
-
-[Service]
-Type=simple
-ExecStart=$INSTALLER_TARGET watch
-Restart=on-failure
-RestartSec=30
-Environment=MEMOLOOP_CONFIG_DIR=$CONFIG_DIR
-Environment=MEMOLOOP_DATA_DIR=$DATA_DIR
-Environment=MEMOLOOP_STATE=$STATE_DIR
-
-[Install]
-WantedBy=graphical-session.target
-UNITEOF
-
-  installer_do_section mkdir -p "$SYSTEMD_DIR"
-  installer_do_section install -m 644 "$unit_tmp" "$SYSTEMD_DIR/$SERVICE_UNIT"
-  rm -f "$unit_tmp"
-
   installer_do_section mkdir -p "$CONFIG_DIR" "$DATA_DIR" "$STATE_DIR" "$STATE_DIR/log"
 
   if [ ! -f "$CONFIG_DIR/config.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
@@ -149,10 +119,6 @@ UNITEOF
     installer_do_section sh -c "printf '%s\n' '// >>> memoloop managed include >>>' 'include optional=true \"memoloop.kdl\"' '// <<< memoloop managed include <<<' >>'$NIRI_DIR/config.kdl'"
   fi
 
-  installer_do_section systemctl --user daemon-reload
-  installer_do_section systemctl --user enable "$SERVICE_UNIT"
-  installer_do_section systemctl --user restart "$SERVICE_UNIT"
-
   if command -v niri >/dev/null 2>&1 && pgrep -x niri >/dev/null 2>&1; then
     installer_do_section sh -c "niri msg action load-config-file --path '$NIRI_DIR/config.kdl'" || true
   fi
@@ -161,14 +127,13 @@ UNITEOF
 Data:     $DATA_DIR
 State:    $STATE_DIR
 Run:      memoloop --help
-Popup:    MOD+N (niri) or memoloop ask
-Service:  systemctl --user status $SERVICE_UNIT"
+Popup:    MOD+N (niri) or memoloop ask"
 }
 
 uninstall_integration() {
-  installer_do_section systemctl --user stop "$SERVICE_UNIT" 2>/dev/null || true
-  installer_do_section_remove systemctl --user disable "$SERVICE_UNIT" 2>/dev/null || true
-  installer_do_section_remove rm -f "$SYSTEMD_DIR/$SERVICE_UNIT"
+  installer_do_section systemctl --user stop memoloop.service 2>/dev/null || true
+  installer_do_section_remove systemctl --user disable memoloop.service 2>/dev/null || true
+  installer_do_section_remove rm -f "$HOME/.config/systemd/user/memoloop.service"
   installer_do_section_remove systemctl --user daemon-reload
 
   if [ -f "$ZSH_ALIASES" ] && grep -qF '# >>> memoloop managed alias >>>' "$ZSH_ALIASES"; then
@@ -194,11 +159,4 @@ installer_run "$@"
 
 if [ "$BIN_ONLY" -eq 1 ]; then
   term_status "system install" "$TERM_MARK_PLAIN" "binary only · no service, config or niri rules were created"
-fi
-
-if [ "${INSTALLER_ACTION:-}" = "install" ] && [ "${INSTALLER_DRY:-0}" -eq 0 ] && [ "$BIN_ONLY" -eq 0 ]; then
-  if ! systemctl --user is-active --quiet "$SERVICE_UNIT"; then
-    term_bad "memoloop: service did not start" "systemctl --user status $SERVICE_UNIT"
-    exit 1
-  fi
 fi
