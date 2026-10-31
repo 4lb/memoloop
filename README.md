@@ -1,6 +1,7 @@
 # memoloop
 
-MemoLoop — Linux prototype of a Japanese desktop language-learning app.
+MemoLoop — Linux prototype of a Japanese desktop language-learning question
+popup.
 
 Project: directory `a-memoloop`, name `memoloop` (MemoLoop).
 PopLoop — the quick-popup feature (marketing / internal naming).
@@ -8,39 +9,33 @@ Resume: `read ./pickup.md`
 
 ## Status
 
-Prototype implemented (Linux/Bash). See [`plans/AGENT.md`](plans/AGENT.md) for the
-product plan, [`plans/first-steps.md`](plans/first-steps.md) for the build
-stages, and [`plans/app-plan.md`](plans/app-plan.md) for the revised product
-plan. See [`plans/config-scoring-plan.md`](plans/config-scoring-plan.md) for the
-config + scoring design.
+MemoLoop is now a question-display application only. Scheduling lives in the
+separate [`intervald`](intervald/README.md) tool: it spawns `memoloop ask` on
+fixed and randomized intervals.
 
-## What the prototype does and does not do
+See [`plans/AGENT.md`](plans/AGENT.md) for the product plan,
+[`plans/first-steps.md`](plans/first-steps.md) for the build stages,
+[`plans/app-plan.md`](plans/app-plan.md) for the revised product plan, and
+[`plans/config-scoring-plan.md`](plans/config-scoring-plan.md) for the config
+and scoring design.
 
-Does:
-- Two independent scheduling rules: fixed (every 45 minutes by default) and random
-  (every 15–30 minutes), each tracking its own next-due time. Intervals configured
-  in `~/.config/memoloop/intervals.conf`.
-- A terminal popup (`foot`) showing a Japanese prompt with its English meaning,
-  answer instructions, and current status (running / paused / DND).
-- Answer submission, correctness feedback (accepted vs not accepted, intended
-  answer shown), dismiss without answering, and a global pause-all control.
-  After the feedback, `n` opens another question in the same window; any other
-  key closes it.
-- A configurable Do-Not-Disturb window.
-- No backlog: prompts due while paused or in DND are skipped, not queued.
-- Queueing: if a popup is already open when another rule fires, the second
-  prompt is queued and shown after the first is dismissed (no overlapping
-  popup terminals).
-- Logging of each prompt (rule, scheduled time, result) to `log/`.
-- Answer scoring with point system: base 100, correct +10, incorrect -10
-  (floor 0). Weighted random selection favours low-point questions, with time
-  decay so unseen questions resurface. Minimum ~10 unique questions per day.
-- Basic automated tests in `tests/`.
+## What memoloop does
 
-Does not:
-- Cross-platform packaging (Tauri is the planned future, see `plans/tech-stack.md`).
-- Spaced repetition / SuperMemo scheduling (explicitly out of scope for this prototype).
-- System-wide keyboard interception, OS locking, accounts, cloud sync, or Anki integration.
+- `memoloop ask` opens a `foot` popup showing a Japanese prompt with its
+  English meaning, answer instructions, and a question type.
+- Accepts typed answers, checks them against one or more accepted answers,
+  shows accepted/not-accepted feedback with the intended answer, and allows
+  dismissing without answering.
+- After feedback, `n` opens another question in the same window; any other key
+  closes it.
+- Answer scoring: base 100 points, correct +10, incorrect -10 (floor 0).
+  Weighted random selection favours low-point questions, with a time decay so
+  unseen questions resurface. A minimum number of unique questions per day is
+  guaranteed.
+- Logs each prompt to `log/reminders.log`.
+
+It does not schedule anything, run a daemon, manage DND/pause state, or spawn
+Anki. Configure those jobs in intervald.
 
 ## Dependencies
 
@@ -54,68 +49,91 @@ Install (CachyOS/Arch example):
 
     paru -S foot jq
 
+## Install
+
+    ./install.sh
+
+This installs `src/memoloop` and `lib/term.sh`, writes the default config,
+copies the question data, and installs the niri floating-window rule. It also
+removes a legacy `memoloop.service` unit; memoloop no longer has a daemon.
+
+Uninstall while keeping data:
+
+    ./install.sh uninstall
+
+Purge config, data and state:
+
+    ./install.sh uninstall --purge-data
+
 ## Run instructions
 
 All commands run from the repo root:
 
     ./src/memoloop setup        # initialise state, log, data and config directories
-    ./src/memoloop status       # show running / paused / DND / next-due state
     ./src/memoloop config       # show effective configuration
-    ./src/memoloop watch        # run the reminder loop in the foreground
-    ./src/memoloop start        # start the systemd user service (installed copy)
-    ./src/memoloop stop         # stop the systemd user service
-    ./src/memoloop restart      # restart the systemd user service (use after editing intervals.conf)
     ./src/memoloop test         # launch one test prompt immediately
-    ./src/memoloop pause        # pause all reminders
-    ./src/memoloop resume       # resume all reminders
-    ./src/memoloop dnd 09:00 17:00   # set the DND window
-    ./src/memoloop dnd off      # clear the DND window
-    ./src/memoloop ask [rule]   # show one question popup (used by the daemon)
-
-`watch` is the daemon: leave it running in the background (e.g. under a
-systemd user service or `nohup ./src/memoloop watch &`). It opens one terminal
-popup at a time when a rule is due.
+    ./src/memoloop ask [name]   # show one question popup (name defaults to manual)
 
 Tests:
 
     ./tests/memoloop_test.sh
 
+## Scheduling with intervald
+
+`intervald` reads `~/.config/intervald/config.yaml` and runs any command on
+fixed or re-rolled random intervals. The shipped jobs are:
+
+    settings:
+      terminal: "foot -e"
+
+    jobs:
+      memoloop:
+        command: "memoloop ask"
+        terminal: true
+        schedule:
+          - every: 45m
+          - random: [15m, 30m]
+
+      anki:
+        command: "anki"
+        schedule:
+          - every: 45m
+          - random: [15m, 30m]
+
+Install, configure and inspect it with:
+
+    intervald check
+    intervald status
+    intervald fire memoloop
+    intervald reload
+    systemctl --user status intervald.service
+
+Full reference: [`intervald/README.md`](intervald/README.md).
+
 ## Configuration (`~/.config/memoloop/`)
 
-**intervals.conf** — scheduling parameters:
+**intervals.conf** — question-selection parameters:
 
 ```
-fixed_seconds=2700
-random_min=15
-random_max=30
 decay_hours=24
 min_per_day=10
-
-# Anki reminder rule (disabled by default — uncomment to enable,
-# then memoloop restart to apply).
-# anki_enabled=true
-# anki_random_min=15
-# anki_random_max=30
-# anki_fixed_seconds=2700
 ```
 
-- `fixed_seconds`: interval between fixed-rule prompts (default 2700 = 45 min)
-- `random_min` / `random_max`: random-rule interval in minutes (default 15–30)
 - `decay_hours`: half-life for answer-point decay in hours (default 24)
 - `min_per_day`: minimum unique questions shown per day (default 10)
-- `anki_enabled`, `anki_type` (`random` \| `fixed`), `anki_random_min`, `anki_random_max`, `anki_fixed_seconds`: optional anki reminder rule (disabled by default)
-
-**Changes take effect only after `memoloop restart`** — the daemon reads
-`config.conf` and `intervals.conf` once at startup (`pickup.set` is re-read
-each question, so it needs no restart).
 
 Override at run time through the environment:
 
-    MEMOLOOP_FIXED_SECONDS=30 ./src/memoloop watch
+    MEMOLOOP_DECAY_HOURS=12 MEMOLOOP_MIN_PER_DAY=5 ./src/memoloop ask
 
-The same exists for `MEMOLOOP_RANDOM_MIN`, `MEMOLOOP_RANDOM_MAX`,
-`MEMOLOOP_DECAY_HOURS`, `MEMOLOOP_MIN_PER_DAY` and `MEMOLOOP_NOHELP`.
-Environment values win over `intervals.conf`.
+`MEMOLOOP_NOHELP` also exists for suppressing the post-question key hint.
+
+**config.conf** — paths and display:
+
+```
+nohelp=true
+USER_DATA_DIR="~/.local/share/memoloop"
+```
 
 **pickup.set** — enabled question groups, one ID per line:
 
@@ -154,8 +172,8 @@ Extra fields by type:
 
 `~/.local/state/memoloop/` — runtime state (override with `MEMOLOOP_STATE`):
 
-- `rules.json` (next-due per rule), `session.json` (paused, DND, queue, open pid),
-  `current.json` (last prompt), `result.json` (last answer), `log/reminders.log`
+- `current.json` (last prompt), `result.json` (last answer),
+  `log/reminders.log`
 
 **answers.json** — per-question answer data with points:
 
@@ -194,50 +212,29 @@ the term.sh frame (64 columns) so the popup box is centred.
 
 ## Directory tree
 
-- `src/memoloop` — entry script (daemon + popup + scheduling)
+- `src/memoloop` — question popup and scoring
 - `lib/term.sh` — terminal renderer (vendored copy, like glyph-key's)
-- `data/questions/questions.json` — legacy sample question set (no longer used)
-- runtime state and logs live in `~/.local/state/memoloop/` (or `MEMOLOOP_STATE`)
-- `tests/memoloop_test.sh` — basic automated tests
+- `intervald/` — standalone interval runner (code, unit, example config, tests)
+- `data/questions/<group>/*.json` — question sets
+- `docs/question-format.md` — question schema
+- `niri/memoloop.kdl` — floating popup rule
+- `tests/memoloop_test.sh` — memoloop tests
 - `plans/` — product and technical plans
 - `progress/` — session progress snapshots
 
-## How simultaneous rules and an already-open popup are handled
-
-Each rule keeps its own next-due time. If fixed and random both fire close
-together, the first one opens its popup and the second is queued in
-`state/session.json` (`queue`). While a popup is open, any further due rule
-is queued rather than launching an overlapping terminal. When the user
-dismisses the held window, the daemon launches the next queued rule.
-Each prompt is logged separately with its rule id, so both rules are honoured
-and none is silently merged or discarded.
-
-## Restart, pause, and missed-prompt behaviour
-
-- Restart: on start, `watch` recalculates each rule's next-due from now
-  (fixed: now + fixed_seconds; random: now + random_min–random_max min).
-- Pause: `./src/memoloop pause` stops all prompts; `resume` restarts them.
-  Missed prompts during pause are skipped, not queued.
-- DND: prompts due inside the DND window are skipped (no backlog).
-- After answering or dismissing, that rule's timer resets from that moment.
-
-## Assumptions, limitations, follow-up work
+## Assumptions and limitations
 
 - Runs under a terminal emulator (`foot`) on Wayland/X11; no display → popups
-  cannot open (foot errors out).
-- The daemon runs the script that was installed when it started. Reinstalling
-  restarts the service; after editing `src/memoloop` by hand, run
-  `systemctl --user restart memoloop`.
+  cannot open.
 - Japanese display/input assumes a UTF-8 locale and a font covering kana/kanji;
-  verify with `memoloop ask fixed`.
-- DND window is same-day only (no overnight windows) in this prototype.
-- Follow-up: Tauri proof of concept (see `plans/tech-stack.md`), per-rule
-  enable/disable, optional prompt bundling, `config` subcommands to edit
-  intervals/pickup.set interactively.
+  verify with `memoloop ask`.
+- Spaced repetition / SuperMemo scheduling is explicitly out of scope.
+- Cross-platform packaging, system-wide keyboard interception, OS locking,
+  accounts, cloud sync and Anki integration are out of scope.
 
 ## Reference projects (do not modify, no runtime dependency)
 
 - `t-linux/cli-utilities/utilities/glyph-key` — popup terminal that accepts
   input and reflects its current state (pattern for `term.sh` + `foot --hold`).
 - `t-linux/cli-utilities/utilities/desk-reminder` — interval scheduling and
-  reminder behaviour (pattern for independent rules and state).
+  reminder behaviour (reference for intervald).

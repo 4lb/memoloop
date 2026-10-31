@@ -4,8 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
 
 INSTALLER_NAME=memoloop
-INSTALLER_INTEGRATION_DESC=' (the script, lib/term.sh, systemd user service, config, niri rules)'
-INSTALLER_NO_INTEGRATION_DESC=' install the script only; no service, config or niri rules'
+INSTALLER_INTEGRATION_DESC=' (the script, lib/term.sh, config, niri rules)'
+INSTALLER_NO_INTEGRATION_DESC=' install the script only; no config or niri rules'
 
 mode=--user
 BIN_ONLY=0
@@ -53,10 +53,10 @@ MODES
 
 HOOKS
   install_tool         copies memoloop and lib/term.sh into <bin>/.. and <bin>/../lib
-  install_integration  systemd user unit, config, niri rules, data/state migration
+  install_integration  config, niri rules, data/state migration
 
-Reinstalling over a running service restarts it, so the daemon always runs the
-newly installed script.'
+Reinstalling also removes a legacy memoloop.service unit; scheduling now lives
+in intervald.'
 
 lib_dir() {
   printf '%s/../lib' "$INSTALLER_BIN_DIR"
@@ -83,34 +83,14 @@ uninstall_tool() {
 }
 
 install_integration() {
-  local unit_tmp
-  unit_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop.service.XXXXXX")
-  cat >"$unit_tmp" <<UNITEOF
-[Unit]
-Description=MemoLoop Japanese study reminders
-After=graphical-session.target
-Wants=graphical-session.target
-StartLimitIntervalSec=300
-StartLimitBurst=5
-
-[Service]
-Type=simple
-ExecStart=$INSTALLER_TARGET watch
-Restart=on-failure
-RestartSec=30
-Environment=MEMOLOOP_CONFIG_DIR=$CONFIG_DIR
-Environment=MEMOLOOP_DATA_DIR=$DATA_DIR
-Environment=MEMOLOOP_STATE=$STATE_DIR
-
-[Install]
-WantedBy=graphical-session.target
-UNITEOF
-
-  installer_do_section mkdir -p "$SYSTEMD_DIR"
-  installer_do_section install -m 644 "$unit_tmp" "$SYSTEMD_DIR/$SERVICE_UNIT"
-  rm -f "$unit_tmp"
-
   installer_do_section mkdir -p "$CONFIG_DIR" "$DATA_DIR" "$STATE_DIR" "$STATE_DIR/log"
+
+  if [ -f "$SYSTEMD_DIR/$SERVICE_UNIT" ]; then
+    installer_do_section systemctl --user stop "$SERVICE_UNIT" 2>/dev/null || true
+    installer_do_section_remove systemctl --user disable "$SERVICE_UNIT" 2>/dev/null || true
+    installer_do_section_remove rm -f "$SYSTEMD_DIR/$SERVICE_UNIT"
+    installer_do_section_remove systemctl --user daemon-reload
+  fi
 
   if [ -f "$DATA_DIR/intervals.conf" ] && [ ! -f "$CONFIG_DIR/intervals.conf" ]; then
     installer_do_section mv "$DATA_DIR/intervals.conf" "$CONFIG_DIR/intervals.conf"
@@ -139,7 +119,7 @@ UNITEOF
   local legacy old_state old_log
   old_state="${XDG_STATE_HOME:-$HOME/.local/state}"
   old_log="$HOME/.local/log"
-  for legacy in rules.json session.json current.json result.json; do
+  for legacy in current.json result.json; do
     if [ -f "$old_state/$legacy" ] && [ ! -f "$STATE_DIR/$legacy" ]; then
       installer_do_section mv "$old_state/$legacy" "$STATE_DIR/$legacy"
     fi
@@ -157,10 +137,6 @@ UNITEOF
     installer_do_section sh -c "printf '%s\n' '// >>> memoloop managed include >>>' 'include optional=true \"memoloop.kdl\"' '// <<< memoloop managed include <<<' >>'$NIRI_DIR/config.kdl'"
   fi
 
-  installer_do_section systemctl --user daemon-reload
-  installer_do_section systemctl --user enable "$SERVICE_UNIT"
-  installer_do_section systemctl --user restart "$SERVICE_UNIT"
-
   if command -v niri >/dev/null 2>&1 && pgrep -x niri >/dev/null 2>&1; then
     installer_do_section sh -c "niri msg action load-config-file --path '$NIRI_DIR/config.kdl'" || true
   fi
@@ -170,7 +146,7 @@ Data:     $DATA_DIR
 State:    $STATE_DIR
 Run:      memoloop --help
 Popup:    MOD+N (niri) or memoloop ask
-Service:  systemctl --user status $SERVICE_UNIT"
+Interval: intervald status"
 }
 
 uninstall_integration() {
@@ -201,12 +177,5 @@ uninstall_integration() {
 installer_run "$@"
 
 if [ "$BIN_ONLY" -eq 1 ]; then
-  term_status "system install" "$TERM_MARK_PLAIN" "binary only · no service, config or niri rules were created"
-fi
-
-if [ "${INSTALLER_ACTION:-}" = "install" ] && [ "${INSTALLER_DRY:-0}" -eq 0 ] && [ "$BIN_ONLY" -eq 0 ]; then
-  if ! systemctl --user is-active --quiet "$SERVICE_UNIT"; then
-    term_bad "memoloop: service did not start" "systemctl --user status $SERVICE_UNIT"
-    exit 1
-  fi
+  term_status "system install" "$TERM_MARK_PLAIN" "binary only · no config or niri rules were created"
 fi

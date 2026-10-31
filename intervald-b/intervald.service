@@ -1,0 +1,16 @@
+[Unit]
+Description=intervald - interval program runner
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/intervald run
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=3
+# Spawned programs must survive daemon stop/restart:
+KillMode=process
+Environment=PATH=%h/.local/bin:%h/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=default.target

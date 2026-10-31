@@ -1,0 +1,18 @@
+settings:
+  terminal: "foot -e"
+
+jobs:
+  memoloop:
+    command: "memoloop ask"
+    terminal: true
+    overlap: skip
+    schedule:
+      - every: 45m
+      - random: [15m, 30m]
+
+  anki:
+    command: "anki"
+    overlap: skip
+    schedule:
+      - every: 45m
+      - random: [15m, 30m]

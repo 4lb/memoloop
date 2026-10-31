@@ -1,0 +1,26 @@
+# ~/.config/intervald/config.yaml
+# Apply changes with:  intervald reload   (or: systemctl --user reload intervald)
+# Validate first with: intervald check
+
+settings:
+  terminal: "foot -e"      # prefix used by jobs with terminal: true
+
+jobs:
+  memoloop:
+    command: "memoloop ask"
+    terminal: true
+    overlap: skip          # skip (default) | allow
+    schedule:
+      - random: [15m, 30m] # re-rolled after every fire
+      # - every: 45m       # multiple rules = independent timers
+
+  anki:
+    command: "anki"
+    schedule:
+      - random: [15m, 30m]
+
+  # my-app:
+  #   command: "/mnt/home/user/bin/my-app -h --with-flags"
+  #   schedule:
+  #     - every: 17m
+  #     - random: [2h, 3h]
