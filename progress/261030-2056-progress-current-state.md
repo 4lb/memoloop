@@ -19,3 +19,4 @@
 ## Commands
 - `./install.sh [--clean] [--dry-run] [--no-integration] [--purge-data] [--help]`
 - `./install.sh --uninstall` removes integration; keeps user data unless `--purge-data`
+- fix: window not showing on error - fix die(), launch_popup(), cmd_ask() terminal handling, and config directory initialization
