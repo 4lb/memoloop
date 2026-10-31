@@ -57,6 +57,13 @@ die() {
 }
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
 
+nohelp_enabled() {
+  case "$1" in
+  true | 1 | yes | on) return 0 ;;
+  esac
+  return 1
+}
+
 config_value() {
   _cv=${1%\"}
   _cv=${_cv#\"}
@@ -647,7 +654,7 @@ EOF
   printf '\033[?25h'
 
   if [ -t 0 ]; then
-    if [ "$NOHELP" != "true" ]; then
+    if ! nohelp_enabled "$NOHELP"; then
       printf '\n  n = new question, any other key = close\n'
     fi
     _close_key=''
