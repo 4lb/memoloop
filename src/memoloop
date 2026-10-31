@@ -127,6 +127,9 @@ load_intervals() {
   [ -f "$intervals_conf" ] || intervals_conf=$legacy_conf
   if [ -f "$intervals_conf" ]; then
     while IFS='=' read -r key value; do
+      value=${value%%#*}          # strip inline comment
+      value="${value#"${value%%[![:space:]]*}"}"   # trim leading whitespace
+      value="${value%"${value##*[![:space:]]}"}"   # trim trailing whitespace
       value=$(config_value "$value")
       case "$key" in
       fixed_seconds) FIXED_SECONDS="$value" ;;
@@ -185,14 +188,30 @@ state_init() {
 }
 EOF
   fi
-  if [ "$ANKI_ENABLED" = "true" ] && ! jq -e '.rules[] | select(.id=="anki")' "$RULES_STATE" >/dev/null 2>&1; then
+  if [ "$ANKI_ENABLED" = "true" ]; then
     if [ "$ANKI_TYPE" = "fixed" ]; then
       jq --argjson sec "$ANKI_FIXED_SECONDS" '
-        .rules += [{"id": "anki", "type": "fixed", "seconds": $sec, "enabled": true, "next_due": 0}]
+        if any(.rules[]; .id=="anki") then
+          .rules |= map(
+            if .id=="anki" then
+              .type="fixed" | .seconds=$sec | .enabled=true | .next_due=0 | del(.min, .max)
+            else . end
+          )
+        else
+          .rules += [{"id": "anki", "type": "fixed", "seconds": $sec, "enabled": true, "next_due": 0}]
+        end
       ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
     else
       jq --argjson min "$ANKI_RANDOM_MIN" --argjson max "$ANKI_RANDOM_MAX" '
-        .rules += [{"id": "anki", "type": "random", "min": $min, "max": $max, "enabled": true, "next_due": 0}]
+        if any(.rules[]; .id=="anki") then
+          .rules |= map(
+            if .id=="anki" then
+              .type="random" | .min=$min | .max=$max | .enabled=true | .next_due=0 | del(.seconds)
+            else . end
+          )
+        else
+          .rules += [{"id": "anki", "type": "random", "min": $min, "max": $max, "enabled": true, "next_due": 0}]
+        end
       ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
     fi
   fi
