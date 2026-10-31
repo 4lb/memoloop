@@ -25,23 +25,13 @@ PICKUP_SET="$CONFIG_DIR/pickup.set"
 QUESTIONS_DIR="$USER_DATA_DIR/questions"
 ANSWERS_STATE="$USER_DATA_DIR/answers.json"
 
-RULES_STATE="$STATE_DIR/rules.json"
-SESSION_STATE="$STATE_DIR/session.json"
 CURRENT_STATE="$STATE_DIR/current.json"
 RESULT_STATE="$STATE_DIR/result.json"
 LOG_FILE="$LOG_DIR/reminders.log"
 
-FIXED_SECONDS=2700
-RANDOM_MIN=15
-RANDOM_MAX=30
 DECAY_HOURS=24
 MIN_PER_DAY=10
 NOHELP=true
-ANKI_ENABLED=false
-ANKI_TYPE=random
-ANKI_FIXED_SECONDS=2700
-ANKI_RANDOM_MIN=15
-ANKI_RANDOM_MAX=30
 
 . "$SELF_DIR/../lib/term.sh"
 
@@ -120,47 +110,6 @@ today_start() {
   date -d "$(date +%F)" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$(date +%F)" +%s
 }
 
-load_intervals() {
-  local intervals_conf="$CONFIG_DIR/intervals.conf"
-  local legacy_conf="$USER_DATA_DIR/intervals.conf"
-  local key value
-  [ -f "$intervals_conf" ] || intervals_conf=$legacy_conf
-  if [ -f "$intervals_conf" ]; then
-    while IFS='=' read -r key value; do
-      value=${value%%#*}          # strip inline comment
-      value="${value#"${value%%[![:space:]]*}"}"   # trim leading whitespace
-      value="${value%"${value##*[![:space:]]}"}"   # trim trailing whitespace
-      value=$(config_value "$value")
-      case "$key" in
-      fixed_seconds) FIXED_SECONDS="$value" ;;
-      random_min) RANDOM_MIN="$value" ;;
-      random_max) RANDOM_MAX="$value" ;;
-      decay_hours) DECAY_HOURS="$value" ;;
-      min_per_day) MIN_PER_DAY="$value" ;;
-      nohelp) NOHELP="$value" ;;
-      anki_enabled) ANKI_ENABLED="$value" ;;
-      anki_type) ANKI_TYPE="$value" ;;
-      anki_fixed_seconds) ANKI_FIXED_SECONDS="$value" ;;
-      anki_random_min) ANKI_RANDOM_MIN="$value" ;;
-      anki_random_max) ANKI_RANDOM_MAX="$value" ;;
-      esac
-    done <"$intervals_conf"
-  fi
-  if [ -n "${MEMOLOOP_NOHELP:-}" ]; then
-    NOHELP=$MEMOLOOP_NOHELP
-  fi
-  [ -n "${MEMOLOOP_FIXED_SECONDS:-}" ] && FIXED_SECONDS=$MEMOLOOP_FIXED_SECONDS
-  [ -n "${MEMOLOOP_RANDOM_MIN:-}" ] && RANDOM_MIN=$MEMOLOOP_RANDOM_MIN
-  [ -n "${MEMOLOOP_RANDOM_MAX:-}" ] && RANDOM_MAX=$MEMOLOOP_RANDOM_MAX
-  [ -n "${MEMOLOOP_DECAY_HOURS:-}" ] && DECAY_HOURS=$MEMOLOOP_DECAY_HOURS
-  [ -n "${MEMOLOOP_MIN_PER_DAY:-}" ] && MIN_PER_DAY=$MEMOLOOP_MIN_PER_DAY
-  [ -n "${MEMOLOOP_ANKI_ENABLED:-}" ] && ANKI_ENABLED=$MEMOLOOP_ANKI_ENABLED
-  [ -n "${MEMOLOOP_ANKI_TYPE:-}" ] && ANKI_TYPE=$MEMOLOOP_ANKI_TYPE
-  [ -n "${MEMOLOOP_ANKI_FIXED_SECONDS:-}" ] && ANKI_FIXED_SECONDS=$MEMOLOOP_ANKI_FIXED_SECONDS
-  [ -n "${MEMOLOOP_ANKI_RANDOM_MIN:-}" ] && ANKI_RANDOM_MIN=$MEMOLOOP_ANKI_RANDOM_MIN
-  [ -n "${MEMOLOOP_ANKI_RANDOM_MAX:-}" ] && ANKI_RANDOM_MAX=$MEMOLOOP_ANKI_RANDOM_MAX
-}
-
 load_enabled_groups() {
   if [ -f "$PICKUP_SET" ]; then
     grep -v '^[[:space:]]*#' "$PICKUP_SET" | grep -v '^[[:space:]]*$'
@@ -176,132 +125,11 @@ lock_state() {
 state_init() {
   mkdir -p "$STATE_DIR" "$LOG_DIR" "$USER_DATA_DIR"
   load_config
-  load_intervals
 
-  if [ ! -f "$RULES_STATE" ]; then
-    cat >"$RULES_STATE" <<EOF
-{
-  "rules": [
-    {"id": "fixed", "type": "fixed", "seconds": $FIXED_SECONDS, "enabled": true, "next_due": 0},
-    {"id": "random", "type": "random", "min": $RANDOM_MIN, "max": $RANDOM_MAX, "enabled": true, "next_due": 0}
-  ]
-}
-EOF
-  fi
-  if [ "$ANKI_ENABLED" = "true" ]; then
-    if [ "$ANKI_TYPE" = "fixed" ]; then
-      jq --argjson sec "$ANKI_FIXED_SECONDS" '
-        if any(.rules[]; .id=="anki") then
-          .rules |= map(
-            if .id=="anki" then
-              .type="fixed" | .seconds=$sec | .enabled=true | .next_due=0 | del(.min, .max)
-            else . end
-          )
-        else
-          .rules += [{"id": "anki", "type": "fixed", "seconds": $sec, "enabled": true, "next_due": 0}]
-        end
-      ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
-    else
-      jq --argjson min "$ANKI_RANDOM_MIN" --argjson max "$ANKI_RANDOM_MAX" '
-        if any(.rules[]; .id=="anki") then
-          .rules |= map(
-            if .id=="anki" then
-              .type="random" | .min=$min | .max=$max | .enabled=true | .next_due=0 | del(.seconds)
-            else . end
-          )
-        else
-          .rules += [{"id": "anki", "type": "random", "min": $min, "max": $max, "enabled": true, "next_due": 0}]
-        end
-      ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
-    fi
-  fi
-  if [ ! -f "$SESSION_STATE" ]; then
-    cat >"$SESSION_STATE" <<EOF
-{"paused": false, "dnd_start": null, "dnd_end": null, "open": 0, "queue": []}
-EOF
-  fi
   if [ ! -f "$ANSWERS_STATE" ] || [ ! -s "$ANSWERS_STATE" ]; then
     printf '{}' >"$ANSWERS_STATE"
   fi
   touch "$LOG_FILE"
-}
-
-rules_get() {
-  jq -r --arg id "$1" '.rules[] | select(.id==$id)' "$RULES_STATE"
-}
-
-rules_set_next_due() {
-  (
-    lock_state
-    jq --arg id "$1" --argjson nd "$2" '
-      (.rules[] | select(.id==$id)).next_due = $nd
-    ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
-  )
-}
-
-rules_set_enabled() {
-  (
-    lock_state
-    jq --arg id "$1" --argjson en "$2" '
-      (.rules[] | select(.id==$id)).enabled = $en
-    ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
-  )
-}
-
-rule_next_due() {
-  jq -r --arg id "$1" '.rules[] | select(.id==$id).next_due' "$RULES_STATE"
-}
-
-rule_enabled() {
-  jq -r --arg id "$1" '.rules[] | select(.id==$id).enabled' "$RULES_STATE"
-}
-
-session_get() {
-  jq -r --arg k "$1" '.[$k]' "$SESSION_STATE"
-}
-
-session_set() {
-  (
-    lock_state
-    jq --arg k "$1" --argjson v "$2" '. + {($k): $v}' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
-  )
-}
-
-session_set_str() {
-  (
-    lock_state
-    jq --arg k "$1" --arg v "$2" '. + {($k): $v}' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
-  )
-}
-
-session_queue_push() {
-  local q
-  q=$(jq -r '.queue[]' "$SESSION_STATE" 2>/dev/null | grep -xF "$1" || true)
-  if [ -z "$q" ]; then
-    (
-      lock_state
-      jq --arg id "$1" '.queue += [$id] | .open = 1' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
-    )
-  fi
-}
-
-session_queue_pop() {
-  local id
-  id=$(jq -r '.queue[0] // empty' "$SESSION_STATE")
-  if [ -n "$id" ]; then
-    (
-      lock_state
-      jq 'del(.queue[0])' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
-    )
-  fi
-  printf '%s' "$id"
-}
-
-session_open_set() {
-  (
-    lock_state
-    jq --argjson o "$1" '.open = $o' "$SESSION_STATE" >"$SESSION_STATE.tmp" && mv "$SESSION_STATE.tmp" "$SESSION_STATE"
-  )
 }
 
 log_add() {
@@ -461,80 +289,6 @@ select_question() {
   printf '%s' "$chosen"
 }
 
-random_between() {
-  local min="$1" max="$2"
-  printf '%d' "$((min + RANDOM % (max - min + 1)))"
-}
-
-rule_interval_seconds() {
-  local id="$1" type
-  type=$(rules_get "$id" | jq -r '.type')
-  case "$type" in
-  fixed)
-    if [ "$id" = "anki" ]; then
-      printf '%d' "$ANKI_FIXED_SECONDS"
-    else
-      printf '%d' "$FIXED_SECONDS"
-    fi
-    ;;
-  random)
-    if [ "$id" = "anki" ]; then
-      printf '%d' "$(($(random_between "$ANKI_RANDOM_MIN" "$ANKI_RANDOM_MAX") * 60))"
-    else
-      printf '%d' "$(($(random_between "$RANDOM_MIN" "$RANDOM_MAX") * 60))"
-    fi
-    ;;
-  *) die "unknown schedule type for rule $id: $type" ;;
-  esac
-}
-
-schedule_recalc() {
-  local id="$1" now sec
-  now=$(epoch)
-  sec=$(rule_interval_seconds "$id")
-  rules_set_next_due "$id" "$((now + sec))"
-}
-
-in_dnd() {
-  local now_hm="${1:-$(date +%H:%M)}" start end
-  start=$(session_get dnd_start)
-  end=$(session_get dnd_end)
-  case "$start" in "" | null) return 1 ;; esac
-  case "$end" in "" | null) return 1 ;; esac
-  [ "$start" = "$end" ] && return 1
-  if [ "$start" \< "$end" ]; then
-    [ ! "$now_hm" \< "$start" ] && [ "$now_hm" \< "$end" ]
-    return
-  fi
-  [ ! "$now_hm" \< "$start" ] || [ "$now_hm" \< "$end" ]
-  return
-}
-
-due_rules() {
-  local now id nd ids
-  now=$(epoch)
-  ids=$(jq -r '.rules[].id' "$RULES_STATE")
-  for id in $ids; do
-    [ "$(rule_enabled "$id")" = "true" ] || continue
-    nd=$(rule_next_due "$id")
-    case "$nd" in
-    "" | null) continue ;;
-    0) printf '%s\n' "$id" ;;
-    *)
-      if [ "$now" -ge "$nd" ]; then
-        printf '%s\n' "$id"
-      fi
-      ;;
-    esac
-  done
-}
-
-popup_running() {
-  local pid
-  pid=$(session_get open_pid 2>/dev/null || true)
-  [ -n "$pid" ] && [ "$pid" != "null" ] && kill -0 "$pid" 2>/dev/null
-}
-
 popup_spawn() {
   local id="$1"
   need foot
@@ -542,47 +296,6 @@ popup_spawn() {
     FOOT_POPUP=1 setsid --fork foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" </dev/null >/dev/null 2>&1
   else
     FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" </dev/null &
-  fi
-}
-
-launch_popup() {
-  local id="$1" pid=""
-  popup_spawn "$id"
-  pid=$!
-  if [ -n "$pid" ]; then
-    session_set open_pid "$pid"
-  fi
-  session_open_set 1
-  log_add "$id" "fired" "popup launched${pid:+ (pid $pid)}"
-}
-
-launch_anki() {
-  local id="$1" pid=""
-  if ! command -v anki >/dev/null 2>&1; then
-    FOOT_POPUP=1 foot --app-id="memoloop" -e sh -c 'printf "anki is not installed\\n  Install anki to enable the anki reminder rule.\\n  Press any key to close...\\n"; read -n1 -r -s' </dev/null >/dev/null 2>&1 &
-    log_add "$id" "fired" "anki not installed"
-    return 0
-  fi
-  anki >/dev/null 2>&1 &
-  pid=$!
-  log_add "$id" "fired" "anki launched${pid:+ (pid $pid)}"
-}
-
-process_queue() {
-  if popup_running; then return 0; fi
-  local open pid
-  open=$(session_get open)
-  pid=$(session_get open_pid 2>/dev/null || true)
-  if [ "$open" != "0" ]; then
-    session_open_set 0
-  fi
-  if [ -n "$pid" ] && [ "$pid" != "null" ]; then
-    session_set open_pid "null"
-  fi
-  local id
-  id=$(session_queue_pop)
-  if [ -n "$id" ] && [ "$id" != "null" ]; then
-    launch_popup "$id"
   fi
 }
 
@@ -680,11 +393,6 @@ ask_question() {
   qid=$(printf '%s' "$json" | jq -r '.id')
   case "$answer" in
   s | S) result="skipped" ;;
-  p | P)
-    session_set paused true
-    result="paused"
-    term_ok "Paused" "All reminders paused. Run 'memoloop resume' to continue."
-    ;;
   d | D) result="dismissed" ;;
   *)
     correct=1
@@ -738,14 +446,12 @@ EOF
     fi
     _close_key=''
     IFS= read -n1 -r -s _close_key || true
-    if [ "$result" != "paused" ]; then
-      case "$_close_key" in
-      n | N | ' ' | '')
-        printf '\033[2J\033[H'
-        return 0
-        ;;
-      esac
-    fi
+    case "$_close_key" in
+    n | N | ' ' | '')
+      printf '\033[2J\033[H'
+      return 0
+      ;;
+    esac
   fi
 
   printf '\033[?25h'
@@ -772,119 +478,6 @@ wrap_text() {
   [ -n "$line" ] && printf '%s\n' "$line"
 }
 
-SERVICE_UNIT="memoloop.service"
-
-cmd_watch() {
-  state_init
-  require_config
-  need foot jq
-  local id
-  for id in $(jq -r '.rules[].id' "$RULES_STATE"); do
-    case "$(rule_next_due "$id")" in
-    "" | null | 0) schedule_recalc "$id" ;;
-    esac
-  done
-
-  term_notice "memoloop watch · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min · anki ${ANKI_TYPE} ${ANKI_ENABLED}"
-
-  while :; do
-    process_queue
-    if [ "$(session_get paused)" = "true" ] || in_dnd; then
-      sleep 5
-      continue
-    fi
-    while IFS= read -r id; do
-      [ -n "$id" ] || continue
-      if popup_running; then
-        session_queue_push "$id"
-        log_add "$id" "queued" "prompt already open"
-      elif [ "$id" = "anki" ]; then
-        launch_anki "$id"
-      else
-        launch_popup "$id"
-      fi
-      schedule_recalc "$id"
-    done < <(due_rules)
-    sleep 5
-  done
-}
-
-cmd_start() {
-  state_init
-  require_config
-  need systemctl
-  if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
-    term_notice "memoloop already running · systemctl --user status $SERVICE_UNIT"
-    return 0
-  fi
-  systemctl --user start "$SERVICE_UNIT"
-  term_added "memoloop started"
-}
-
-cmd_stop() {
-  state_init
-  need systemctl
-  if ! systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
-    term_notice "memoloop not running"
-    return 0
-  fi
-  systemctl --user stop "$SERVICE_UNIT"
-  term_removed "memoloop stopped"
-}
-
-cmd_restart() {
-  state_init
-  need systemctl
-  cmd_stop
-  cmd_start
-}
-
-due_label() {
-  local nd
-  nd=$(rule_next_due "$1")
-  case "$nd" in
-  "" | null) printf 'not scheduled' ;;
-  0) printf 'due now' ;;
-  *)
-    if [ "$nd" -le "$(epoch)" ]; then
-      printf 'due now'
-    else
-      printf '%s' "$(iso "$nd")"
-    fi
-    ;;
-  esac
-}
-
-cmd_status() {
-  state_init
-  require_config
-  term_init
-  local paused dnd_start dnd_end dnd
-  paused=$(session_get paused)
-  dnd_start=$(session_get dnd_start)
-  dnd_end=$(session_get dnd_end)
-  case "$dnd_start" in
-  "" | null) dnd="off" ;;
-  *) dnd="$dnd_start-$dnd_end" ;;
-  esac
-
-  if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
-    local status_text="memoloop is running"
-    local status_marker="$TERM_MARK_OK"
-  else
-    local status_text="memoloop is not running"
-    local status_marker="$TERM_MARK_PLAIN"
-  fi
-
-  local extra=(
-    "$TERM_MARK_PLAIN" "paused: $paused | dnd: $dnd"
-    "$TERM_MARK_PLAIN" "next: fixed $(due_label fixed) | random $(due_label random) | anki $(due_label anki)"
-  )
-
-  local status_args=("$status_marker" "$status_text" "${extra[@]}")
-  term_status "Status" "${status_args[@]}"
-}
-
 cmd_config() {
   state_init
   require_config
@@ -896,29 +489,11 @@ cmd_config() {
   printf '  QUESTIONS_DIR: %s\n' "$QUESTIONS_DIR"
   printf '  STATE_DIR: %s\n' "$STATE_DIR"
   printf '  LOG_DIR: %s\n' "$LOG_DIR"
-  printf '\nInterval settings:\n'
-  printf '  fixed_seconds: %s\n' "$FIXED_SECONDS"
-  printf '  random_min: %s\n' "$RANDOM_MIN"
-  printf '  random_max: %s\n' "$RANDOM_MAX"
+  printf '\nSettings:\n'
   printf '  decay_hours: %s\n' "$DECAY_HOURS"
   printf '  min_per_day: %s\n' "$MIN_PER_DAY"
-  printf '  anki_enabled: %s\n' "$ANKI_ENABLED"
-  printf '  anki_type: %s\n' "$ANKI_TYPE"
-  printf '  anki_random_min: %s\n' "$ANKI_RANDOM_MIN"
-  printf '  anki_random_max: %s\n' "$ANKI_RANDOM_MAX"
-  printf '  anki_fixed_seconds: %s\n' "$ANKI_FIXED_SECONDS"
-  printf '\nSettings:\n'
   printf '  nohelp: %s\n' "$NOHELP"
   printf '\nEnabled groups (%s):\n' "$(load_enabled_groups | wc -l)"
-  printf '\nInterval file: %s\n' "$CONFIG_DIR/intervals.conf"
-  printf 'Config file:   %s\n' "$CONFIG_CONF"
-  if [ -f "$CONFIG_CONF" ]; then
-    printf '  (loaded from config.conf)\n'
-  fi
-  printf 'Pickup set: %s\n' "$PICKUP_SET"
-  if [ -f "$PICKUP_SET" ]; then
-    cat "$PICKUP_SET"
-  fi
   printf '\nQuestions available:\n'
   local groups group qcount file
   groups=$(load_enabled_groups)
@@ -934,48 +509,6 @@ cmd_config() {
     printf '  (no enabled groups)\n'
   fi
   printf '\n'
-}
-
-cmd_pause() {
-  state_init
-  session_set paused true
-  term_ok "Paused" "All reminders paused. Run 'memoloop resume' to continue."
-}
-
-cmd_resume() {
-  state_init
-  session_set paused false
-  term_ok "Resumed" "All reminders resumed."
-}
-
-valid_time() {
-  case "$1" in
-  [0-9][0-9]:[0-9][0-9]) ;;
-  *) return 1 ;;
-  esac
-  [ "${1%%:*}" -le 23 ] || return 1
-  [ "${1#*:}" -le 59 ] || return 1
-  return 0
-}
-
-cmd_dnd() {
-  local start_time="${1:-}" end_time="${2:-}"
-  if [ -z "$start_time" ] || [ -z "$end_time" ]; then
-    die "dnd requires two HH:MM times: memoloop dnd HH:MM HH:MM"
-  fi
-  valid_time "$start_time" || die "invalid start time: $start_time (expected HH:MM)"
-  valid_time "$end_time" || die "invalid end time: $end_time (expected HH:MM)"
-  state_init
-  session_set_str dnd_start "$start_time"
-  session_set_str dnd_end "$end_time"
-  term_status "DND set" "$TERM_MARK_PLAIN" "Do Not Disturb window: $start_time - $end_time"
-}
-
-cmd_dnd_off() {
-  state_init
-  session_set dnd_start null
-  session_set dnd_end null
-  term_status "DND cleared" "$TERM_MARK_PLAIN" "reminders fire at any time"
 }
 
 cmd_setup() {
@@ -1007,57 +540,27 @@ usage() {
   cat <<'EOF'
 Usage: memoloop <command>
 
-  setup       initialize state, log, data and config directories
-  start       start the reminder daemon (systemd user service)
-  stop        stop the reminder daemon
-  restart     stop and start the reminder daemon (use after editing config.conf or intervals.conf)
-  watch       run the reminder loop in the foreground (used by the service)
-  ask [rule]  show one question popup (used by the daemon and bindings)
-  test        launch a test prompt immediately
-  status      show running/paused/DND/next-due state
-  config      show effective configuration
-  pause       pause all reminders
-  resume      resume all reminders
-  dnd HH:MM HH:MM   set the Do Not Disturb window
-  dnd off           clear the Do Not Disturb window
+  ask [name]      show one question popup (default name: manual)
+  test            launch a test prompt immediately
+  config          show effective configuration
+  setup           initialize state, log, data and config directories
 
-Config:  ~/.config/memoloop/       (config.conf, intervals.conf, pickup.set)
+Config: ~/.config/memoloop/       (config.conf, pickup.set)
 Data:    ~/.local/share/memoloop/  (questions/, answers.json)
-State:   ~/.local/state/memoloop/  (rules.json, session.json, log/reminders.log)
+State:   ~/.local/state/memoloop/  (current.json, result.json, log/reminders.log)
+
+Scheduling is handled by intervald; configure its jobs in
+~/.config/intervald/config.yaml.
 EOF
 }
 
 main() {
   case "${1:-}" in
-  start)
-    shift
-    cmd_start "$@"
-    ;;
-  stop)
-    shift
-    cmd_stop "$@"
-    ;;
-  restart)
-    shift
-    cmd_restart "$@"
-    ;;
-  watch) cmd_watch ;;
   ask)
     shift
     cmd_ask "$@"
     ;;
-  status) cmd_status ;;
   config) cmd_config ;;
-  pause) cmd_pause ;;
-  resume) cmd_resume ;;
-  dnd)
-    shift
-    if [ "${1:-}" = "off" ]; then
-      cmd_dnd_off
-    else
-      cmd_dnd "$@"
-    fi
-    ;;
   test) cmd_test ;;
   setup) cmd_setup ;;
   -h | --help | help) usage ;;
@@ -1068,8 +571,6 @@ main() {
   esac
 }
 
-load_config
-load_intervals
 [ -n "${MEMOLOOP_NOHELP:-}" ] && NOHELP=$MEMOLOOP_NOHELP
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
