@@ -1,54 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
 
 INSTALLER_NAME=memoloop
+INSTALLER_INTEGRATION_DESC=' (the script, lib/term.sh, systemd user service, config, niri rules)'
+INSTALLER_NO_INTEGRATION_DESC=' install the script only; no service, config or niri rules'
 
-INSTALLER_INTEGRATION_DESC=' (the script, lib/term.sh, systemd user service, config and zsh alias)'
-INSTALLER_NO_INTEGRATION_DESC=' install the script only; no systemd unit, config or alias'
-
-mode="--user"
+mode=--user
+BIN_ONLY=0
+_INSTALLER_NEXT_STEPS=""
 rest=()
-while [ $# -gt 0 ]; do
-  case "$1" in
-  --user) mode="--user" ;;
-  --system) mode="--system" ;;
+for arg in "$@"; do
+  case "$arg" in
+  --user | --system) mode="$arg" ;;
   --overwrite-data) MEMOLOOP_OVERWRITE_DATA=1 ;;
   --purge-data) MEMOLOOP_PURGE_DATA=1 ;;
-  *) rest+=("$1") ;;
+  *) rest+=("$arg") ;;
   esac
-  shift
 done
-set -- "${rest[@]+"${rest[@]}"}"
 
-case "$mode" in
---user)
-  INSTALLER_BIN_DIR="$HOME/.local/bin"
-  INSTALLER_LIB_DIR="$INSTALLER_BIN_DIR/../lib"
-  SYSTEMD_DIR="$HOME/.config/systemd/user"
-  CONFIG_DIR="$HOME/.config/memoloop"
-  CACHE_DIR="$HOME/.local/share/memoloop"
-  USER_DATA_DIR="$HOME/.local/share/memoloop"
-  ZSH_ALIASES="$HOME/.config/zsh/my_zsh_aliases"
-  SUDO=""
-  ;;
---system)
-  INSTALLER_BIN_DIR="/usr/local/bin"
-  INSTALLER_LIB_DIR="$INSTALLER_BIN_DIR/../lib"
-  SYSTEMD_DIR="/etc/systemd/system"
-  CONFIG_DIR="/etc/memoloop"
-  CACHE_DIR="/var/lib/memoloop"
-  USER_DATA_DIR="/var/lib/memoloop"
-  ZSH_ALIASES="/etc/zsh/zshrc"
-  SUDO="sudo"
-  ;;
-esac
+if [ "$mode" = "--system" ]; then
+  BIN_ONLY=1
+  rest+=(--no-integration)
+  INSTALLER_BIN_DIR=/usr/local/bin
+fi
+set -- ${rest[@]+"${rest[@]}"}
 
-INSTALLER_TARGET="$INSTALLER_BIN_DIR/memoloop"
+CONFIG_DIR="${MEMOLOOP_CONFIG_DIR:-$HOME/.config/memoloop}"
+DATA_DIR="${MEMOLOOP_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/memoloop}"
+STATE_DIR="${MEMOLOOP_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/memoloop}"
+SYSTEMD_DIR="$HOME/.config/systemd/user"
+NIRI_DIR="$HOME/.config/niri"
+ZSH_ALIASES="$HOME/.config/zsh/my_zsh_aliases"
 SERVICE_UNIT="memoloop.service"
-ALIAS_NAME="memoloop"
-ALIAS_LINE="alias memoloop='$INSTALLER_TARGET ask'"
 
 . "$SCRIPT_DIR/lib/term.sh"
 . "$SCRIPT_DIR/lib/installer.sh"
@@ -58,94 +43,98 @@ term_init
 INSTALLER_EXTRA_HELP='
 MODES
   --user      install under your own home (default)
-  --system    install system-wide, with sudo
-  --overwrite-data  replace existing MemoLoop config, pickup set and questions during install
-  --purge-data      (on uninstall) also delete MemoLoop config and cache
+  --system    install the script and lib into /usr/local (needs sudo);
+              binary only, no user service, config or niri rules
+  --overwrite-data  replace existing config, pickup set, intervals and questions
+  --purge-data      (on uninstall) delete MemoLoop config, data and state
 
   By default, install and uninstall preserve all user data (config, pickup set,
-  questions, answers). Use --overwrite-data or --purge-data only when you
-  explicitly want to replace/remove user data.
-
-  These choose four directories rather than one, so they are not another name
-  for --install-path: a system-wide install puts the unit in /etc/systemd and
-  the config in /etc as well as the script in /usr/local/bin.
+  intervals, questions, answers, state, log).
 
 HOOKS
-  install_tool      copies memoloop and lib/term.sh to the bin/lib directories
-  install_integration creates the systemd user unit, memoloop config and zsh alias
+  install_tool         copies memoloop and lib/term.sh into <bin>/.. and <bin>/../lib
+  install_integration  systemd user unit, config, niri rules, data/state migration
 
-The zsh alias is appended to $HOME/.config/zsh/my_zsh_aliases (--user) or
-/etc/zsh/zshrc (--system) only if it is not already there.'
+Reinstalling over a running service restarts it, so the daemon always runs the
+newly installed script.'
+
+lib_dir() {
+  printf '%s/../lib' "$INSTALLER_BIN_DIR"
+}
+
+write_default() {
+  local dest="$1" tmp
+  tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop.XXXXXX")
+  cat >"$tmp"
+  installer_do_section install -m 644 "$tmp" "$dest"
+  rm -f "$tmp"
+}
 
 install_tool() {
-  installer_do_section installer_as_root mkdir -p "$INSTALLER_LIB_DIR" || installer_die_unwritable
+  installer_do_section installer_as_root mkdir -p "$INSTALLER_BIN_DIR" "$(lib_dir)" || installer_die_unwritable
   installer_do_section installer_as_root install -m 755 "$SCRIPT_DIR/src/memoloop" "$INSTALLER_TARGET"
-  installer_do_section installer_as_root install -m 644 "$SCRIPT_DIR/lib/term.sh" "$INSTALLER_LIB_DIR/term.sh"
+  installer_do_section installer_as_root install -m 644 "$SCRIPT_DIR/lib/term.sh" "$(lib_dir)/term.sh"
 }
 
 uninstall_tool() {
   installer_do_section_remove rm -f "$INSTALLER_TARGET"
-  installer_do_section_remove rm -f "$INSTALLER_LIB_DIR/term.sh"
-  installer_do_section_remove rmdir "$INSTALLER_LIB_DIR" 2>/dev/null || true
+  installer_do_section_remove rm -f "$(lib_dir)/term.sh"
+  installer_do_section_remove rmdir "$(lib_dir)" 2>/dev/null || true
 }
 
 install_integration() {
-  local svc_tmp
-  svc_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop.service.XXXXXX")
-  cat >"$svc_tmp" <<'UNITEOF'
+  local unit_tmp
+  unit_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop.service.XXXXXX")
+  cat >"$unit_tmp" <<UNITEOF
 [Unit]
 Description=MemoLoop Japanese study reminders
 After=graphical-session.target
 Wants=graphical-session.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/memoloop watch
+ExecStart=$INSTALLER_TARGET watch
 Restart=on-failure
 RestartSec=30
-Environment=MEMOLOOP_CONFIG_DIR=%h/.config/memoloop
-Environment=MEMOLOOP_CACHE_DIR=%h/.local/share/memoloop
+Environment=MEMOLOOP_CONFIG_DIR=$CONFIG_DIR
+Environment=MEMOLOOP_DATA_DIR=$DATA_DIR
+Environment=MEMOLOOP_STATE=$STATE_DIR
 
 [Install]
 WantedBy=graphical-session.target
 UNITEOF
 
-  installer_do_section installer_as_root install -m 644 "$svc_tmp" "$SYSTEMD_DIR/$SERVICE_UNIT"
-  rm -f "$svc_tmp"
+  installer_do_section mkdir -p "$SYSTEMD_DIR"
+  installer_do_section install -m 644 "$unit_tmp" "$SYSTEMD_DIR/$SERVICE_UNIT"
+  rm -f "$unit_tmp"
 
-  installer_do_section installer_as_root mkdir -p "$USER_DATA_DIR"
-  installer_do_section installer_as_root mkdir -p "$CONFIG_DIR"
+  installer_do_section mkdir -p "$CONFIG_DIR" "$DATA_DIR" "$STATE_DIR" "$STATE_DIR/log"
 
-  # intervals.conf goes into user data directory per plan
-  if [ ! -f "$USER_DATA_DIR/intervals.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
-    local conf_tmp
-    conf_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-intervals.XXXXXX")
-    cat >"$conf_tmp" <<'CONFEOF'
+  if [ -f "$DATA_DIR/intervals.conf" ] && [ ! -f "$CONFIG_DIR/intervals.conf" ]; then
+    installer_do_section mv "$DATA_DIR/intervals.conf" "$CONFIG_DIR/intervals.conf"
+  fi
+
+  if [ ! -f "$CONFIG_DIR/intervals.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
+    write_default "$CONFIG_DIR/intervals.conf" <<'CONFEOF'
 fixed_seconds=2700
 random_min=15
 random_max=30
 decay_hours=24
 min_per_day=10
 CONFEOF
-    installer_do_section installer_as_root install -m 644 "$conf_tmp" "$USER_DATA_DIR/intervals.conf"
-    rm -f "$conf_tmp"
   fi
 
   if [ ! -f "$CONFIG_DIR/config.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
-    local conf_tmp
-    conf_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-conf.XXXXXX")
-    cat >"$conf_tmp" <<'CONFEOF'
+    write_default "$CONFIG_DIR/config.conf" <<CONFEOF
 nohelp=true
-USER_DATA_DIR="$HOME/.local/share/memoloop"
+USER_DATA_DIR=$DATA_DIR
 CONFEOF
-    installer_do_section installer_as_root install -m 644 "$conf_tmp" "$CONFIG_DIR/config.conf"
-    rm -f "$conf_tmp"
   fi
 
   if [ ! -f "$CONFIG_DIR/pickup.set" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
-    local pickup_tmp
-    pickup_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-pickup.XXXXXX")
-    cat >"$pickup_tmp" <<'PICKUPEOF'
+    write_default "$CONFIG_DIR/pickup.set" <<'PICKUPEOF'
 greetings
 family
 weather
@@ -154,88 +143,87 @@ adjectives
 verbs
 nouns
 PICKUPEOF
-    installer_do_section installer_as_root install -m 644 "$pickup_tmp" "$CONFIG_DIR/pickup.set"
-    rm -f "$pickup_tmp"
   fi
 
-  # Existing question sets are user data. Replace them only on explicit request.
-  if [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ] && [ -d "$USER_DATA_DIR/questions" ]; then
-    installer_do_section installer_as_root rm -rf "$USER_DATA_DIR/questions"
+  if [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ] && [ -d "$DATA_DIR/questions" ]; then
+    installer_do_section rm -rf "$DATA_DIR/questions"
   fi
 
-  # Copy questions from data/ starter kit if available, otherwise create defaults.
-  if [ ! -d "$USER_DATA_DIR/questions" ]; then
-    installer_do_section installer_as_root mkdir -p "$USER_DATA_DIR"
-    installer_do_section installer_as_root cp -r "$SCRIPT_DIR/data/questions" "$USER_DATA_DIR/questions"
+  if [ ! -d "$DATA_DIR/questions" ]; then
+    installer_do_section cp -r "$SCRIPT_DIR/data/questions" "$DATA_DIR/questions"
   fi
 
-  installer_do_section installer_as_root mkdir -p "$(dirname "$ZSH_ALIASES")"
-  # Mark only the alias block created by this installer. Never claim an
-  # existing user alias, because uninstall must leave it untouched.
-  if [ ! -f "$ZSH_ALIASES" ] || ! grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
-    alias_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-alias.XXXXXX")
-    cat >"$alias_tmp" <<ALIASEOF
-# >>> memoloop managed alias >>>
-alias memoloop='$INSTALLER_TARGET'
-# <<< memoloop managed alias <<<
-ALIASEOF
-    installer_do_section sh -c "cat '$alias_tmp' >> '$ZSH_ALIASES'"
-    rm -f "$alias_tmp"
+  local legacy old_state old_log
+  old_state="${XDG_STATE_HOME:-$HOME/.local/state}"
+  old_log="$HOME/.local/log"
+  for legacy in rules.json session.json current.json result.json; do
+    if [ -f "$old_state/$legacy" ] && [ ! -f "$STATE_DIR/$legacy" ]; then
+      installer_do_section mv "$old_state/$legacy" "$STATE_DIR/$legacy"
+    fi
+  done
+  if [ -f "$old_log/reminders.log" ] && [ ! -f "$STATE_DIR/log/reminders.log" ]; then
+    installer_do_section mv "$old_log/reminders.log" "$STATE_DIR/log/reminders.log"
   fi
 
-  installer_do_section installer_as_root mkdir -p "$HOME/.config/niri"
-  installer_do_section installer_as_root install -m 644 "$SCRIPT_DIR/niri/memoloop.kdl" "$HOME/.config/niri/memoloop.kdl"
-  if [ -f "$HOME/.config/niri/config.kdl" ] && ! grep -qF 'include optional=true "memoloop.kdl"' "$HOME/.config/niri/config.kdl"; then
-    niri_inc_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-niri.XXXXXX")
-    cat >"$niri_inc_tmp" <<'NIRIEOF'
-// >>> memoloop managed include >>>
-include optional=true "memoloop.kdl"
-// <<< memoloop managed include <<<
-NIRIEOF
-    installer_do_section sh -c "cat '$niri_inc_tmp' >> '$HOME/.config/niri/config.kdl'"
-    rm -f "$niri_inc_tmp"
+  installer_do_section mkdir -p "$NIRI_DIR"
+  if [ -f "$NIRI_DIR/memoloop.kdl" ] && ! cmp -s "$SCRIPT_DIR/niri/memoloop.kdl" "$NIRI_DIR/memoloop.kdl"; then
+    installer_do_section cp "$NIRI_DIR/memoloop.kdl" "$NIRI_DIR/memoloop.kdl.bak"
+  fi
+  installer_do_section install -m 644 "$SCRIPT_DIR/niri/memoloop.kdl" "$NIRI_DIR/memoloop.kdl"
+  if [ -f "$NIRI_DIR/config.kdl" ] && ! grep -qF 'include optional=true "memoloop.kdl"' "$NIRI_DIR/config.kdl"; then
+    installer_do_section sh -c "printf '%s\n' '// >>> memoloop managed include >>>' 'include optional=true \"memoloop.kdl\"' '// <<< memoloop managed include <<<' >>'$NIRI_DIR/config.kdl'"
   fi
 
-  # Enable and start the systemd user service
-  installer_do_section installer_as_root systemctl --user daemon-reload
-  installer_do_section installer_as_root systemctl --user enable "$SERVICE_UNIT"
-  installer_do_section installer_as_root systemctl --user start "$SERVICE_UNIT"
+  installer_do_section systemctl --user daemon-reload
+  installer_do_section systemctl --user enable "$SERVICE_UNIT"
+  installer_do_section systemctl --user restart "$SERVICE_UNIT"
 
-  # Reload niri config if running
   if command -v niri >/dev/null 2>&1 && pgrep -x niri >/dev/null 2>&1; then
-    installer_do_section sh -c "niri msg action load-config-file --path '$HOME/.config/niri/config.kdl'"
+    installer_do_section sh -c "niri msg action load-config-file --path '$NIRI_DIR/config.kdl'" || true
   fi
 
-  # Next steps shown after installation completes
   _INSTALLER_NEXT_STEPS="Config:   $CONFIG_DIR
-Cache:    $CACHE_DIR
-Alias:    memoloop  →  $INSTALLER_TARGET
+Data:     $DATA_DIR
+State:    $STATE_DIR
 Run:      memoloop --help
 Popup:    MOD+N (niri) or memoloop ask
 Service:  systemctl --user status $SERVICE_UNIT"
 }
 
 uninstall_integration() {
-  installer_remove rm -f "$SYSTEMD_DIR/$SERVICE_UNIT"
+  installer_do_section systemctl --user stop "$SERVICE_UNIT" 2>/dev/null || true
+  installer_do_section_remove systemctl --user disable "$SERVICE_UNIT" 2>/dev/null || true
+  installer_do_section_remove rm -f "$SYSTEMD_DIR/$SERVICE_UNIT"
+  installer_do_section_remove systemctl --user daemon-reload
 
-  # Remove config and cache only if --purge-data is explicitly given.
-  # By default, all user data is preserved.
-  if [ "${MEMOLOOP_PURGE_DATA:-}" = "1" ]; then
-    installer_remove rm -rf "$CONFIG_DIR"
-    installer_remove rm -rf "$CACHE_DIR"
-  fi
-
-  # Remove only the exact block created by this installer. Unmarked/pre-existing
-  # aliases are user-owned and must survive uninstall.
   if [ -f "$ZSH_ALIASES" ] && grep -qF '# >>> memoloop managed alias >>>' "$ZSH_ALIASES"; then
-    installer_remove sed -i '/^# >>> memoloop managed alias >>>$/,/^# <<< memoloop managed alias <<<$/{d;}' "$ZSH_ALIASES"
+    installer_do_section_remove sed -i '/^# >>> memoloop managed alias >>>$/,/^# <<< memoloop managed alias <<<$/{d;}' "$ZSH_ALIASES"
   fi
 
-  installer_remove rm -f "$HOME/.config/niri/memoloop.kdl"
-  # Same ownership rule for Niri: remove only our marked include block.
-  if [ -f "$HOME/.config/niri/config.kdl" ] && grep -qF '// >>> memoloop managed include >>>' "$HOME/.config/niri/config.kdl"; then
-    installer_remove sed -i '\|^// >>> memoloop managed include >>>$|,\|^// <<< memoloop managed include <<<$|{d;}' "$HOME/.config/niri/config.kdl"
+  installer_do_section_remove rm -f "$NIRI_DIR/memoloop.kdl"
+  if [ -f "$NIRI_DIR/config.kdl" ] && grep -qF '// >>> memoloop managed include >>>' "$NIRI_DIR/config.kdl"; then
+    installer_do_section_remove sed -i '\|^// >>> memoloop managed include >>>$|,\|^// <<< memoloop managed include <<<$|{d;}' "$NIRI_DIR/config.kdl"
+    installer_do_section_remove sh -c "niri msg action load-config-file --path '$NIRI_DIR/config.kdl'" || true
+  fi
+
+  if [ "${MEMOLOOP_PURGE_DATA:-}" = "1" ]; then
+    installer_do_section_remove rm -rf "$CONFIG_DIR" "$DATA_DIR" "$STATE_DIR"
+  else
+    installer_do_section_remove "kept: $CONFIG_DIR"
+    installer_do_section_remove "kept: $DATA_DIR"
+    installer_do_section_remove "kept: $STATE_DIR"
   fi
 }
 
 installer_run "$@"
+
+if [ "$BIN_ONLY" -eq 1 ]; then
+  term_notice "system mode installs the binary only" "run memoloop as any user; no service or config was created"
+fi
+
+if [ "${INSTALLER_ACTION:-}" = "install" ] && [ "${INSTALLER_DRY:-0}" -eq 0 ] && [ "$BIN_ONLY" -eq 0 ]; then
+  if ! systemctl --user is-active --quiet "$SERVICE_UNIT"; then
+    term_bad "memoloop: service did not start" "systemctl --user status $SERVICE_UNIT"
+    exit 1
+  fi
+fi
