@@ -1,6 +1,52 @@
 [
-  {"id": "kanji-001", "type": "translation", "japanese": "水", "english": "water", "accepted": ["水", "mizu"], "note": "Single kanji: water."},
-  {"id": "kanji-002", "type": "translation", "japanese": "火", "english": "fire", "accepted": ["火", "hi"], "note": "Fire."},
-  {"id": "kanji-003", "type": "translation", "japanese": "土", "english": "ground/soil", "accepted": ["土", "tsuchi"], "note": "Ground/soil."},
-  {"id": "kanji-004", "type": "choice", "japanese": "水 means?", "english": "water", "choices": ["A. fire", "B. water", "C. wood"], "answer": "B", "accepted": ["B", "b"], "note": "水 (mizu) = water."}
+  {
+    "id": "kanji-101",
+    "type": "translation",
+    "japanese": "水",
+    "english": "water",
+    "accepted": [
+      "水",
+      "mizu"
+    ],
+    "note": "Single kanji: water."
+  },
+  {
+    "id": "kanji-102",
+    "type": "translation",
+    "japanese": "火",
+    "english": "fire",
+    "accepted": [
+      "火",
+      "hi"
+    ],
+    "note": "Fire."
+  },
+  {
+    "id": "kanji-103",
+    "type": "translation",
+    "japanese": "土",
+    "english": "ground/soil",
+    "accepted": [
+      "土",
+      "tsuchi"
+    ],
+    "note": "Ground/soil."
+  },
+  {
+    "id": "kanji-104",
+    "type": "choice",
+    "japanese": "水 means?",
+    "english": "water",
+    "choices": [
+      "A. fire",
+      "B. water",
+      "C. wood"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "水 (mizu) = water."
+  }
 ]

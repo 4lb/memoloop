@@ -1,6 +1,52 @@
 [
-  {"id": "gram-001", "type": "translation", "japanese": "どうぞ", "english": "please (afterthought)", "accepted": ["どうぞ", "douzo"], "note": "Please (afterthought)."},
-  {"id": "gram-002", "type": "translation", "japanese": "すみません", "english": "excuse me / I'm sorry", "accepted": ["すみません", "sumimasen"], "note": "Excuse me / sorry."},
-  {"id": "gram-003", "type": "reverse", "japanese": "どうぞ", "english": "please (afterthought)", "accepted": ["どうぞ", "douzo"], "note": "Translate this English to Japanese: please (afterthought)"},
-  {"id": "gram-004", "type": "choice", "japanese": "すみません means?", "english": "excuse me", "choices": ["A. thank you", "B. excuse me", "C. hello"], "answer": "B", "accepted": ["B", "b"], "note": "すみません (sumimasen) = excuse me / I'm sorry."}
+  {
+    "id": "gram-101",
+    "type": "translation",
+    "japanese": "どうぞ",
+    "english": "please (afterthought)",
+    "accepted": [
+      "どうぞ",
+      "douzo"
+    ],
+    "note": "Please (afterthought)."
+  },
+  {
+    "id": "gram-102",
+    "type": "translation",
+    "japanese": "すみません",
+    "english": "excuse me / I'm sorry",
+    "accepted": [
+      "すみません",
+      "sumimasen"
+    ],
+    "note": "Excuse me / sorry."
+  },
+  {
+    "id": "gram-103",
+    "type": "reverse",
+    "japanese": "どうぞ",
+    "english": "please (afterthought)",
+    "accepted": [
+      "どうぞ",
+      "douzo"
+    ],
+    "note": "Translate this English to Japanese: please (afterthought)"
+  },
+  {
+    "id": "gram-104",
+    "type": "choice",
+    "japanese": "すみません means?",
+    "english": "excuse me",
+    "choices": [
+      "A. thank you",
+      "B. excuse me",
+      "C. hello"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "すみません (sumimasen) = excuse me / I'm sorry."
+  }
 ]

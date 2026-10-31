@@ -1,6 +1,52 @@
 [
-  {"id": "kana-001", "type": "translation", "japanese": "あ", "english": "a (hiragana)", "accepted": ["あ", "A"], "note": "Hiragana a."},
-  {"id": "kana-002", "type": "translation", "japanese": "い", "english": "i (hiragana)", "accepted": ["い", "I"], "note": "Hiragana i."},
-  {"id": "kana-003", "type": "translation", "japanese": "う", "english": "u (hiragana)", "accepted": ["う", "U"], "note": "Hiragana u."},
-  {"id": "kana-004", "type": "choice", "japanese": "あ means?", "english": "a", "choices": ["A. い", "B. あ", "C. う"], "answer": "B", "accepted": ["B", "b"], "note": "あ (a) = hiragana a."}
+  {
+    "id": "kana-101",
+    "type": "translation",
+    "japanese": "あ",
+    "english": "a (hiragana)",
+    "accepted": [
+      "あ",
+      "A"
+    ],
+    "note": "Hiragana a."
+  },
+  {
+    "id": "kana-102",
+    "type": "translation",
+    "japanese": "い",
+    "english": "i (hiragana)",
+    "accepted": [
+      "い",
+      "I"
+    ],
+    "note": "Hiragana i."
+  },
+  {
+    "id": "kana-103",
+    "type": "translation",
+    "japanese": "う",
+    "english": "u (hiragana)",
+    "accepted": [
+      "う",
+      "U"
+    ],
+    "note": "Hiragana u."
+  },
+  {
+    "id": "kana-104",
+    "type": "choice",
+    "japanese": "あ means?",
+    "english": "a",
+    "choices": [
+      "A. い",
+      "B. あ",
+      "C. う"
+    ],
+    "answer": "B",
+    "accepted": [
+      "B",
+      "b"
+    ],
+    "note": "あ (a) = hiragana a."
+  }
 ]
