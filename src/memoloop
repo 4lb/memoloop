@@ -26,13 +26,17 @@ USER_DATA_DIR="${USER_DATA_DIR:-$HOME/.local/share/memoloop}"
 CONFIG_CONF="$CONFIG_DIR/intervals.conf"
 PICKUP_SET="$CONFIG_DIR/pickup.set"
 QUESTIONS_DIR="$USER_DATA_DIR/questions"
-ANSWERS_STATE="$CACHE_DIR/answers.json"
 
 
 # Load config.conf for USER_DATA_DIR if present
 if [ -f "$CONFIG_DIR/conf.conf" ]; then
   . "$CONFIG_DIR/conf.conf"
 fi
+
+# Recalculate QUESTIONS_DIR after config load (USER_DATA_DIR may be overridden)
+QUESTIONS_DIR="$USER_DATA_DIR/questions"
+ANSWERS_STATE="$CACHE_DIR/answers.json"
+
 
 RULES_STATE="$STATE_DIR/rules.json"
 SESSION_STATE="$STATE_DIR/session.json"
@@ -53,7 +57,16 @@ RULE_RANDOM_ID="random"
 
 . "$SELF_DIR/../lib/term.sh"
 
-die() { printf 'memoloop: %s\n' "$1" >&2; if [ -t 0 ] && [ -z "${FOOT_POPUP:-}" ]; then printf '\n  Press any key to close...\n'; read -n1 -r -s _dummy || true; fi; exit 1; }
+die() {
+  printf 'memoloop: %s\n' "$1" >&2
+
+  if [ -t 0 ]; then
+    printf '\n  Press any key to close...\n'
+    read -n1 -r -s _dummy || true
+  fi
+
+  exit 1
+}
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
 
 require_config() {
@@ -382,7 +395,7 @@ popup_running() {
 launch_popup() {
   local id="$1"
   need foot
-  foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
+  FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
   local pid=$!
   session_set open_pid "$pid"
   session_open_set 1
@@ -404,14 +417,24 @@ process_queue() {
 cmd_ask() {
   term_init
   local id="${1:-manual}"
+
+  # Niri może uruchomić skrypt bez terminala.
+  # W takim przypadku najpierw otwieramy foot, a walidację
+  # wykonujemy dopiero wewnątrz jego procesu.
+  if [ -z "${FOOT_POPUP:-}" ] && [ ! -t 0 ]; then
+    need foot
+    FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
+    return 0
+  fi
+
   need jq
-  load_intervals
   load_intervals
 
   local groups
   groups=$(load_enabled_groups)
   [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
 
+  local json
   json=$(select_question "$groups")
   if [ -z "$json" ] || [ "$json" = "null" ]; then
     die "no question files found for enabled groups in $QUESTIONS_DIR"
