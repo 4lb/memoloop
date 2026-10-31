@@ -123,6 +123,11 @@ random_min=15
 random_max=30
 decay_hours=24
 min_per_day=10
+# Anki reminder rule (disabled by default — uncomment to enable).
+# anki_enabled=true
+# anki_random_min=15
+# anki_random_max=30
+# anki_fixed_seconds=2700
 CONFEOF
   fi
 
