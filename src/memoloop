@@ -746,9 +746,14 @@ cmd_status() {
   state_init
   require_config
   term_init
-  local paused dnd
+  local paused dnd_start dnd_end dnd
   paused=$(session_get paused)
-  dnd=$(in_dnd && echo yes || echo no)
+  dnd_start=$(session_get dnd_start)
+  dnd_end=$(session_get dnd_end)
+  case "$dnd_start" in
+  "" | null) dnd="off" ;;
+  *) dnd="$dnd_start-$dnd_end" ;;
+  esac
 
   if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
     local status_text="memoloop is running"
