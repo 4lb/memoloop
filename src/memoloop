@@ -37,6 +37,10 @@ RANDOM_MAX=30
 DECAY_HOURS=24
 MIN_PER_DAY=10
 NOHELP=true
+ANKI_ENABLED=false
+ANKI_FIXED_SECONDS=2700
+ANKI_RANDOM_MIN=15
+ANKI_RANDOM_MAX=30
 
 . "$SELF_DIR/../lib/term.sh"
 
@@ -130,6 +134,10 @@ load_intervals() {
       decay_hours) DECAY_HOURS="$value" ;;
       min_per_day) MIN_PER_DAY="$value" ;;
       nohelp) NOHELP="$value" ;;
+      anki_enabled) ANKI_ENABLED="$value" ;;
+      anki_fixed_seconds) ANKI_FIXED_SECONDS="$value" ;;
+      anki_random_min) ANKI_RANDOM_MIN="$value" ;;
+      anki_random_max) ANKI_RANDOM_MAX="$value" ;;
       esac
     done <"$intervals_conf"
   fi
@@ -141,6 +149,10 @@ load_intervals() {
   [ -n "${MEMOLOOP_RANDOM_MAX:-}" ] && RANDOM_MAX=$MEMOLOOP_RANDOM_MAX
   [ -n "${MEMOLOOP_DECAY_HOURS:-}" ] && DECAY_HOURS=$MEMOLOOP_DECAY_HOURS
   [ -n "${MEMOLOOP_MIN_PER_DAY:-}" ] && MIN_PER_DAY=$MEMOLOOP_MIN_PER_DAY
+  [ -n "${MEMOLOOP_ANKI_ENABLED:-}" ] && ANKI_ENABLED=$MEMOLOOP_ANKI_ENABLED
+  [ -n "${MEMOLOOP_ANKI_FIXED_SECONDS:-}" ] && ANKI_FIXED_SECONDS=$MEMOLOOP_ANKI_FIXED_SECONDS
+  [ -n "${MEMOLOOP_ANKI_RANDOM_MIN:-}" ] && ANKI_RANDOM_MIN=$MEMOLOOP_ANKI_RANDOM_MIN
+  [ -n "${MEMOLOOP_ANKI_RANDOM_MAX:-}" ] && ANKI_RANDOM_MAX=$MEMOLOOP_ANKI_RANDOM_MAX
 }
 
 load_enabled_groups() {
@@ -169,6 +181,11 @@ state_init() {
   ]
 }
 EOF
+  fi
+  if [ "$ANKI_ENABLED" = "true" ] && ! jq -e '.rules[] | select(.id=="anki")' "$RULES_STATE" >/dev/null 2>&1; then
+    jq --argjson min "$ANKI_RANDOM_MIN" --argjson max "$ANKI_RANDOM_MAX" '
+      .rules += [{"id": "anki", "type": "random", "min": $min, "max": $max, "enabled": true, "next_due": 0}]
+    ' "$RULES_STATE" >"$RULES_STATE.tmp" && mv "$RULES_STATE.tmp" "$RULES_STATE"
   fi
   if [ ! -f "$SESSION_STATE" ]; then
     cat >"$SESSION_STATE" <<EOF
@@ -419,16 +436,24 @@ random_between() {
 }
 
 rule_interval_seconds() {
-  local type
-  type=$(rules_get "$1" | jq -r '.type')
+  local id="$1" type
+  type=$(rules_get "$id" | jq -r '.type')
   case "$type" in
   fixed)
-    printf '%d' "$FIXED_SECONDS"
+    if [ "$id" = "anki" ]; then
+      printf '%d' "$ANKI_FIXED_SECONDS"
+    else
+      printf '%d' "$FIXED_SECONDS"
+    fi
     ;;
   random)
-    printf '%d' "$(($(random_between "$RANDOM_MIN" "$RANDOM_MAX") * 60))"
+    if [ "$id" = "anki" ]; then
+      printf '%d' "$(($(random_between "$ANKI_RANDOM_MIN" "$ANKI_RANDOM_MAX") * 60))"
+    else
+      printf '%d' "$(($(random_between "$RANDOM_MIN" "$RANDOM_MAX") * 60))"
+    fi
     ;;
-  *) die "unknown schedule type for rule $1: $type" ;;
+  *) die "unknown schedule type for rule $id: $type" ;;
   esac
 }
 
@@ -455,9 +480,10 @@ in_dnd() {
 }
 
 due_rules() {
-  local now id nd
+  local now id nd ids
   now=$(epoch)
-  for id in fixed random; do
+  ids=$(jq -r '.rules[].id' "$RULES_STATE")
+  for id in $ids; do
     [ "$(rule_enabled "$id")" = "true" ] || continue
     nd=$(rule_next_due "$id")
     case "$nd" in
@@ -497,6 +523,18 @@ launch_popup() {
   fi
   session_open_set 1
   log_add "$id" "fired" "popup launched${pid:+ (pid $pid)}"
+}
+
+launch_anki() {
+  local id="$1" pid=""
+  if ! command -v anki >/dev/null 2>&1; then
+    FOOT_POPUP=1 foot --app-id="memoloop" -e sh -c 'printf "anki is not installed\\n  Install anki to enable the anki reminder rule.\\n  Press any key to close...\\n"; read -n1 -r -s' </dev/null >/dev/null 2>&1 &
+    log_add "$id" "fired" "anki not installed"
+    return 0
+  fi
+  anki >/dev/null 2>&1 &
+  pid=$!
+  log_add "$id" "fired" "anki launched${pid:+ (pid $pid)}"
 }
 
 process_queue() {
@@ -710,13 +748,13 @@ cmd_watch() {
   require_config
   need foot jq
   local id
-  for id in fixed random; do
+  for id in $(jq -r '.rules[].id' "$RULES_STATE"); do
     case "$(rule_next_due "$id")" in
     "" | null | 0) schedule_recalc "$id" ;;
     esac
   done
 
-  term_notice "memoloop watch · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
+  term_notice "memoloop watch · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min · anki ${ANKI_RANDOM_MIN}–${ANKI_RANDOM_MAX}min"
 
   while :; do
     process_queue
@@ -729,6 +767,8 @@ cmd_watch() {
       if popup_running; then
         session_queue_push "$id"
         log_add "$id" "queued" "prompt already open"
+      elif [ "$id" = "anki" ]; then
+        launch_anki "$id"
       else
         launch_popup "$id"
       fi
@@ -800,7 +840,7 @@ cmd_status() {
 
   local extra=(
     "$TERM_MARK_PLAIN" "paused: $paused | dnd: $dnd"
-    "$TERM_MARK_PLAIN" "next: fixed $(due_label fixed) | random $(due_label random)"
+    "$TERM_MARK_PLAIN" "next: fixed $(due_label fixed) | random $(due_label random) | anki $(due_label anki)"
   )
 
   local status_args=("$status_marker" "$status_text" "${extra[@]}")
@@ -824,6 +864,10 @@ cmd_config() {
   printf '  random_max: %s\n' "$RANDOM_MAX"
   printf '  decay_hours: %s\n' "$DECAY_HOURS"
   printf '  min_per_day: %s\n' "$MIN_PER_DAY"
+  printf '  anki_enabled: %s\n' "$ANKI_ENABLED"
+  printf '  anki_random_min: %s\n' "$ANKI_RANDOM_MIN"
+  printf '  anki_random_max: %s\n' "$ANKI_RANDOM_MAX"
+  printf '  anki_fixed_seconds: %s\n' "$ANKI_FIXED_SECONDS"
   printf '\nSettings:\n'
   printf '  nohelp: %s\n' "$NOHELP"
   printf '\nEnabled groups (%s):\n' "$(load_enabled_groups | wc -l)"
