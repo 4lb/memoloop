@@ -1,0 +1,6 @@
+[
+  {"id": "wea-001", "type": "translation", "japanese": "雨", "english": "rain", "accepted": ["雨", "あめ", "ame"], "note": "Rain."},
+  {"id": "wea-002", "type": "translation", "japanese": "雪", "english": "snow", "accepted": ["雪", "ゆき", "yuki"], "note": "Snow."},
+  {"id": "wea-003", "type": "translation", "japanese": "暑い", "english": "hot", "accepted": ["暑い", "あつい", "atsui"], "note": "Hot."},
+  {"id": "wea-004", "type": "choice", "japanese": "雨 means?", "english": "rain", "choices": ["A. snow", "B. rain", "C. sunny"], "answer": "B", "accepted": ["B", "b"], "note": "雨 (ame) = rain."}
+]

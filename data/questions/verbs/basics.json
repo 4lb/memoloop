@@ -1,0 +1,6 @@
+[
+  {"id": "verb-001", "type": "translation", "japanese": "食べる", "english": "to eat", "accepted": ["食べる", "taberu"], "note": "To eat."},
+  {"id": "verb-002", "type": "translation", "japanese": "飲む", "english": "to drink", "accepted": ["飲む", "nomu"], "note": "To drink."},
+  {"id": "verb-003", "type": "reverse", "japanese": "食べる", "english": "to eat", "accepted": ["食べる", "taberu"], "note": "Translate this English to Japanese: to eat"},
+  {"id": "verb-004", "type": "choice", "japanese": "雨 means?", "english": "rain", "choices": ["A. snow", "B. rain", "C. sunny"], "answer": "B", "accepted": ["B", "b"], "note": "雨 (ame) = rain."}
+]

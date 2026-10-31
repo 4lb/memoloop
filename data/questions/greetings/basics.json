@@ -1,0 +1,6 @@
+[
+  {"id": "greet-001", "type": "translation", "japanese": "こんにちは", "english": "Hello / Good afternoon", "accepted": ["こんにちは", "konnichiwa"], "note": "Standard daytime greeting."},
+  {"id": "greet-002", "type": "translation", "japanese": "ありがとうございます", "english": "Thank you", "accepted": ["ありがとうございます", "arigatou gozaimasu", "arigatou", "ありがとう"], "note": "Thank you (polite)."},
+  {"id": "greet-003", "type": "reverse", "japanese": "こんにちは", "english": "Hello / Good afternoon", "accepted": ["こんにちは", "konnichiwa"], "note": "Translate this English to Japanese: Hello / Good afternoon"},
+  {"id": "greet-004", "type": "choice", "japanese": "小さい means?", "english": "small", "choices": ["A. big", "B. small", "C. new"], "answer": "B", "accepted": ["B", "b"], "note": "小さい (chiisai) = small."}
+]

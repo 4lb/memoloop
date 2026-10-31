@@ -14,16 +14,25 @@ SELF_DIR() {
 SELF_DIR=$(SELF_DIR)
 unset -f SELF_DIR
 
-
 CONFIG_DIR="${MEMOLOOP_CONFIG_DIR:-$HOME/.config/memoloop}"
 CACHE_DIR="${MEMOLOOP_CACHE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/memoloop}"
 STATE_DIR="${MEMOLOOP_STATE:-$SELF_DIR/../state}"
 LOG_DIR="${MEMOLOOP_LOG:-$SELF_DIR/../log}"
 
-CONFIG_CONF="$CONFIG_DIR/config.conf"
+# Set default USER_DATA_DIR before using it for QUESTIONS_DIR
+USER_DATA_DIR="${USER_DATA_DIR:-$HOME/.local/share/memoloop}"
+
+
+CONFIG_CONF="$CONFIG_DIR/intervals.conf"
 PICKUP_SET="$CONFIG_DIR/pickup.set"
-QUESTIONS_DIR="$CONFIG_DIR/questions"
+QUESTIONS_DIR="$USER_DATA_DIR/questions"
 ANSWERS_STATE="$CACHE_DIR/answers.json"
+
+
+# Load config.conf for USER_DATA_DIR if present
+if [ -f "$CONFIG_DIR/conf.conf" ]; then
+  . "$CONFIG_DIR/conf.conf"
+fi
 
 RULES_STATE="$STATE_DIR/rules.json"
 SESSION_STATE="$STATE_DIR/session.json"
@@ -44,8 +53,20 @@ RULE_RANDOM_ID="random"
 
 . "$SELF_DIR/../lib/term.sh"
 
-die() { printf 'memoloop: %s\n' "$1" >&2; exit 1; }
+die() { printf 'memoloop: %s\n' "$1" >&2; if [ -t 0 ] && [ -z "${FOOT_POPUP:-}" ]; then printf '\n  Press any key to close...\n'; read -n1 -r -s _dummy || true; fi; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed"; }
+
+require_config() {
+  [ -f "$PICKUP_SET" ] || die "config not found: $PICKUP_SET"
+  local groups
+  groups=$(load_enabled_groups)
+  [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
+  local questions
+  questions=$(load_all_questions "$groups")
+  local qcount
+  qcount=$(printf '%s' "$questions" | jq 'length')
+  [ "$qcount" -gt 0 ] || die "no question files found for enabled groups in $QUESTIONS_DIR"
+}
 
 epoch() { date +%s; }
 iso() { date -d "@$1" '+%H:%M:%S' 2>/dev/null || date -r "$1" '+%H:%M:%S'; }
@@ -56,7 +77,8 @@ today_start() {
 
 
 load_intervals() {
-  if [ -f "$CONFIG_CONF" ]; then
+  local intervals_conf="$USER_DATA_DIR/intervals.conf"
+  if [ -f "$intervals_conf" ]; then
     local key value
     while IFS='=' read -r key value; do
       case "$key" in
@@ -67,7 +89,7 @@ load_intervals() {
         min_per_day) MIN_PER_DAY="$value" ;;
         nohelp) NOHELP="$value" ;;
       esac
-    done <"$CONFIG_CONF"
+    done <"$intervals_conf"
   fi
 }
 
@@ -386,22 +408,22 @@ cmd_ask() {
   load_intervals
   load_intervals
 
+  local groups
+  groups=$(load_enabled_groups)
+  [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
+
+  json=$(select_question "$groups")
+  if [ -z "$json" ] || [ "$json" = "null" ]; then
+    die "no question files found for enabled groups in $QUESTIONS_DIR"
+  fi
+
   if [ -z "${FOOT_POPUP:-}" ]; then
     need foot
     FOOT_POPUP=1 foot --app-id="memoloop" -e "$SELF_DIR/memoloop" ask "$id" &
     return 0
   fi
 
-  local groups json qtype jp en target note answer_label choices answer_letter
-  groups=$(load_enabled_groups)
-  [ -n "$groups" ] || die "no enabled question groups in $PICKUP_SET"
-
-  json=$(select_question "$groups")
-  if [ -z "$json" ] || [ "$json" = "null" ]; then
-    term_notice "No questions available" "Add question files to $CONFIG_DIR/questions/<group>/<file>.json"
-    return 0
-  fi
-
+  local qtype jp en target note answer_label choices answer_letter
   qtype=$(printf '%s' "$json" | jq -r '.type // "translation"')
   jp=$(printf '%s' "$json" | jq -r '.japanese')
   en=$(printf '%s' "$json" | jq -r '.english')
@@ -508,12 +530,13 @@ cmd_ask() {
   esac
 
   if [ -t 0 ]; then
-    if [ "$NOHELP" != "true" ]; then
-      printf '\n  Press any key to close...\n'
-    fi
-    _close_key=''
-    read -n1 -r -s _close_key || true
+# printf '\n  Press any key to close...\n'
+  if [ "$NOHELP" != "true" ]; then
+    printf '\n  Press any key to close...\n'
   fi
+  _close_key=''
+  read -n1 -r -s _close_key || true
+fi
 
   update_points "$qid" "$result"
 
@@ -550,6 +573,7 @@ SERVICE_UNIT="memoloop.service"
 
 cmd_watch() {
   state_init
+  require_config
   need foot jq
   for id in fixed random; do
     [ "$(rule_next_due "$id")" = "0" ] && schedule_recalc "$id"
@@ -580,6 +604,7 @@ cmd_watch() {
 
 cmd_start() {
   state_init
+  require_config
   need systemctl
   if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
     term_notice "memoloop already running" "systemctl --user status $SERVICE_UNIT"
@@ -602,6 +627,7 @@ cmd_stop() {
 
 cmd_status() {
   state_init
+  require_config
   term_init
   local paused dnd nd_fixed nd_random
   paused=$(session_get paused)

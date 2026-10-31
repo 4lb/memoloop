@@ -1,0 +1,218 @@
+[
+  {
+    "id": "gram-001",
+    "type": "translation",
+    "japanese": "私は学生です",
+    "romaji": "watashi wa gakusei desu",
+    "english": "I am a student",
+    "accepted": [
+      "私は学生です",
+      "わたしはがくせいです",
+      "watashi wa gakusei desu"
+    ],
+    "note": "A wa B desu - A is B. Basic sentence pattern: Topic + wa + predicate + desu."
+  },
+  {
+    "id": "gram-002",
+    "type": "translation",
+    "japanese": "これは本です",
+    "romaji": "kore wa hon desu",
+    "english": "This is a book",
+    "accepted": ["これは本です", "これはほんです", "kore wa hon desu"],
+    "note": "Kore wa X desu - This is X. Kore = this (near speaker)."
+  },
+  {
+    "id": "gram-003",
+    "type": "translation",
+    "japanese": "そこは図書館です",
+    "romaji": "soko wa toshokan desu",
+    "english": "That is a library",
+    "accepted": [
+      "そこは図書館です",
+      "そこはとしょかんです",
+      "soko wa toshokan desu"
+    ],
+    "note": "Soko wa X desu - That is X (near listener). Soko = that (near listener)."
+  },
+  {
+    "id": "gram-004",
+    "type": "translation",
+    "japanese": "あれは何ですか",
+    "romaji": "are wa nan desu ka",
+    "english": "What is that?",
+    "accepted": ["あれは何ですか", "あれはなんですか", "are wa nan desu ka"],
+    "note": "Are wa nan desu ka - What is that? Are = that (far from both)."
+  },
+  {
+    "id": "gram-005",
+    "type": "translation",
+    "japanese": "りんごを食べます",
+    "romaji": "ringo o tabemasu",
+    "english": "I eat an apple",
+    "accepted": ["りんごを食べます", "りんごをたべます", "ringo o tabemasu"],
+    "note": "O o V-masu - Object marker o. Object + o + verb-masu."
+  },
+  {
+    "id": "gram-006",
+    "type": "translation",
+    "japanese": "水を飲みます",
+    "romaji": "mizu o nomimasu",
+    "english": "I drink water",
+    "accepted": ["水を飲みます", "みずをのみます", "mizu o nomimasu"],
+    "note": "O o V-masu - Object + o + verb-masu. Water + o + drink-masu."
+  },
+  {
+    "id": "gram-007",
+    "type": "translation",
+    "japanese": "本を読みます",
+    "romaji": "hon o yomimasu",
+    "english": "I read a book",
+    "accepted": ["本を読みます", "ほんをよみます", "hon o yomimasu"],
+    "note": "O o V-masu - Object + o + verb-masu. Book + o + read-masu."
+  },
+  {
+    "id": "gram-008",
+    "type": "translation",
+    "japanese": "学校に行きます",
+    "romaji": "gakkou o ikimasu",
+    "english": "I go to school",
+    "accepted": ["学校に行きます", "がっこうにいきます", "gakkou ni ikimasu"],
+    "note": "E ni V-masu - Direction marker ni. Destination + ni + go-masu."
+  },
+  {
+    "id": "gram-009",
+    "type": "translation",
+    "japanese": "家に帰ります",
+    "romaji": "ie ni kaerimasu",
+    "english": "I go home",
+    "accepted": ["家に帰ります", "いえにかえります", "ie ni kaerimasu"],
+    "note": "E ni V-masu - Home + ni + return-masu."
+  },
+  {
+    "id": "gram-010",
+    "type": "translation",
+    "japanese": "図書館で本を読みます",
+    "romaji": "toshokan de hon o yomimasu",
+    "english": "I read a book at the library",
+    "accepted": [
+      "図書館で本を読みます",
+      "としょかんでほんをよみます",
+      "toshokan de hon o yomimasu"
+    ],
+    "note": "E de V-masu - Location marker de. Place + de + verb-masu."
+  },
+  {
+    "id": "gram-011",
+    "type": "translation",
+    "japanese": "レストランでご飯を食べます",
+    "romaji": "resutoran de gohan o tabemasu",
+    "english": "I eat rice at the restaurant",
+    "accepted": [
+      "レストランでご飯を食べます",
+      "れすとらんでごはんをたべます",
+      "resutoran de gohan o tabemasu"
+    ],
+    "note": "E de V-masu - Restaurant + de + eat-masu."
+  },
+  {
+    "id": "gram-012",
+    "type": "translation",
+    "japanese": "これは私の本です",
+    "romaji": "kore wa watashi no hon desu",
+    "english": "This is my book",
+    "accepted": [
+      "これは私の本です",
+      "これはわたしのほんです",
+      "kore wa watashi no hon desu"
+    ],
+    "note": "A no B - B of A. Possessive particle no. My + book."
+  },
+  {
+    "id": "gram-013",
+    "type": "translation",
+    "japanese": "田中さんの車です",
+    "romaji": "tanaka-san no kuruma desu",
+    "english": "It is Mr. Tanaka's car",
+    "accepted": [
+      "田中さんの車です",
+      "たなかさんのくるまです",
+      "tanaka-san no kuruma desu"
+    ],
+    "note": "A no B - B of A. Mr. Tanaka's + car."
+  },
+  {
+    "id": "gram-014",
+    "type": "translation",
+    "japanese": "好きです",
+    "romaji": "suki desu",
+    "english": "I like it",
+    "accepted": ["好きです", "すきです", "suki desu"],
+    "note": "Ga suki desu - Like. Object + ga + like-masu."
+  },
+  {
+    "id": "gram-015",
+    "type": "translation",
+    "japanese": "猫が好きです",
+    "romaji": "neko ga suki desu",
+    "english": "I like cats",
+    "accepted": ["猫が好きです", "ねこがすきです", "neko ga suki desu"],
+    "note": "Ga suki desu - Cat + ga + like-masu."
+  },
+  {
+    "id": "gram-016",
+    "type": "translation",
+    "japanese": "日本語が話せます",
+    "romaji": "nihongo ga hanasemasu",
+    "english": "I can speak Japanese",
+    "accepted": [
+      "日本語が話せます",
+      "にほんごがはなせます",
+      "nihongo ga hanasemasu"
+    ],
+    "note": "Ga V-potential - Can do. Japanese + ga + can-speak."
+  },
+  {
+    "id": "gram-017",
+    "type": "translation",
+    "japanese": "お願いします",
+    "romaji": "onegaishimasu",
+    "english": "Please",
+    "accepted": ["お願いします", "おねがいします", "onegaishimasu"],
+    "note": "Onegaishimasu - Please (formal request). Used when asking for a favor."
+  },
+  {
+    "id": "gram-018",
+    "type": "translation",
+    "japanese": "ありがとうございます",
+    "romaji": "arigatou gozaimasu",
+    "english": "Thank you",
+    "accepted": [
+      "ありがとうございます",
+      "ありがとうございます",
+      "arigatou gozaimasu"
+    ],
+    "note": "Arigatou gozaimasu - Thank you (polite). Formal thank you."
+  },
+  {
+    "id": "gram-019",
+    "type": "translation",
+    "japanese": "すみません",
+    "romaji": "sumimasen",
+    "english": "Excuse me",
+    "accepted": ["すみません", "すみません", "sumimasen"],
+    "note": "Sumimasen - Excuse me / I'm sorry. Used to apologize or get attention."
+  },
+  {
+    "id": "gram-020",
+    "type": "translation",
+    "japanese": "おはようございます",
+    "romaji": "ohayou gozaimasu",
+    "english": "Good morning",
+    "accepted": [
+      "おはようございます",
+      "おはようございます",
+      "ohayou gozaimasu"
+    ],
+    "note": "Ohayou gozaimasu - Good morning (polite). Formal morning greeting."
+  }
+]

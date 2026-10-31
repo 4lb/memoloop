@@ -4,6 +4,9 @@ state/
 log/
 *.state
 
+# Starter kit data - tracked in repo for new users
+!data/
+
 # Editor / OS
 .*.swp
 .*.swo

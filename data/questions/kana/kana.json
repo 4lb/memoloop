@@ -1,0 +1,256 @@
+[
+  {
+    "id": "kana-001",
+    "type": "translation",
+    "japanese": "あ",
+    "romaji": "a",
+    "english": "a (hiragana)",
+    "accepted": ["あ", "a"],
+    "note": "あ (a) - Hiragana character 'a'."
+  },
+  {
+    "id": "kana-002",
+    "type": "translation",
+    "japanese": "い",
+    "romaji": "i",
+    "english": "i (hiragana)",
+    "accepted": ["い", "i"],
+    "note": "い (i) - Hiragana character 'i'."
+  },
+  {
+    "id": "kana-003",
+    "type": "translation",
+    "japanese": "う",
+    "romaji": "u",
+    "english": "u (hiragana)",
+    "accepted": ["う", "u"],
+    "note": "う (u) - Hiragana character 'u'."
+  },
+  {
+    "id": "kana-004",
+    "type": "translation",
+    "japanese": "え",
+    "romaji": "e",
+    "english": "e (hiragana)",
+    "accepted": ["え", "e"],
+    "note": "え (e) - Hiragana character 'e'."
+  },
+  {
+    "id": "kana-005",
+    "type": "translation",
+    "japanese": "お",
+    "romaji": "o",
+    "english": "o (hiragana)",
+    "accepted": ["お", "o"],
+    "note": "お (o) - Hiragana character 'o'."
+  },
+  {
+    "id": "kana-006",
+    "type": "translation",
+    "japanese": "か",
+    "romaji": "ka",
+    "english": "ka (hiragana)",
+    "accepted": ["か", "ka"],
+    "note": "か (ka) - Hiragana character 'ka'."
+  },
+  {
+    "id": "kana-007",
+    "type": "translation",
+    "japanese": "き",
+    "romaji": "ki",
+    "english": "ki (hiragana)",
+    "accepted": ["き", "ki"],
+    "note": "き (ki) - Hiragana character 'ki'."
+  },
+  {
+    "id": "kana-008",
+    "type": "translation",
+    "japanese": "く",
+    "romaji": "ku",
+    "english": "ku (hiragana)",
+    "accepted": ["く", "ku"],
+    "note": "く (ku) - Hiragana character 'ku'."
+  },
+  {
+    "id": "kana-009",
+    "type": "translation",
+    "japanese": "け",
+    "romaji": "ke",
+    "english": "ke (hiragana)",
+    "accepted": ["け", "ke"],
+    "note": "け (ke) - Hiragana character 'ke'."
+  },
+  {
+    "id": "kana-010",
+    "type": "translation",
+    "japanese": "こ",
+    "romaji": "ko",
+    "english": "ko (hiragana)",
+    "accepted": ["こ", "ko"],
+    "note": "こ (ko) - Hiragana character 'ko'."
+  },
+  {
+    "id": "kana-011",
+    "type": "translation",
+    "japanese": "ア",
+    "romaji": "a",
+    "english": "a (katakana)",
+    "accepted": ["ア", "a"],
+    "note": "ア (a) - Katakana character 'a'."
+  },
+  {
+    "id": "kana-012",
+    "type": "translation",
+    "japanese": "イ",
+    "romaji": "i",
+    "english": "i (katakana)",
+    "accepted": ["イ", "i"],
+    "note": "イ (i) - Katakana character 'i'."
+  },
+  {
+    "id": "kana-013",
+    "type": "translation",
+    "japanese": "ウ",
+    "romaji": "u",
+    "english": "u (katakana)",
+    "accepted": ["ウ", "u"],
+    "note": "ウ (u) - Katakana character 'u'."
+  },
+  {
+    "id": "kana-014",
+    "type": "translation",
+    "japanese": "エ",
+    "romaji": "e",
+    "english": "e (katakana)",
+    "accepted": ["エ", "e"],
+    "note": "エ (e) - Katakana character 'e'."
+  },
+  {
+    "id": "kana-015",
+    "type": "translation",
+    "japanese": "オ",
+    "romaji": "o",
+    "english": "o (katakana)",
+    "accepted": ["オ", "o"],
+    "note": "オ (o) - Katakana character 'o'."
+  },
+  {
+    "id": "kana-016",
+    "type": "translation",
+    "japanese": "カ",
+    "romaji": "ka",
+    "english": "ka (katakana)",
+    "accepted": ["カ", "ka"],
+    "note": "カ (ka) - Katakana character 'ka'."
+  },
+  {
+    "id": "kana-017",
+    "type": "translation",
+    "japanese": "キ",
+    "romaji": "ki",
+    "english": "ki (katakana)",
+    "accepted": ["キ", "ki"],
+    "note": "キ (ki) - Katakana character 'ki'."
+  },
+  {
+    "id": "kana-018",
+    "type": "translation",
+    "japanese": "ク",
+    "romaji": "ku",
+    "english": "ku (katakana)",
+    "accepted": ["ク", "ku"],
+    "note": "ク (ku) - Katakana character 'ku'."
+  },
+  {
+    "id": "kana-019",
+    "type": "translation",
+    "japanese": "ケ",
+    "romaji": "ke",
+    "english": "ke (katakana)",
+    "accepted": ["ケ", "ke"],
+    "note": "ケ (ke) - Katakana character 'ke'."
+  },
+  {
+    "id": "kana-020",
+    "type": "translation",
+    "japanese": "コ",
+    "romaji": "ko",
+    "english": "ko (katakana)",
+    "accepted": ["コ", "ko"],
+    "note": "コ (ko) - Katakana character 'ko'."
+  },
+  {
+    "id": "kana-021",
+    "type": "reverse",
+    "japanese": "あ",
+    "romaji": "a",
+    "english": "a (hiragana)",
+    "accepted": ["あ", "a"],
+    "note": "Translate to Japanese: a (hiragana)."
+  },
+  {
+    "id": "kana-022",
+    "type": "reverse",
+    "japanese": "か",
+    "romaji": "ka",
+    "english": "ka (hiragana)",
+    "accepted": ["か", "ka"],
+    "note": "Translate to Japanese: ka (hiragana)."
+  },
+  {
+    "id": "kana-023",
+    "type": "reverse",
+    "japanese": "ア",
+    "romaji": "a",
+    "english": "a (katakana)",
+    "accepted": ["ア", "a"],
+    "note": "Translate to Japanese: a (katakana)."
+  },
+  {
+    "id": "kana-024",
+    "type": "reverse",
+    "japanese": "カ",
+    "romaji": "ka",
+    "english": "ka (katakana)",
+    "accepted": ["カ", "ka"],
+    "note": "Translate to Japanese: ka (katakana)."
+  },
+  {
+    "id": "kana-025",
+    "type": "cloze",
+    "japanese": "___いうえお",
+    "target": "あ",
+    "english": "First hiragana vowel",
+    "accepted": ["あ", "a"],
+    "note": "あ (a) - First vowel in the gojuon order."
+  },
+  {
+    "id": "kana-026",
+    "type": "cloze",
+    "japanese": "___きくけこ",
+    "target": "か",
+    "english": "First ka-row hiragana",
+    "accepted": ["か", "ka"],
+    "note": "か (ka) - First ka-row hiragana character."
+  },
+  {
+    "id": "kana-027",
+    "type": "choice",
+    "japanese": "あ means?",
+    "english": "a sound",
+    "choices": ["A. ka", "B. a", "C. sa"],
+    "answer": "B",
+    "accepted": ["B", "b"],
+    "note": "あ (a) - Hiragana 'a' sound."
+  },
+  {
+    "id": "kana-028",
+    "type": "choice",
+    "japanese": "カ means?",
+    "english": "ka sound (katakana)",
+    "choices": ["A. ki", "B. ku", "C. ka"],
+    "answer": "C",
+    "accepted": ["C", "c"],
+    "note": "カ (ka) - Katakana 'ka' sound."
+  }
+]

@@ -14,6 +14,8 @@ while [ $# -gt 0 ]; do
 	case "$1" in
 	--user) mode="--user" ;;
 	--system) mode="--system" ;;
+	--overwrite-data) MEMOLOOP_OVERWRITE_DATA=1 ;;
+	--purge-data) MEMOLOOP_PURGE_DATA=1 ;;
 	*) rest+=("$1") ;;
 	esac
 	shift
@@ -27,6 +29,7 @@ case "$mode" in
 	SYSTEMD_DIR="$HOME/.config/systemd/user"
 	CONFIG_DIR="$HOME/.config/memoloop"
 	CACHE_DIR="$HOME/.local/share/memoloop"
+	USER_DATA_DIR="$HOME/.local/share/memoloop"
 	ZSH_ALIASES="$HOME/.config/zsh/my_zsh_aliases"
 	SUDO=""
 	;;
@@ -36,6 +39,7 @@ case "$mode" in
 	SYSTEMD_DIR="/etc/systemd/system"
 	CONFIG_DIR="/etc/memoloop"
 	CACHE_DIR="/var/lib/memoloop"
+	USER_DATA_DIR="/var/lib/memoloop"
 	ZSH_ALIASES="/etc/zsh/zshrc"
 	SUDO="sudo"
 	;;
@@ -55,6 +59,12 @@ INSTALLER_EXTRA_HELP='
 MODES
   --user      install under your own home (default)
   --system    install system-wide, with sudo
+  --overwrite-data  replace existing MemoLoop config, pickup set and questions during install
+  --purge-data      (on uninstall) also delete MemoLoop config and cache
+
+  By default, install and uninstall preserve all user data (config, pickup set,
+  questions, answers). Use --overwrite-data or --purge-data only when you
+  explicitly want to replace/remove user data.
 
   These choose four directories rather than one, so they are not another name
   for --install-path: a system-wide install puts the unit in /etc/systemd and
@@ -100,12 +110,14 @@ Environment=MEMOLOOP_CACHE_DIR=%h/.local/share/memoloop
 WantedBy=graphical-session.target
 UNITEOF
 
-	installer_do_section installer_as_root mkdir -p "$SYSTEMD_DIR"
 	installer_do_section installer_as_root install -m 644 "$svc_tmp" "$SYSTEMD_DIR/$SERVICE_UNIT"
 	rm -f "$svc_tmp"
 
+	installer_do_section installer_as_root mkdir -p "$USER_DATA_DIR"
 	installer_do_section installer_as_root mkdir -p "$CONFIG_DIR"
-	if [ ! -f "$CONFIG_DIR/intervals.conf" ]; then
+
+	# intervals.conf goes into user data directory per plan
+	if [ ! -f "$USER_DATA_DIR/intervals.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
 		local conf_tmp
 		conf_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-intervals.XXXXXX")
 		cat >"$conf_tmp" <<'CONFEOF'
@@ -114,13 +126,23 @@ random_min=15
 random_max=30
 decay_hours=24
 min_per_day=10
-nohelp=true
 CONFEOF
-		installer_do_section installer_as_root install -m 644 "$conf_tmp" "$CONFIG_DIR/intervals.conf"
+		installer_do_section installer_as_root install -m 644 "$conf_tmp" "$USER_DATA_DIR/intervals.conf"
 		rm -f "$conf_tmp"
 	fi
 
-	if [ ! -f "$CONFIG_DIR/pickup.set" ]; then
+	if [ ! -f "$CONFIG_DIR/conf.conf" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
+		local conf_tmp
+		conf_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-conf.XXXXXX")
+		cat >"$conf_tmp" <<'CONFEOF'
+nohelp=true
+USER_DATA_DIR="$HOME/.local/share/memoloop"
+CONFEOF
+		installer_do_section installer_as_root install -m 644 "$conf_tmp" "$CONFIG_DIR/conf.conf"
+		rm -f "$conf_tmp"
+	fi
+
+	if [ ! -f "$CONFIG_DIR/pickup.set" ] || [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ]; then
 		local pickup_tmp
 		pickup_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-pickup.XXXXXX")
 		cat >"$pickup_tmp" <<'PICKUPEOF'
@@ -136,40 +158,40 @@ PICKUPEOF
 		rm -f "$pickup_tmp"
 	fi
 
-	# Copy questions from backup if available, otherwise create defaults
-	if [ ! -d "$CONFIG_DIR/questions" ]; then
-		if [ -d "$HOME/.config/memoloop-bak/questions" ]; then
-			installer_do_section installer_as_root cp -r "$HOME/.config/memoloop-bak/questions" "$CONFIG_DIR/questions"
-		else
-			installer_do_section installer_as_root mkdir -p "$CONFIG_DIR/questions/greetings"
-			local q_tmp
-			q_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-questions.XXXXXX")
-			cat >"$q_tmp" <<'QEOF'
-[
-  {"id": "greet-001", "type": "translation", "japanese": "こんにちは", "english": "Hello / Good afternoon", "accepted": ["こんにちは", "konnichiwa"], "note": "Standard daytime greeting."},
-  {"id": "greet-002", "type": "translation", "japanese": "ありがとうございます", "english": "Thank you", "accepted": ["ありがとうございます", "arigatou gozaimasu", "arigatou", "ありがとう"], "note": "Thank you (polite)."},
-  {"id": "greet-003", "type": "reverse", "japanese": "こんにちは", "english": "Hello / Good afternoon", "accepted": ["こんにちは", "konnichiwa"], "note": "Translate this English to Japanese: Hello / Good afternoon"},
-  {"id": "greet-004", "type": "choice", "japanese": "小さい means?", "english": "small", "choices": ["A. big", "B. small", "C. new"], "answer": "B", "accepted": ["B", "b"], "note": "小さい (chiisai) = small."}
-]
-QEOF
-			installer_do_section installer_as_root install -m 644 "$q_tmp" "$CONFIG_DIR/questions/greetings/basics.json"
-			rm -f "$q_tmp"
-		fi
+	# Existing question sets are user data. Replace them only on explicit request.
+	if [ "${MEMOLOOP_OVERWRITE_DATA:-}" = "1" ] && [ -d "$USER_DATA_DIR/questions" ]; then
+		installer_do_section installer_as_root rm -rf "$USER_DATA_DIR/questions"
+	fi
+
+	# Copy questions from data/ starter kit if available, otherwise create defaults.
+	if [ ! -d "$USER_DATA_DIR/questions" ]; then
+		installer_do_section installer_as_root mkdir -p "$USER_DATA_DIR"
+		installer_do_section installer_as_root cp -r "$SCRIPT_DIR/data/questions" "$USER_DATA_DIR/questions"
 	fi
 
 	installer_do_section installer_as_root mkdir -p "$(dirname "$ZSH_ALIASES")"
+	# Mark only the alias block created by this installer. Never claim an
+	# existing user alias, because uninstall must leave it untouched.
 	if [ ! -f "$ZSH_ALIASES" ] || ! grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
-		installer_do_section sh -c "cat >> '$ZSH_ALIASES' <<'EOF'
-
+		alias_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-alias.XXXXXX")
+		cat >"$alias_tmp" <<ALIASEOF
+# >>> memoloop managed alias >>>
 alias memoloop='$INSTALLER_TARGET'
-EOF"
+# <<< memoloop managed alias <<<
+ALIASEOF
+		installer_do_section sh -c "cat '$alias_tmp' >> '$ZSH_ALIASES'"
+		rm -f "$alias_tmp"
 	fi
 
 	installer_do_section installer_as_root mkdir -p "$HOME/.config/niri"
 	installer_do_section installer_as_root install -m 644 "$SCRIPT_DIR/niri/memoloop.kdl" "$HOME/.config/niri/memoloop.kdl"
 	if [ -f "$HOME/.config/niri/config.kdl" ] && ! grep -qF 'include optional=true "memoloop.kdl"' "$HOME/.config/niri/config.kdl"; then
 		niri_inc_tmp=$(mktemp "${TMPDIR:-/tmp}/memoloop-niri.XXXXXX")
-		printf 'include optional=true "memoloop.kdl"\n' >"$niri_inc_tmp"
+		cat >"$niri_inc_tmp" <<'NIRIEOF'
+// >>> memoloop managed include >>>
+include optional=true "memoloop.kdl"
+// <<< memoloop managed include <<<
+NIRIEOF
 		installer_do_section sh -c "cat '$niri_inc_tmp' >> '$HOME/.config/niri/config.kdl'"
 		rm -f "$niri_inc_tmp"
 	fi
@@ -195,15 +217,24 @@ Service:  systemctl --user status $SERVICE_UNIT"
 
 uninstall_integration() {
 	installer_remove rm -f "$SYSTEMD_DIR/$SERVICE_UNIT"
-	installer_remove rm -rf "$CONFIG_DIR"
-	installer_remove rm -rf "$CACHE_DIR"
-	if [ -f "$ZSH_ALIASES" ] && grep -qF "alias memoloop=" "$ZSH_ALIASES"; then
-		installer_remove sed -i '/^alias memoloop=/d' "$ZSH_ALIASES"
-		installer_remove sed -i '/^# memoloop$/d' "$ZSH_ALIASES"
+
+	# Remove config and cache only if --purge-data is explicitly given.
+	# By default, all user data is preserved.
+	if [ "${MEMOLOOP_PURGE_DATA:-}" = "1" ]; then
+		installer_remove rm -rf "$CONFIG_DIR"
+		installer_remove rm -rf "$CACHE_DIR"
 	fi
+
+	# Remove only the exact block created by this installer. Unmarked/pre-existing
+	# aliases are user-owned and must survive uninstall.
+	if [ -f "$ZSH_ALIASES" ] && grep -qF '# >>> memoloop managed alias >>>' "$ZSH_ALIASES"; then
+		installer_remove sed -i '/^# >>> memoloop managed alias >>>$/,/^# <<< memoloop managed alias <<<$/{d;}' "$ZSH_ALIASES"
+	fi
+
 	installer_remove rm -f "$HOME/.config/niri/memoloop.kdl"
-	if [ -f "$HOME/.config/niri/config.kdl" ]; then
-		installer_remove sed -i '/^include optional=true "memoloop.kdl"$/d' "$HOME/.config/niri/config.kdl"
+	# Same ownership rule for Niri: remove only our marked include block.
+	if [ -f "$HOME/.config/niri/config.kdl" ] && grep -qF '// >>> memoloop managed include >>>' "$HOME/.config/niri/config.kdl"; then
+		installer_remove sed -i '\|^// >>> memoloop managed include >>>$|,\|^// <<< memoloop managed include <<<$|{d;}' "$HOME/.config/niri/config.kdl"
 	fi
 }
 
