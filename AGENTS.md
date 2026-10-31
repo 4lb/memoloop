@@ -33,4 +33,9 @@ vendored from there and are also comment-free.
 
 ### Exceptions
 
-None. If you think code needs a comment, the code is unclear. Fix the code.
+- User-facing config files that ship as starting points after install (e.g.
+  `config.example.yaml` in `intervald-NSVL-DC/`). These are documentation for
+  the user, not code; comments explaining keys, defaults, and semantics are
+  encouraged.
+
+None other. If you think code needs a comment, the code is unclear. Fix the code.

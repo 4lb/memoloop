@@ -1,0 +1,851 @@
+#!/usr/bin/env python3
+import glob
+import json
+import logging
+import os
+import random
+import re
+import select
+import shlex
+import shutil
+import signal
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+
+JOB_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+DURATION_RE = re.compile(r"^([0-9]+)([smh])$")
+UNIT_SECONDS = {"s": 1, "m": 60, "h": 3600}
+TRUE_STRINGS = {"true", "yes", "on", "1"}
+FALSE_STRINGS = {"false", "no", "off", "0"}
+
+log = logging.getLogger("intervald")
+
+
+def default_config_path():
+    return Path(
+        os.environ.get(
+            "INTERVALD_CONFIG",
+            str(Path.home() / ".config/intervald/config.yaml"),
+        )
+    ).expanduser()
+
+
+def state_path():
+    base = os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local/state")
+    return Path(
+        os.environ.get("INTERVALD_STATE", str(Path(base) / "intervald/state.json"))
+    ).expanduser()
+
+
+def fmt_seconds(seconds):
+    seconds = int(seconds)
+    if seconds < 0:
+        return "due now"
+    if seconds == 0:
+        return "0s"
+    hours, rest = divmod(seconds, 3600)
+    minutes, secs = divmod(rest, 60)
+    parts = []
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes:
+        parts.append(f"{minutes}m")
+    if secs:
+        parts.append(f"{secs}s")
+    return "".join(parts)
+
+
+def fmt_interval(rule):
+    if rule.kind == "every":
+        return fmt_seconds(rule.seconds)
+    return f"{fmt_seconds(rule.seconds)}-{fmt_seconds(rule.max_seconds)}"
+
+
+def parse_duration(value, field, errors):
+    if isinstance(value, bool) or value is None:
+        errors.append(f"{field}: expected a duration like 90s, 45m or 2h")
+        return None
+    if isinstance(value, int):
+        errors.append(
+            f"{field}: {value} has no unit; add one, e.g. {value}s, {value}m or {value}h"
+        )
+        return None
+    if isinstance(value, float):
+        errors.append(f"{field}: floats are not allowed; use a whole number with a unit")
+        return None
+    if not isinstance(value, str):
+        errors.append(f"{field}: expected a duration string like 90s, 45m or 2h")
+        return None
+    match = DURATION_RE.match(value.strip())
+    if not match:
+        errors.append(
+            f"{field}: invalid duration {value!r}; expected a positive integer and s, m or h"
+        )
+        return None
+    number = int(match.group(1))
+    if number <= 0:
+        errors.append(f"{field}: duration must be positive, got {value!r}")
+        return None
+    return number * UNIT_SECONDS[match.group(2)]
+
+
+def check_bool(value, field, errors):
+    if type(value) is bool:
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in TRUE_STRINGS or lowered in FALSE_STRINGS:
+            errors.append(
+                f"{field}: expected a YAML boolean, got quoted string {value!r}; "
+                f"write true or false without quotes"
+            )
+            return None
+    errors.append(f"{field}: expected a boolean (true or false)")
+    return None
+
+
+@dataclass
+class Rule:
+    kind: str
+    seconds: int
+    max_seconds: int | None = None
+
+    def draw(self, rng):
+        if self.kind == "every":
+            return self.seconds
+        return rng.randint(self.seconds, self.max_seconds)
+
+
+@dataclass
+class Job:
+    name: str
+    command: str
+    terminal: bool
+    shell: bool
+    overlap: str
+    rules: list
+
+    def argv(self, settings):
+        if self.shell:
+            parts = ["/bin/sh", "-c", self.command]
+        else:
+            parts = shlex.split(self.command)
+        if self.terminal:
+            return shlex.split(settings["terminal"]) + parts
+        return parts
+
+    def executable(self):
+        if self.shell:
+            return None
+        try:
+            tokens = shlex.split(self.command)
+        except ValueError:
+            return None
+        return tokens[0] if tokens else None
+
+
+@dataclass
+class Config:
+    settings: dict
+    jobs: dict
+
+
+@dataclass
+class Timer:
+    job: Job
+    rule: Rule
+    deadline: float
+
+
+def make_unique_key_loader(errors):
+    class UniqueKeyLoader(yaml.SafeLoader):
+        def construct_mapping(self, node, deep=False):
+            self.flatten_mapping(node)
+            mapping = {}
+            for key_node, value_node in node.value:
+                try:
+                    key = self.construct_object(key_node, deep=deep)
+                except yaml.YAMLError as exc:
+                    errors.append(f"line {key_node.start_mark.line + 1}: invalid key: {exc}")
+                    continue
+                try:
+                    duplicate = key in mapping
+                except TypeError:
+                    errors.append(
+                        f"line {key_node.start_mark.line + 1}: unsupported unhashable key {key!r}"
+                    )
+                    continue
+                if duplicate:
+                    errors.append(
+                        f"line {key_node.start_mark.line + 1}: duplicate key {key!r}"
+                    )
+                mapping[key] = self.construct_object(value_node, deep=deep)
+            return mapping
+
+    return UniqueKeyLoader
+
+
+def validate_job(name, raw, errors):
+    field = f"job {name!r}"
+    if not isinstance(name, str):
+        errors.append(f"job name {name!r}: must be a string")
+        return None
+    if not JOB_NAME_RE.match(name):
+        errors.append(
+            f"{field}: invalid job name; allowed characters are letters, digits, _ and -"
+        )
+    if not isinstance(raw, dict):
+        errors.append(f"{field}: expected a mapping")
+        return None
+    allowed = {"command", "terminal", "shell", "overlap", "schedule"}
+    for key in raw:
+        if key not in allowed:
+            errors.append(f"{field}: unknown key {key!r}")
+
+    command = raw.get("command")
+    if command is None:
+        errors.append(f"{field}: command is required")
+        command = ""
+    elif not isinstance(command, str) or not command.strip():
+        errors.append(f"{field}: command must be a non-empty string")
+        command = ""
+    if command and not raw.get("shell"):
+        try:
+            shlex.split(command)
+        except ValueError as exc:
+            errors.append(f"{field}: command cannot be split: {exc}")
+
+    terminal = False
+    if "terminal" in raw:
+        terminal = check_bool(raw["terminal"], f"{field}.terminal", errors)
+        terminal = bool(terminal)
+
+    shell = False
+    if "shell" in raw:
+        shell = check_bool(raw["shell"], f"{field}.shell", errors)
+        shell = bool(shell)
+
+    overlap = "skip"
+    if "overlap" in raw:
+        value = raw["overlap"]
+        if value not in ("skip", "allow"):
+            errors.append(f"{field}.overlap: expected 'skip' or 'allow', got {value!r}")
+        else:
+            overlap = value
+
+    rules = []
+    schedule = raw.get("schedule")
+    if schedule is None:
+        errors.append(f"{field}: schedule is required")
+    elif not isinstance(schedule, list):
+        errors.append(f"{field}.schedule: expected a list of rules")
+    elif not schedule:
+        errors.append(f"{field}.schedule: at least one rule is required")
+    else:
+        for index, rule in enumerate(schedule):
+            rule_field = f"{field}.schedule[{index}]"
+            if not isinstance(rule, dict):
+                errors.append(f"{rule_field}: expected a mapping with every or random")
+                continue
+            allowed_rule = {"every", "random"}
+            for key in rule:
+                if key not in allowed_rule:
+                    errors.append(f"{rule_field}: unknown key {key!r}")
+            has_every = "every" in rule
+            has_random = "random" in rule
+            if has_every == has_random:
+                errors.append(f"{rule_field}: use exactly one of every or random")
+                continue
+            if has_every:
+                seconds = parse_duration(rule["every"], f"{rule_field}.every", errors)
+                if seconds is not None:
+                    rules.append(Rule("every", seconds))
+            else:
+                value = rule["random"]
+                if not isinstance(value, list) or len(value) != 2:
+                    errors.append(
+                        f"{rule_field}.random: expected a two-item list [min, max]"
+                    )
+                    continue
+                minimum = parse_duration(value[0], f"{rule_field}.random[0]", errors)
+                maximum = parse_duration(value[1], f"{rule_field}.random[1]", errors)
+                if minimum is not None and maximum is not None:
+                    if minimum > maximum:
+                        errors.append(
+                            f"{rule_field}.random: min {fmt_seconds(minimum)} is greater "
+                            f"than max {fmt_seconds(maximum)}"
+                        )
+                    else:
+                        rules.append(Rule("random", minimum, maximum))
+
+    return Job(name, command, terminal, shell, overlap, rules)
+
+
+def executable_exists(name):
+    if "/" in name:
+        return os.path.isfile(name) and os.access(name, os.X_OK)
+    return shutil.which(name) is not None
+
+
+def validate(raw, errors, warnings):
+    if raw is None:
+        errors.append("config is empty")
+        return None
+    if not isinstance(raw, dict):
+        errors.append("top level must be a mapping with settings and jobs")
+        return None
+
+    for key in raw:
+        if key not in ("settings", "jobs"):
+            errors.append(f"top level: unknown key {key!r}")
+
+    settings_raw = raw.get("settings", {})
+    settings = {}
+    if settings_raw is None:
+        settings_raw = {}
+    if not isinstance(settings_raw, dict):
+        errors.append("settings: expected a mapping")
+        settings_raw = {}
+    for key in settings_raw:
+        if key != "terminal":
+            errors.append(f"settings: unknown key {key!r}")
+    terminal = settings_raw.get("terminal")
+    if terminal is not None:
+        if not isinstance(terminal, str) or not terminal.strip():
+            errors.append("settings.terminal: expected a non-empty string")
+        else:
+            settings["terminal"] = terminal
+
+    jobs_raw = raw.get("jobs")
+    jobs = {}
+    if jobs_raw is None:
+        jobs_raw = {}
+    elif not isinstance(jobs_raw, dict):
+        errors.append("jobs: expected a mapping of job names to job definitions")
+        jobs_raw = {}
+
+    for name, job_raw in jobs_raw.items():
+        job = validate_job(name, job_raw, errors)
+        if job is not None:
+            jobs[name] = job
+        if isinstance(job_raw, dict) and job_raw.get("terminal") is True:
+            if "terminal" not in settings:
+                label = name if isinstance(name, str) else repr(name)
+                errors.append(
+                    f"job {label!r}: terminal is true but settings.terminal is not set"
+                )
+
+    if not errors:
+        terminal_exec = None
+        if "terminal" in settings:
+            try:
+                tokens = shlex.split(settings["terminal"])
+            except ValueError as exc:
+                errors.append(f"settings.terminal: cannot be split: {exc}")
+                tokens = []
+            if tokens:
+                terminal_exec = tokens[0]
+                if not executable_exists(terminal_exec):
+                    warnings.append(
+                        f"settings.terminal: executable {terminal_exec!r} not found in PATH"
+                    )
+        for name, job in jobs.items():
+            executable = job.executable()
+            if executable and not executable_exists(executable):
+                warnings.append(
+                    f"job {name!r}: executable {executable!r} not found in PATH"
+                )
+    if errors:
+        return None
+    return Config(settings, jobs)
+
+
+def load_config(path):
+    errors = []
+    warnings = []
+    try:
+        text = Path(path).read_text()
+    except OSError as exc:
+        return None, [f"{path}: {exc.strerror or exc}"], warnings
+    try:
+        raw = yaml.load(text, Loader=make_unique_key_loader(errors))
+    except yaml.YAMLError as exc:
+        mark = getattr(exc, "problem_mark", None)
+        where = f"line {mark.line + 1}: " if mark is not None else ""
+        problem = getattr(exc, "problem", None) or str(exc)
+        errors.append(f"{where}YAML error: {problem}")
+        return None, errors, warnings
+    config = validate(raw, errors, warnings)
+    return config, errors, warnings
+
+
+def report_errors(errors):
+    for error in errors:
+        print(f"error: {error}", file=sys.stderr)
+
+
+def report_warnings(warnings):
+    for warning in warnings:
+        print(f"warning: {warning}", file=sys.stderr)
+
+
+def fix_env(env):
+    """Make GUI apps launchable from a systemd user service."""
+    rt = env.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    env.setdefault("XDG_RUNTIME_DIR", rt)
+    if not env.get("WAYLAND_DISPLAY") and not env.get("DISPLAY"):
+        socks = sorted(p for p in glob.glob(rt + "/wayland-*") if not p.endswith(".lock"))
+        if socks:
+            env["WAYLAND_DISPLAY"] = os.path.basename(socks[0])
+        elif os.path.exists("/tmp/.X11-unix/X0"):
+            env["DISPLAY"] = ":0"
+
+
+class Daemon:
+    def __init__(self, path):
+        self.path = Path(path)
+        self.config = None
+        self.timers = []
+        self.running = {}
+        self.rng = random.Random()
+
+    def active(self, name):
+        return [proc for proc in self.running.get(name, []) if proc.poll() is None]
+
+    def reap(self):
+        changed = False
+        for name in list(self.running):
+            alive = []
+            for proc in self.running[name]:
+                status = proc.poll()
+                if status is None:
+                    alive.append(proc)
+                else:
+                    changed = True
+                    log.info("job %s: pid %d exited with status %s", name, proc.pid, status)
+            if alive:
+                self.running[name] = alive
+            else:
+                del self.running[name]
+        return changed
+
+    def build_timers(self, config, now):
+        timers = []
+        for job in config.jobs.values():
+            for rule in job.rules:
+                timers.append(Timer(job, rule, now + rule.draw(self.rng)))
+        return timers
+
+    def load(self):
+        config, errors, warnings = load_config(self.path)
+        report_warnings(warnings)
+        if errors:
+            report_errors(errors)
+            return False
+        self.config = config
+        now = time.monotonic()
+        self.timers = self.build_timers(config, now)
+        log.info("config loaded: %s (%d job(s))", self.path, len(config.jobs))
+        for timer in self.timers:
+            log.info(
+                "job %s: rule %s next fire in %s",
+                timer.job.name,
+                fmt_interval(timer.rule),
+                fmt_seconds(timer.deadline - now),
+            )
+        return True
+
+    def reload(self):
+        config, errors, warnings = load_config(self.path)
+        report_warnings(warnings)
+        if errors:
+            for error in errors:
+                log.error("%s", error)
+            log.error("reload failed; keeping the old config")
+            return False
+        self.config = config
+        now = time.monotonic()
+        self.timers = self.build_timers(config, now)
+        log.info("config reloaded: %s (%d job(s))", self.path, len(config.jobs))
+        for timer in self.timers:
+            log.info(
+                "job %s: rule %s next fire in %s",
+                timer.job.name,
+                fmt_interval(timer.rule),
+                fmt_seconds(timer.deadline - now),
+            )
+        self.write_state()
+        return True
+
+    def spawn(self, job, source):
+        try:
+            env = os.environ.copy()
+            fix_env(env)
+            proc = subprocess.Popen(
+                job.argv(self.config.settings),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+                close_fds=True,
+                env=env,
+            )
+        except OSError as exc:
+            log.error("job %s: %s spawn failed: %s", job.name, source, exc)
+            return None
+        self.running.setdefault(job.name, []).append(proc)
+        log.info("job %s: %s fire, pid %d", job.name, source, proc.pid)
+        return proc
+
+    def advance(self, timer, now):
+        if timer.rule.kind == "every":
+            deadline = timer.deadline + timer.rule.seconds
+            if deadline <= now:
+                deadline = now + timer.rule.seconds
+            return deadline
+        return now + timer.rule.draw(self.rng)
+
+    def write_state(self, stopped=False):
+        if self.config is None:
+            return
+        now_mono = time.monotonic()
+        now_epoch = time.time()
+        jobs = {}
+        for name, job in self.config.jobs.items():
+            rules = []
+            for timer in self.timers:
+                if timer.job.name != name:
+                    continue
+                rules.append(
+                    {
+                        "kind": timer.rule.kind,
+                        "interval": timer.rule.seconds,
+                        "max": timer.rule.max_seconds,
+                        "next_fire": now_epoch + (timer.deadline - now_mono),
+                    }
+                )
+            jobs[name] = {
+                "command": job.command,
+                "terminal": job.terminal,
+                "shell": job.shell,
+                "overlap": job.overlap,
+                "running": [proc.pid for proc in self.active(name)],
+                "rules": rules,
+            }
+        data = {
+            "pid": os.getpid(),
+            "stopped": stopped,
+            "config": str(self.path),
+            "updated": now_epoch,
+            "jobs": jobs,
+        }
+        path = state_path()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            tmp.write_text(json.dumps(data, indent=2) + "\n")
+            os.replace(tmp, path)
+        except OSError as exc:
+            log.warning("cannot write state %s: %s", path, exc)
+
+    def timeout(self):
+        timeout = None
+        if self.timers:
+            timeout = max(0.0, min(t.deadline for t in self.timers) - time.monotonic())
+        if any(self.active(name) for name in self.running):
+            timeout = 1.0 if timeout is None else min(timeout, 1.0)
+        return timeout
+
+
+def run_daemon(path):
+    daemon = Daemon(path)
+    if not daemon.load():
+        return 1
+
+    flags = {"reload": False, "stop": False}
+
+    def on_hup(signum, frame):
+        flags["reload"] = True
+
+    def on_stop(signum, frame):
+        flags["stop"] = True
+
+    signal.signal(signal.SIGHUP, on_hup)
+    signal.signal(signal.SIGTERM, on_stop)
+    signal.signal(signal.SIGINT, on_stop)
+
+    wake_r, wake_w = os.pipe2(os.O_NONBLOCK | os.O_CLOEXEC)
+    signal.set_wakeup_fd(wake_w)
+    daemon.write_state()
+    log.info("intervald started, pid %d", os.getpid())
+
+    try:
+        while not flags["stop"]:
+            if flags["reload"]:
+                flags["reload"] = False
+                daemon.reload()
+            if daemon.reap():
+                daemon.write_state()
+            now = time.monotonic()
+            due = [timer for timer in daemon.timers if timer.deadline <= now]
+            if due:
+                grouped = {}
+                for timer in due:
+                    grouped.setdefault(timer.job.name, []).append(timer)
+                for name, timers in grouped.items():
+                    job = timers[0].job
+                    if job.overlap == "skip" and daemon.active(name):
+                        pids = ", ".join(str(proc.pid) for proc in daemon.active(name))
+                        log.warning(
+                            "job %s: overlap skip (still running: %s)", name, pids
+                        )
+                    else:
+                        daemon.spawn(job, "scheduled")
+                for timer in due:
+                    timer.deadline = daemon.advance(timer, now)
+                    log.info(
+                        "job %s: rule %s next fire in %s",
+                        timer.job.name,
+                        fmt_interval(timer.rule),
+                        fmt_seconds(timer.deadline - now),
+                    )
+                daemon.write_state()
+            timeout = daemon.timeout()
+            try:
+                ready, _, _ = select.select([wake_r], [], [], timeout)
+            except InterruptedError:
+                continue
+            if ready:
+                try:
+                    while os.read(wake_r, 512):
+                        pass
+                except BlockingIOError:
+                    pass
+    finally:
+        signal.set_wakeup_fd(-1)
+        daemon.write_state(stopped=True)
+        log.info("intervald stopped")
+    return 0
+
+
+def cmd_check(path):
+    config, errors, warnings = load_config(path)
+    report_warnings(warnings)
+    if errors:
+        report_errors(errors)
+        return 1
+    print(f"OK: {len(config.jobs)} job(s) from {path}")
+    for name, job in config.jobs.items():
+        rules = ", ".join(fmt_interval(rule) for rule in job.rules)
+        print(f"  {name}: {rules}")
+    return 0
+
+
+def cmd_fire(path, name):
+    config, errors, warnings = load_config(path)
+    report_warnings(warnings)
+    if errors:
+        report_errors(errors)
+        return 1
+    job = config.jobs.get(name)
+    if job is None:
+        print(f"error: unknown job {name!r}", file=sys.stderr)
+        return 1
+    try:
+        env = os.environ.copy()
+        fix_env(env)
+        proc = subprocess.Popen(
+            job.argv(config.settings),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True,
+            env=env,
+        )
+    except OSError as exc:
+        print(f"error: job {name!r}: spawn failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"fired {name} (pid {proc.pid})")
+    return 0
+
+
+def pid_alive(pid):
+    if not pid:
+        return False
+    try:
+        os.kill(int(pid), 0)
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def load_state():
+    path = state_path()
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+
+
+def cmd_status():
+    data = load_state()
+    if data is None:
+        print(f"intervald: not running (no state at {state_path()})")
+        return 0
+    pid = data.get("pid")
+    alive = pid_alive(pid) and not data.get("stopped")
+    status = "running" if alive else "not running (stale state)"
+    print(f"intervald: {status}")
+    print(f"  pid:    {pid}")
+    print(f"  config: {data.get('config')}")
+    age = max(0, int(time.time() - float(data.get("updated", 0))))
+    print(f"  state:  {state_path()} (updated {age}s ago)")
+    now = time.time()
+    jobs = data.get("jobs", {})
+    if not jobs:
+        print("  jobs:   none")
+    for name, job in jobs.items():
+        running = [p for p in job.get("running", []) if pid_alive(p)]
+        running_text = ", ".join(str(p) for p in running) if running else "-"
+        print(f"  {name}: {job.get('command')!r}")
+        print(
+            f"    terminal={job.get('terminal')} shell={job.get('shell')} "
+            f"overlap={job.get('overlap')} running={running_text}"
+        )
+        for rule in job.get("rules", []):
+            if rule.get("kind") == "every":
+                label = fmt_seconds(rule.get("interval", 0))
+            else:
+                label = f"{fmt_seconds(rule.get('interval', 0))}-{fmt_seconds(rule.get('max') or 0)}"
+            next_fire = float(rule.get("next_fire", 0))
+            remaining = next_fire - now
+            when = time.strftime("%H:%M:%S", time.localtime(next_fire))
+            if remaining <= 0:
+                print(f"    {label}: due now")
+            else:
+                print(f"    {label}: in {fmt_seconds(remaining)} (at {when})")
+    return 0
+
+
+def cmd_reload():
+    data = load_state()
+    pid = data.get("pid") if data else None
+    if pid_alive(pid):
+        try:
+            os.kill(int(pid), signal.SIGHUP)
+        except OSError as exc:
+            print(f"error: cannot signal pid {pid}: {exc}", file=sys.stderr)
+            return 1
+        print(f"reload requested (pid {pid})")
+        return 0
+    try:
+        result = subprocess.run(
+            ["systemctl", "--user", "reload", "intervald.service"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError:
+        result = None
+    if result is not None and result.returncode == 0:
+        print("reload requested (systemctl)")
+        return 0
+    print("error: intervald is not running", file=sys.stderr)
+    return 1
+
+
+def usage():
+    print(
+        """Usage: intervald [-c PATH] <command>
+
+Commands:
+  run                 run the scheduler in the foreground
+  check               validate the config and exit
+  status              show jobs, rules, running state and next fires
+  fire <job>          spawn a job now, ignoring overlap
+  reload              ask the running daemon to reload its config
+
+Options:
+  -c, --config PATH   config file (default: ~/.config/intervald/config.yaml)
+  -h, --help          show this help
+"""
+    )
+
+
+def parse_config_arg(argv):
+    path = None
+    rest = []
+    index = 0
+    while index < len(argv):
+        arg = argv[index]
+        if arg in ("-c", "--config"):
+            if index + 1 >= len(argv):
+                print("error: -c requires a path", file=sys.stderr)
+                return None, None
+            path = argv[index + 1]
+            index += 2
+        elif arg.startswith("--config="):
+            path = arg.split("=", 1)[1]
+            index += 1
+        else:
+            rest.append(arg)
+            index += 1
+    return path, rest
+
+
+def main(argv):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s intervald %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        stream=sys.stderr,
+    )
+    path, rest = parse_config_arg(argv)
+    if path is None and rest is None:
+        return 2
+    config_path = Path(path).expanduser() if path else default_config_path()
+    if not rest:
+        usage()
+        return 2
+    command = rest[0]
+    args = rest[1:]
+    if command in ("-h", "--help", "help"):
+        usage()
+        return 0
+    if command == "run":
+        if args:
+            print("error: run takes no arguments", file=sys.stderr)
+            return 2
+        return run_daemon(config_path)
+    if command == "check":
+        if args:
+            print("error: check takes no arguments", file=sys.stderr)
+            return 2
+        return cmd_check(config_path)
+    if command == "status":
+        if args:
+            print("error: status takes no arguments", file=sys.stderr)
+            return 2
+        return cmd_status()
+    if command == "fire":
+        if len(args) != 1:
+            print("error: fire requires exactly one job name", file=sys.stderr)
+            return 2
+        return cmd_fire(config_path, args[0])
+    if command == "reload":
+        if args:
+            print("error: reload takes no arguments", file=sys.stderr)
+            return 2
+        return cmd_reload()
+    print(f"error: unknown command {command!r}", file=sys.stderr)
+    usage()
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

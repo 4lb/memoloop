@@ -1,0 +1,53 @@
+# intervald configuration file.
+# Path: ~/.config/intervald/config.yaml  (override with `intervald -c <path>` command)
+#
+# Validate with:  intervald check
+# Apply changes:  intervald reload   (or: systemctl --user reload intervald.service)
+
+settings:
+  # Terminal prefix prepended to jobs that have `terminal: true`.
+  # Must be a non-empty string, split with shlex (first token is the executable).
+  terminal: "foot -e"
+
+jobs:
+  # Each key is a job ID; must match [A-Za-z0-9_-]+.
+  # Every job needs a `command` and at least one schedule rule.
+
+  memoloop:
+    command: "memoloop ask"          # required; split with shlex, no shell by default
+    terminal: true                   # default false; prefix settings.terminal when true
+    overlap: skip                    # skip|allow, default skip; see below
+    schedule:                        # required; at least one rule
+      - every: 45m                   # fixed interval: positive integer + s|m|h
+      - random: [15m, 30m]           # uniform random delay [min, max], re-rolled every fire
+
+  anki:
+    command: "anki"
+    overlap: skip
+    schedule:
+      - every: 45m
+      - random: [15m, 30m]
+
+# ------------------------------------------------------------------------------
+# Job keys (all optional unless noted):
+#   command   string  required; the command to run (shlex-split, no shell)
+#   terminal  bool    default false; if true, prefix `settings.terminal`
+#   shell     bool    default false; if true, run via /bin/sh -c
+#   overlap   skip|allow  default skip; skip = don't fire if previous instance still running
+#   schedule  list    required; one or more rules (each exactly one of every/random)
+#
+# Duration rules:
+#   - every: <dur>   fixed interval, advances from previous deadline (no drift)
+#   - random: [<min>, <max>]   uniform integer seconds in [min, max], re-rolled after each fire
+#   <dur> = positive integer + s|m|h  (e.g. 90s, 45m, 2h)
+#   Floats, bare numbers (30), 1h30m, and days are rejected.
+#
+# overlap semantics:
+#   skip    (default) scheduled fire skipped while a previous instance runs; rule still reschedules
+#   allow   every scheduled fire spawns
+#   `intervald fire <job>` always spawns, ignoring overlap, and never touches scheduled timers.
+#
+# A config with no jobs (`jobs: {}`) is valid; the daemon simply idles.
+# Missing executables are warnings from `intervald check`, not errors.
+# Duplicate YAML keys and quoted booleans ("true"/"yes") are rejected with line numbers.
+# ------------------------------------------------------------------------------
