@@ -47,6 +47,18 @@ Every file is a UTF-8 JSON **array of objects**:
 No comments, no trailing commas, one array per file. A file may hold one
 question or hundreds; they are equivalent.
 
+Files must be written with indentation, one field per line — never minified
+into one long line. The bundled data is formatted with
+[Prettier](https://prettier.io) defaults (2 spaces, 80 columns). If `prettier`
+is installed, format every question file in place:
+
+```sh
+prettier --write 'data/questions/*/*.json'
+```
+
+Otherwise match the existing indentation by hand. `jq` output is also valid,
+but run it through `prettier` before committing so diffs stay readable.
+
 ## Fields
 
 | Field | Required | Type | Meaning |
