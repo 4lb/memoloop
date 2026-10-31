@@ -16,12 +16,13 @@ SELF_DIR() {
 REPO=$(SELF_DIR)
 unset -f SELF_DIR
 
+CLI_ROOT="$(mktemp -d)"
+
 export MEMOLOOP_CONFIG_DIR="$(mktemp -d)"
-export MEMOLOOP_CACHE_DIR="$(mktemp -d)"
 export MEMOLOOP_STATE="$(mktemp -d)"
 export MEMOLOOP_LOG="$(mktemp -d)"
 export USER_DATA_DIR="$(mktemp -d)"
-trap 'rm -rf "$MEMOLOOP_CONFIG_DIR" "$MEMOLOOP_CACHE_DIR" "$MEMOLOOP_STATE" "$MEMOLOOP_LOG" "$USER_DATA_DIR"' EXIT
+trap 'rm -rf "$MEMOLOOP_CONFIG_DIR" "$MEMOLOOP_STATE" "$MEMOLOOP_LOG" "$USER_DATA_DIR" "$CLI_ROOT"' EXIT
 
 . "$REPO/src/memoloop"
 
@@ -38,6 +39,10 @@ assert_eq() {
 }
 
 cat >$MEMOLOOP_CONFIG_DIR/config.conf <<'EOF'
+nohelp=true
+EOF
+
+cat >$MEMOLOOP_CONFIG_DIR/intervals.conf <<'EOF'
 fixed_seconds=2700
 random_min=15
 random_max=30
@@ -129,6 +134,80 @@ sel_id=$(printf '%s' "$sel" | jq -r '.id // empty')
 
 sel_prefix=$(printf '%s' "$sel_id" | cut -d- -f1-2)
 assert_eq "selected group is greetings" "t-greet" "$sel_prefix"
+
+in_dnd_code() {
+  in_dnd "$1"
+  printf '%s' "$?"
+}
+
+session_set_str dnd_start "09:00"
+session_set_str dnd_end "17:00"
+assert_eq "dnd window: start edge is inside" "0" "$(in_dnd_code 09:00)"
+assert_eq "dnd window: middle is inside" "0" "$(in_dnd_code 12:00)"
+assert_eq "dnd window: end edge is outside" "1" "$(in_dnd_code 17:00)"
+assert_eq "dnd window: before is outside" "1" "$(in_dnd_code 08:59)"
+
+session_set_str dnd_start "22:00"
+session_set_str dnd_end "07:00"
+assert_eq "overnight dnd: late is inside" "0" "$(in_dnd_code 23:30)"
+assert_eq "overnight dnd: early is inside" "0" "$(in_dnd_code 06:59)"
+assert_eq "overnight dnd: daytime is outside" "1" "$(in_dnd_code 12:00)"
+assert_eq "overnight dnd: end edge is outside" "1" "$(in_dnd_code 07:00)"
+
+session_set dnd_start null
+session_set dnd_end null
+assert_eq "dnd unset is outside" "1" "$(in_dnd_code 12:00)"
+
+mkdir -p "$CLI_ROOT/config" "$CLI_ROOT/data/questions/greetings"
+cp "$USER_DATA_DIR/questions/greetings/basics.json" "$CLI_ROOT/data/questions/greetings/basics.json"
+printf 'greetings\n' >"$CLI_ROOT/config/pickup.set"
+printf 'fixed_seconds=60\nrandom_min=1\nrandom_max=2\n' >"$CLI_ROOT/config/intervals.conf"
+printf 'nohelp=true\nUSER_DATA_DIR="%s"\n' "$CLI_ROOT/data" >"$CLI_ROOT/config/config.conf"
+
+cli() {
+  env MEMOLOOP_CONFIG_DIR="$CLI_ROOT/config" \
+    MEMOLOOP_DATA_DIR="$CLI_ROOT/data" \
+    MEMOLOOP_STATE="$CLI_ROOT/state" \
+    MEMOLOOP_LOG="$CLI_ROOT/log" \
+    bash "$REPO/src/memoloop" "$@" </dev/null >/dev/null 2>&1
+}
+
+cli setup
+assert_eq "setup exits 0" "0" "$?"
+assert_eq "setup creates rules.json" "yes" "$([ -s "$CLI_ROOT/state/rules.json" ] && echo yes || echo no)"
+assert_eq "setup creates session.json" "yes" "$([ -s "$CLI_ROOT/state/session.json" ] && echo yes || echo no)"
+assert_eq "setup creates answers.json" "yes" "$([ -s "$CLI_ROOT/data/answers.json" ] && echo yes || echo no)"
+assert_eq "setup creates log file" "yes" "$([ -f "$CLI_ROOT/log/reminders.log" ] && echo yes || echo no)"
+
+cli dnd 09:00 17:00
+assert_eq "dnd exits 0" "0" "$?"
+assert_eq "dnd start stored" "09:00" "$(jq -r .dnd_start "$CLI_ROOT/state/session.json")"
+assert_eq "dnd end stored" "17:00" "$(jq -r .dnd_end "$CLI_ROOT/state/session.json")"
+
+cli dnd off
+assert_eq "dnd off clears start" "null" "$(jq -r .dnd_start "$CLI_ROOT/state/session.json")"
+assert_eq "dnd off clears end" "null" "$(jq -r .dnd_end "$CLI_ROOT/state/session.json")"
+
+cli dnd 25:00 17:00
+assert_eq "dnd rejects bad time" "1" "$?"
+cli dnd 12:00
+assert_eq "dnd needs two arguments" "1" "$?"
+
+out=$(env MEMOLOOP_CONFIG_DIR="$CLI_ROOT/config" \
+  MEMOLOOP_DATA_DIR="$CLI_ROOT/data" \
+  MEMOLOOP_STATE="$CLI_ROOT/state" \
+  MEMOLOOP_LOG="$CLI_ROOT/log" \
+  bash "$REPO/src/memoloop" config </dev/null 2>&1)
+case "$out" in *"$CLI_ROOT/data"*) v=yes ;; *) v=no ;; esac
+assert_eq "config.conf USER_DATA_DIR honoured" "yes" "$v"
+
+popup_rc=0
+timeout 3 bash -c '
+  export FOOT_POPUP=1
+  export MEMOLOOP_CONFIG_DIR="$1" MEMOLOOP_DATA_DIR="$2" MEMOLOOP_STATE="$3" MEMOLOOP_LOG="$4"
+  sleep 6 | "$5" ask fixed >/dev/null 2>&1
+' _ "$CLI_ROOT/config" "$CLI_ROOT/data" "$CLI_ROOT/state" "$CLI_ROOT/log" "$REPO/src/memoloop" || popup_rc=$?
+assert_eq "popup renders and waits for input" "124" "$popup_rc"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 if [ "$fail" -gt 0 ]; then
