@@ -218,7 +218,7 @@ uninstall_integration() {
 installer_run "$@"
 
 if [ "$BIN_ONLY" -eq 1 ]; then
-  term_notice "system mode installs the binary only" "run memoloop as any user; no service or config was created"
+  term_status "system install" "$TERM_MARK_PLAIN" "binary only · no service, config or niri rules were created"
 fi
 
 if [ "${INSTALLER_ACTION:-}" = "install" ] && [ "${INSTALLER_DRY:-0}" -eq 0 ] && [ "$BIN_ONLY" -eq 0 ]; then

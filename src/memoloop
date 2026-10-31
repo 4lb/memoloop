@@ -470,12 +470,14 @@ popup_spawn() {
 }
 
 launch_popup() {
-  local id="$1"
+  local id="$1" pid=""
   popup_spawn "$id"
-  local pid=$!
-  session_set open_pid "$pid"
+  pid=$!
+  if [ -n "$pid" ]; then
+    session_set open_pid "$pid"
+  fi
   session_open_set 1
-  log_add "$id" "fired" "popup launched (pid $pid)"
+  log_add "$id" "fired" "popup launched${pid:+ (pid $pid)}"
 }
 
 process_queue() {
@@ -506,7 +508,7 @@ cmd_ask() {
   fi
 
   need jq
-  load_intervals
+  state_init
 
   local groups
   groups=$(load_enabled_groups)
@@ -585,7 +587,7 @@ cmd_ask() {
   p | P)
     session_set paused true
     result="paused"
-    term_notice "Paused" "All reminders paused. Run 'memoloop resume' to continue."
+    term_ok "Paused" "All reminders paused. Run 'memoloop resume' to continue."
     ;;
   d | D) result="dismissed" ;;
   *)
@@ -679,7 +681,7 @@ cmd_watch() {
     esac
   done
 
-  term_notice "memoloop watch" "fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
+  term_notice "memoloop watch · fixed ${FIXED_SECONDS}s · random ${RANDOM_MIN}–${RANDOM_MAX}min"
 
   while :; do
     process_queue
@@ -706,7 +708,7 @@ cmd_start() {
   require_config
   need systemctl
   if systemctl --user is-active --quiet "$SERVICE_UNIT" 2>/dev/null; then
-    term_notice "memoloop already running" "systemctl --user status $SERVICE_UNIT"
+    term_notice "memoloop already running · systemctl --user status $SERVICE_UNIT"
     return 0
   fi
   systemctl --user start "$SERVICE_UNIT"
@@ -814,13 +816,13 @@ cmd_config() {
 cmd_pause() {
   state_init
   session_set paused true
-  term_notice "Paused" "All reminders paused. Run 'memoloop resume' to continue."
+  term_ok "Paused" "All reminders paused. Run 'memoloop resume' to continue."
 }
 
 cmd_resume() {
   state_init
   session_set paused false
-  term_notice "Resumed" "All reminders resumed."
+  term_ok "Resumed" "All reminders resumed."
 }
 
 valid_time() {
@@ -843,14 +845,14 @@ cmd_dnd() {
   state_init
   session_set_str dnd_start "$start_time"
   session_set_str dnd_end "$end_time"
-  term_notice "DND set" "Do Not Disturb window: $start_time - $end_time"
+  term_status "DND set" "$TERM_MARK_PLAIN" "Do Not Disturb window: $start_time - $end_time"
 }
 
 cmd_dnd_off() {
   state_init
   session_set dnd_start null
   session_set dnd_end null
-  term_notice "DND cleared"
+  term_status "DND cleared" "$TERM_MARK_PLAIN" "reminders fire at any time"
 }
 
 cmd_setup() {
