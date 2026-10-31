@@ -56,15 +56,18 @@ Install (CachyOS/Arch example):
 
 All commands run from the repo root:
 
-    ./src/memoloop setup        # initialise state/, log/, config/, cache/ directories
-    ./src/memoloop status       # show paused / DND / next-due / config state
+    ./src/memoloop setup        # initialise state, log, data and config directories
+    ./src/memoloop status       # show running / paused / DND / next-due state
     ./src/memoloop config       # show effective configuration
-    ./src/memoloop watch        # run the reminder daemon (fixed + random rules)
+    ./src/memoloop watch        # run the reminder loop in the foreground
+    ./src/memoloop start        # start the systemd user service (installed copy)
+    ./src/memoloop stop         # stop the systemd user service
     ./src/memoloop test         # launch one test prompt immediately
     ./src/memoloop pause        # pause all reminders
     ./src/memoloop resume       # resume all reminders
-    ./src/memoloop dnd <start> <end>   # set DND window, e.g. dnd 09:00 17:00
-    ./src/memoloop ask <rule>   # show one question popup (used by the daemon)
+    ./src/memoloop dnd 09:00 17:00   # set the DND window
+    ./src/memoloop dnd off      # clear the DND window
+    ./src/memoloop ask [rule]   # show one question popup (used by the daemon)
 
 `watch` is the daemon: leave it running in the background (e.g. under a
 systemd user service or `nohup ./src/memoloop watch &`). It opens one terminal
@@ -91,9 +94,13 @@ min_per_day=10
 - `decay_hours`: half-life for answer-point decay in hours (default 24)
 - `min_per_day`: minimum unique questions shown per day (default 10)
 
-Override at run time via `MEMOLOOP_FIXED_SECONDS`, e.g. for a 30-second test:
+Override at run time through the environment:
 
     MEMOLOOP_FIXED_SECONDS=30 ./src/memoloop watch
+
+The same exists for `MEMOLOOP_RANDOM_MIN`, `MEMOLOOP_RANDOM_MAX`,
+`MEMOLOOP_DECAY_HOURS`, `MEMOLOOP_MIN_PER_DAY` and `MEMOLOOP_NOHELP`.
+Environment values win over `intervals.conf`.
 
 **pickup.set** — enabled question groups, one ID per line:
 
@@ -122,9 +129,19 @@ Extra fields by type:
 - `cloze`: `target` — the word to blank out in `japanese`
 - `choice`: `choices` — array of option strings, `answer` — the correct letter
 
-## Cache (`~/.local/share/memoloop/`)
+## Data and state
 
-**answers.json** — per-question answer cache with points:
+`~/.local/share/memoloop/` — user data (override with `MEMOLOOP_DATA_DIR`):
+
+- `questions/<group>/*.json`
+- `answers.json` — per-question points and show history
+
+`~/.local/state/memoloop/` — runtime state (override with `MEMOLOOP_STATE`):
+
+- `rules.json` (next-due per rule), `session.json` (paused, DND, queue, open pid),
+  `current.json` (last prompt), `result.json` (last answer), `log/reminders.log`
+
+**answers.json** — per-question answer data with points:
 
 ```json
 {
@@ -156,13 +173,15 @@ and place `niri/memoloop.kdl` at
 every other `foot` window keeps tiling. The size rule dimensions the window to
 the term.sh frame (64 columns) so the popup box is centred.
 
+`MOD+N` runs `memoloop ask` from `PATH`, so the installed binary in
+`~/.local/bin` must be reachable from the shell that niri spawns.
+
 ## Directory tree
 
 - `src/memoloop` — entry script (daemon + popup + scheduling)
 - `lib/term.sh` — terminal renderer (vendored copy, like glyph-key's)
 - `data/questions/questions.json` — legacy sample question set (no longer used)
-- `state/` — runtime state (rules, session, current question, result; gitignored)
-- `log/` — runtime logs (gitignored)
+- runtime state and logs live in `~/.local/state/memoloop/` (or `MEMOLOOP_STATE`)
 - `tests/memoloop_test.sh` — basic automated tests
 - `plans/` — product and technical plans
 - `progress/` — session progress snapshots
@@ -190,6 +209,9 @@ and none is silently merged or discarded.
 
 - Runs under a terminal emulator (`foot`) on Wayland/X11; no display → popups
   cannot open (foot errors out).
+- The daemon runs the script that was installed when it started. Reinstalling
+  restarts the service; after editing `src/memoloop` by hand, run
+  `systemctl --user restart memoloop`.
 - Japanese display/input assumes a UTF-8 locale and a font covering kana/kanji;
   verify with `memoloop ask fixed`.
 - DND window is same-day only (no overnight windows) in this prototype.

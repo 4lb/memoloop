@@ -331,3 +331,70 @@ installer are untested — which is why all of the above shipped green.
 9. Add tests: `setup`, `dnd`, a popup smoke test that runs `FOOT_POPUP=1
    memoloop ask` on a pty and asserts it blocks, and an `install.sh --dry-run`
    test.
+
+## 5. Status after the fix pass (261031)
+
+Everything in §4 except the items marked *open* has been implemented and
+verified on this machine.
+
+**`src/memoloop`**
+
+- `cmd_ask` has one spawn path. `FOOT_POPUP` alone decides whether a popup is
+  rendered or launched; the redundant second branch is gone. Launching from a
+  tty detaches the new terminal (`setsid --fork`, stdin `/dev/null`) so it no
+  longer dies with the parent pty — the original failure mode.
+- `memoloop setup` implemented; `memoloop dnd` uses `--arg` for strings, calls
+  `state_init`, validates `HH:MM`, and `dnd off` was added.
+- `intervals.conf` is read from `~/.config/memoloop` (legacy copy in the data
+  dir still works); `config.conf` is parsed instead of sourced, quotes and
+  `$HOME/` are expanded, and it can no longer override an explicit
+  `MEMOLOOP_DATA_DIR`.
+- `random_min`/`random_max` are read live from the config instead of the value
+  frozen in `rules.json`.
+- Environment overrides (`MEMOLOOP_FIXED_SECONDS`, `MEMOLOOP_RANDOM_MIN`,
+  `MEMOLOOP_RANDOM_MAX`, `MEMOLOOP_DECAY_HOURS`, `MEMOLOOP_MIN_PER_DAY`,
+  `MEMOLOOP_NOHELP`) now work as `README` claims.
+- State and log moved to `~/.local/state/memoloop` (`MEMOLOOP_STATE`).
+  Answers live in the data dir; `CACHE_DIR`/`MEMOLOOP_CACHE_DIR` are gone.
+- State mutations take an `flock`; `process_queue` only writes when a value
+  changes (the 5-second write storm is gone: `session.json` keeps its mtime
+  while a popup is open).
+- `due_rules` treats `next_due = 0` as "due now"; `in_dnd` handles overnight
+  windows and takes an optional clock argument for tests.
+- `select_question` seeds from epoch + `$RANDOM` so two rules fired in the same
+  second pick different questions; `question_weight` clamps negative decay.
+- `die` inside a popup shows the error for 5 s instead of waiting forever;
+  the unit got `StartLimitIntervalSec`/`StartLimitBurst`.
+- `usage`/`status`/`config` show real paths; `status` now prints paused and DND.
+
+**`install.sh`**
+
+- `systemctl --user restart` instead of `start`: a reinstall restarts the
+  daemon, so it always runs the installed script.
+- Unit is templated with the real target path and `MEMOLOOP_*` dirs; no
+  hardcoded `%h/.local/bin`.
+- `lib` path is derived from the actual bin dir, so `--install-path` works.
+- Uninstall stops and disables the unit, reloads systemd, and reports the
+  user data it keeps.
+- State/log migration from `~/.local/state/*.json` and `~/.local/log`.
+  `intervals.conf` migration from the data dir to the config dir.
+- `--system` now installs the binary and lib into `/usr/local` and says that it
+  is binary-only, instead of writing a broken user unit into `/etc`.
+- Alias creation removed (the binary is on `PATH`); the managed block is still
+  removed on uninstall. Niri rules are installed with a `.bak` backup when the
+  local copy differs, and the binding now calls `memoloop ask` from `PATH`.
+- `--dry-run`, `--install-path`, `--system`, `--no-integration` all exercised.
+
+**Tests** — 42 assertions, including `setup`, `dnd`/`dnd off`, DND window
+boundaries (same-day and overnight), `config.conf` parsing, and a popup smoke
+test that asserts `FOOT_POPUP=1 memoloop ask` renders and blocks on stdin.
+
+**Open / deliberately not done**
+
+- No packaging, no XDG portal, no `--system` service (a GUI app belongs in the
+  user manager; `--system` is binary-only on purpose).
+- `select_question` is still O(questions) `jq` calls; fine at this size.
+- No per-rule enable/disable CLI yet (`rules.json` supports it).
+- The audit's §2 item about verifying the version of a running daemon is
+  addressed only by restarting on install; a runtime version check was not
+  added.
