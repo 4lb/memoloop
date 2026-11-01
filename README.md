@@ -10,8 +10,8 @@ Resume: `read ./pickup.md`
 
 Prototype implemented (Linux/Bash). See [`plans/AGENT.md`](plans/AGENT.md) for the
 product plan, [`plans/first-steps.md`](plans/first-steps.md) for the build
-stages, and [`plans/app-plan.md`](plans/app-plan.md) for the revised product
-plan. See [`plans/config-scoring-plan.md`](plans/config-scoring-plan.md) for the
+stages, and [`plans/261030-app-plan.md`](plans/261030-app-plan.md) for the revised product
+plan. See [`plans/261030-config-scoring-plan.md`](plans/261030-config-scoring-plan.md) for the
 config + scoring design.
 
 ## What the prototype does and does not do

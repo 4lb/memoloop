@@ -26,7 +26,7 @@ Groundwork (files created):
   `log/` (state/log gitignored)
 
 Read & absorbed (reference context — do not redo):
-- `plans/AGENT.md`, `tech-stack.md`, `first-steps.md`, `app-plan.md`
+- `plans/AGENT.md`, `tech-stack.md`, `first-steps.md`, `261030-app-plan.md`
 - Reference projects (read-only, not modified, no runtime dep):
   `t-linux/cli-utilities/utilities/glyph-key` (popup terminal renderer, own lib/ copy
   of term.sh), `desk-reminder` (per-rule intervals, XDG_STATE_HOME state, D-Bus daemon

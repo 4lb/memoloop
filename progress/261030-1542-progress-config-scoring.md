@@ -12,7 +12,7 @@ Implemented the ~/.config/memoloop/ config system + answer scoring with weighted
 
 - `src/memoloop` — rewritten: config dir `~/.config/memoloop/` (intervals.conf, pickup.set, questions/<group>/), cache dir `~/.cache/memoloop/` (answers.json). Point system: base 100, correct +10, incorrect -10 (floor 0). Weight: 100/(points+100). Time decay: half-life every decay_hours (default 24h). Daily minimum: min_per_day unique questions/day. Weighted random selection via awk (jq lacks exp/ln/random). New `cmd_config` subcommand.
 - `tests/memoloop_test.sh` — rewritten: 19 tests for config loading, question loading, scoring, weights, daily minimum, selection. All pass.
-- `plans/config-scoring-plan.md` — design document for the feature.
+- `plans/261030-config-scoring-plan.md` — design document for the feature.
 - `README.md` — updated to document new config system.
 - Fixed `questions_shown_today()` stray `)` syntax bug.
 - Fixed `update_points()` to pass `$result` via `--arg` to jq.
@@ -22,7 +22,7 @@ Implemented the ~/.config/memoloop/ config system + answer scoring with weighted
 ## Files modified
 
 Modified: src/memoloop, tests/memoloop_test.sh, README.md
-Created: plans/config-scoring-plan.md
+Created: plans/261030-config-scoring-plan.md
 
 ## Commands run
 
