@@ -15,7 +15,7 @@
 - `data/questions/` — question JSON files
 - `install.sh` — install script
 - `README.md`, `AGENTS.md` — documentation
-- `pickup.md` — pickup set configuration
+- `progress/pickup.md` — pickup set configuration
 
 **On system:**
 - `~/.local/bin/memoloop` — binary

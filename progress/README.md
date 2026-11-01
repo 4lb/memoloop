@@ -42,8 +42,8 @@ agent should be able to read the latest report and continue immediately.
 Agents running on different platforms append reports here. The latest file is
 the source of truth for "where we are". Before starting work, read the most
 recent `progress/*.md` file plus `plans/AGENT.md`.
-A thin pointer at repo root (`./pickup.md`) redirects agents to the latest
-`progress/*.md` snapshot so work can be resumed with a single read.
+A thin pointer at repo root (`./progress/pickup.md`) redirects agents to the
+latest `progress/*.md` snapshot so work can be resumed with a single read.
 
 ## Writing progress
 

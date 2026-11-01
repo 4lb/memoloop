@@ -18,8 +18,8 @@ nothing committed yet. Local config `repo.name=memoloop`. No GitHub remote yet.
 Groundwork (files created):
 - `.gitignore` — `state/`, `log/`, `*.state`, editor/OS files
 - `LICENSE` — MIT
-- `README.md` — repo/project name, MemoLoop/PopLoop, resume line `read ./pickup.md`
-- `pickup.md` — resume pointer to latest `progress/*.md` + `plans/AGENT.md`
+- `README.md` — repo/project name, MemoLoop/PopLoop, resume line `read ./progress/pickup.md`
+- `progress/pickup.md` — resume pointer to latest `progress/*.md` + `plans/AGENT.md`
 - `progress/README.md` — progress report conventions (naming `YYMMDD-HHMM`, frontmatter,
   pointer sentence to latest snapshot)
 - Empty placeholder dirs: `src/`, `lib/`, `data/questions/`, `docs/`, `tests/`, `state/`,

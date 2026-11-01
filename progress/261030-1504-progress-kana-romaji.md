@@ -25,7 +25,7 @@ Improved question quality per user feedback:
 - data/questions/questions.json — legacy file, kana+romaji added to reverse questions, English-only choice options, pretty-printed
 - src/memoloop — choice type no longer displays note line
 - progress/261030-1504-progress-kana-romaji.md — this snapshot
-- pickup.md — updated pointer
+- progress/pickup.md — updated pointer
 
 ## Files modified (outside repo, ~/.config/memoloop/)
 

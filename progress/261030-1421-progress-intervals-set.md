@@ -14,12 +14,12 @@ Set default intervals per user request: fixed 45 min, random 15–30 min. Commit
 - `README.md` — updated interval docs.
 - `tests/memoloop_test.sh` — updated expected fixed interval (2700) and random range (900-1800s). All 19 tests pass.
 - `progress/261030-1354-progress-implementation.md` — updated to reflect multi-pattern question set completion.
-- `pickup.md` — updated state to "implementation complete for MVP prototype".
+- `progress/pickup.md` — updated state to "implementation complete for MVP prototype".
 
 ## Files modified
 
 Modified: src/memoloop, README.md, tests/memoloop_test.sh
-Modified: progress/261030-1354-progress-implementation.md, pickup.md
+Modified: progress/261030-1354-progress-implementation.md, progress/pickup.md
 
 ## Commands run
 

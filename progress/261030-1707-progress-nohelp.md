@@ -24,7 +24,7 @@ Added `nohelp` config flag to suppress the "Press any key to close..." prompt:
 - ~/.config/memoloop/intervals.conf — added nohelp option
 - ~/.config/niri/config.kdl — MOD+N passes MEMOLOOP_NOHELP=1
 - progress/261030-1707-progress-nohelp.md — this snapshot
-- pickup.md — updated pointer
+- progress/pickup.md — updated pointer
 
 ## Where to resume next
 

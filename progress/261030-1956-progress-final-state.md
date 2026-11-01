@@ -61,7 +61,7 @@ Final state of memoloop prototype — fully implemented, tested, and installed o
 - `tests/memoloop_test.sh` — 19 tests
 - `README.md` — documentation
 - `AGENTS.md` — no-comments policy
-- `pickup.md`, `progress/*.md` — session tracking
+- `progress/pickup.md`, `progress/*.md` — session tracking
 
 **Installed on system:**
 - `~/.local/bin/memoloop` — binary

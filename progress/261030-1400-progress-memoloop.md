@@ -14,7 +14,7 @@ Progress checkpoint after repo rename:
 - Project name `memoloop` (MemoLoop); quick-popup feature `PopLoop`
 - `git config --local repo.name memoloop`
 - `[PATH]` in plans/AGENT.md -> /home/eru/r/projects/a-memoloop
-- README.md and pickup.md updated for new names
+- README.md and progress/pickup.md updated for new names
 - Existing progress file left untouched (this snapshot appended alongside)
 - Nothing committed yet; no GitHub remote added
 

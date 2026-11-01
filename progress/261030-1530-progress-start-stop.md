@@ -23,7 +23,7 @@ Committed `ad6ed00` and pushed to `origin main`.
 
 - src/memoloop — start/stop/status rewritten
 - progress/261030-1530-progress-start-stop.md — this snapshot
-- pickup.md — updated pointer
+- progress/pickup.md — updated pointer
 
 ## Where to resume next
 

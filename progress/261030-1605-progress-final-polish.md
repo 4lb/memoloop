@@ -37,7 +37,7 @@ Commits pushed:
 - src/memoloop — full implementation
 - tests/memoloop_test.sh — 19 tests
 - progress/*.md — snapshots
-- pickup.md — pointer
+- progress/pickup.md — pointer
 
 ## Files outside repo (~/.config/memoloop/, ~/.cache/memoloop/)
 

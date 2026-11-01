@@ -39,7 +39,7 @@ Created `install.sh` following the desk-reminder/alias-manager pattern:
 - ~/.config/memoloop/pickup.set (created by install)
 - ~/.config/zsh/my_zsh_aliases (alias added by install)
 - progress/261030-1714-progress-install-script.md (this snapshot)
-- pickup.md — updated pointer
+- progress/pickup.md — updated pointer
 
 ## Committed
 

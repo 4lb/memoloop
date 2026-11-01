@@ -20,7 +20,7 @@ Implemented the memoloop Linux prototype MVP and made it runnable on the user's 
 ## Files created / modified
 
 Created: src/memoloop, lib/term.sh, data/questions/questions.json, tests/memoloop_test.sh, niri/memoloop.kdl, progress/261030-1354-progress-implementation.md
-Modified: README.md, pickup.md, ~/.config/niri/config.kdl (added memoloop.kdl include)
+Modified: README.md, progress/pickup.md, ~/.config/niri/config.kdl (added memoloop.kdl include)
 
 ## Commands run
 

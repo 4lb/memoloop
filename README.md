@@ -4,7 +4,7 @@ MemoLoop — Linux prototype of a Japanese desktop language-learning app.
 
 Project: directory `a-memoloop`, name `memoloop` (MemoLoop).
 PopLoop — the quick-popup feature (marketing / internal naming).
-Resume: `read ./pickup.md`
+Resume: `read ./progress/pickup.md`
 
 ## Status
 
