@@ -1,9 +1,8 @@
 # --- vendored from cli-utilities/term.sh, cksum 3276722527 65019; do not edit ---
-#!/bin/sh
 #
 # term.sh -- the shared output renderer.  Sourced, never executed.
 #
-# The rules it implements are written down in conventions/output.md.  If
+# The rules it implements are written down in conventions/docs/output.md.  If
 # the two ever disagree, that is a bug in one of them, and the staleness test
 # in each consuming repo is what says so.
 #
@@ -83,15 +82,15 @@ TERM_TEXT=''
 # No shape below sets bold.  Bold is what content uses when the content is a
 # heading, and a shape that forced it made every line in the box a heading.
 term_palette() {
-  # BEGIN generated: palette -- from conventions/tokens.yaml; do not edit
-  TERM_ERROR=$(printf '\033[38;2;240;113;120m')   # --error            #f07178
-  TERM_WARN=$(printf '\033[38;2;255;143;64m')     # --warning          #ff8f40
-  TERM_ADD=$(printf '\033[38;2;74;157;205m')      # --info             #4a9dcd
-  TERM_DEL=$(printf '\033[38;2;210;166;255m')     # --constant         #d2a6ff
-  TERM_OK=$(printf '\033[38;2;170;217;76m')       # --success          #aad94c
-  TERM_NEG=$(printf '\033[38;2;255;180;84m')      # --keyword          #ffb454
-  TERM_NEUTRAL=$(printf '\033[38;2;221;221;221m') # --gray             #dddddd
-  TERM_TEXT=$(printf '\033[38;2;239;239;239m')    # --foreground       #efefef
+  # BEGIN generated: palette -- from data/tokens.yaml; do not edit
+	TERM_ERROR=$(printf '\033[38;2;240;113;120m')   # --error            #f07178
+	TERM_WARN=$(printf '\033[38;2;255;143;64m')     # --warning          #ff8f40
+	TERM_ADD=$(printf '\033[38;2;74;157;205m')      # --info             #4a9dcd
+	TERM_DEL=$(printf '\033[38;2;210;166;255m')     # --constant         #d2a6ff
+	TERM_OK=$(printf '\033[38;2;170;217;76m')       # --success          #aad94c
+	TERM_NEG=$(printf '\033[38;2;255;180;84m')      # --keyword          #ffb454
+	TERM_NEUTRAL=$(printf '\033[38;2;221;221;221m') # --gray             #dddddd
+	TERM_TEXT=$(printf '\033[38;2;239;239;239m')    # --foreground       #efefef
   # END generated
 }
 
@@ -107,15 +106,15 @@ term_palette() {
 # between the two warm tokens, which is why `ansi:` in tokens.yaml is a name a
 # person chose for each token and not the nearest of the sixteen to its hex.
 term_palette_ansi() {
-  # BEGIN generated: palette-ansi -- from conventions/tokens.yaml; do not edit
-  TERM_ERROR=$(printf '\033[0;31m')   # --error      red
-  TERM_WARN=$(printf '\033[0;33m')    # --warning    yellow
-  TERM_ADD=$(printf '\033[0;34m')     # --info       blue
-  TERM_DEL=$(printf '\033[0;35m')     # --constant   magenta
-  TERM_OK=$(printf '\033[0;32m')      # --success    green
-  TERM_NEG=$(printf '\033[0;36m')     # --keyword    cyan
-  TERM_NEUTRAL=$(printf '\033[0;90m') # --gray       brightblack
-  TERM_TEXT=$(printf '\033[0;37m')    # --foreground white
+  # BEGIN generated: palette-ansi -- from data/tokens.yaml; do not edit
+	TERM_ERROR=$(printf '\033[0;31m')   # --error      red
+	TERM_WARN=$(printf '\033[0;33m')    # --warning    yellow
+	TERM_ADD=$(printf '\033[0;34m')     # --info       blue
+	TERM_DEL=$(printf '\033[0;35m')     # --constant   magenta
+	TERM_OK=$(printf '\033[0;32m')      # --success    green
+	TERM_NEG=$(printf '\033[0;36m')     # --keyword    cyan
+	TERM_NEUTRAL=$(printf '\033[0;90m') # --gray       brightblack
+	TERM_TEXT=$(printf '\033[0;37m')    # --foreground white
   # END generated
 }
 
@@ -125,7 +124,7 @@ term_palette_ansi() {
 # or it is not term_ok.
 #
 # Generated from conventions/symbols.yaml; edit the yaml and run
-# sh conventions/render.sh, never this block.
+# sh cli/generators/render.sh, never this block.
 # BEGIN generated: markers -- from conventions/symbols.yaml; do not edit
 TERM_MARK_ERROR='⟁'  # a critical failure -- the tool stopped, or the data is wrong
 TERM_MARK_WARN='▽'   # important but not critical -- the tool stopped, nothing is lost
@@ -476,6 +475,119 @@ term_truncate() { # $1 text $2 max
   printf '%s' "$_ttu_out"
 }
 
+# Visible column width of a marker glyph, or of a colour+marker string (a
+# leading SGR sequence is skipped and not counted).  Plain (`·` / `.`) is one
+# column; every other marker is two columns in the Unicode column and one
+# column in the ASCII column.  term_vocabulary equates each TERM_MARK_* with
+# its ASCII twin, so matching the ASCII set tells us we are in the narrow
+# column.
+term_marker_cols() { # $1 marker [or colour+marker] -> visible column width
+  # Every marker in data/symbols.yaml is a single-column glyph; wc -L confirms
+  # ⟁ ▽ ⊕ ⟜ ⦿ ⊘ · all measure as one column.  Skip a leading SGR sequence so
+  # the glyph itself can be matched; the width itself is always one.
+  _tmc="$1"
+  case "$_tmc" in "$(printf '\033')"*)
+    while [ -n "$_tmc" ]; do
+      _tmc_r="${_tmc#?}"; _tmc_c="${_tmc%"$_tmc_r"}"; _tmc="$_tmc_r"
+      case "$_tmc_c" in [A-Za-z]) break ;; esac
+    done
+  esac
+  printf '1'
+}
+
+# Wrap $1 into lines of at most $2 visible columns, printing each line with
+# $3 as the prefix of the first line and $4 as the prefix of every later line,
+# terminated by TERM_RESET and a newline.  SGR escapes inside $1 are copied
+# verbatim and never consume budget, so colour mid-text survives wrapping.
+# Words break at spaces only; a single word longer than the budget is cut with
+# the ellipsis (inside the budget) and occupies its own line.
+term_wrap() { # $1 text $2 maxcols $3 first_prefix $4 cont_prefix
+  _twr_s="$1"
+  _twr_max="${2:-$TERM_ROW}"
+  _twr_pfx="$3"          # prefix for the next line to print: first, then cont
+  _twr_line=''
+  _twr_len=0
+  _twr_word=''
+  _twr_wlen=0
+
+  while [ -n "$_twr_s" ]; do
+    _twr_rest="${_twr_s#?}"
+    _twr_c="${_twr_s%"$_twr_rest"}"
+    # SGR sequence: copy verbatim, never counted, never cut.
+    if [ "$_twr_c" = "$(printf '\033')" ]; then
+      _twr_word="$_twr_word$_twr_c"
+      _twr_s="$_twr_rest"
+      while [ -n "$_twr_s" ]; do
+        _twr_rest="${_twr_s#?}"
+        _twr_c="${_twr_s%"$_twr_rest"}"
+        _twr_word="$_twr_word$_twr_c"
+        _twr_s="$_twr_rest"
+        case "$_twr_c" in [A-Za-z]) break ;; esac
+      done
+      continue
+    fi
+    case "$_twr_c" in
+      ' ' | "$(printf '\t')")
+        if [ -n "$_twr_word" ]; then
+          _twr_add=$_twr_wlen
+          if [ -n "$_twr_line" ]; then _twr_add=$((_twr_add + 1)); fi
+          if [ "$((_twr_len + _twr_add))" -gt "$_twr_max" ]; then
+            if [ -n "$_twr_line" ]; then
+              printf '%s%s%s%s\n' "$_twr_pfx" "$_twr_line" "$TERM_RESET"
+              _twr_pfx="$4"
+              _twr_line=''
+              _twr_len=0
+            fi
+            if [ "$_twr_wlen" -gt "$_twr_max" ]; then
+              printf '%s%s%s%s\n' "$_twr_pfx" "$(term_truncate "$_twr_word" "$_twr_max")" "$TERM_RESET"
+              _twr_pfx="$4"
+            else
+              _twr_line="$_twr_word"; _twr_len="$_twr_wlen"
+            fi
+          else
+            if [ -n "$_twr_line" ]; then _twr_line="$_twr_line $_twr_word"; else _twr_line="$_twr_word"; fi
+            _twr_len=$((_twr_len + _twr_add))
+          fi
+          _twr_word=''
+          _twr_wlen=0
+        fi
+        ;;
+      *)
+        _twr_word="$_twr_word$_twr_c"
+        _twr_wlen=$((_twr_wlen + 1))
+        ;;
+    esac
+    _twr_s="$_twr_rest"
+  done
+
+  # Trailing word.
+  if [ -n "$_twr_word" ]; then
+    _twr_add=$_twr_wlen
+    if [ -n "$_twr_line" ]; then _twr_add=$((_twr_add + 1)); fi
+    if [ "$((_twr_len + _twr_add))" -gt "$_twr_max" ]; then
+      if [ -n "$_twr_line" ]; then
+        printf '%s%s%s%s\n' "$_twr_pfx" "$_twr_line" "$TERM_RESET"
+        _twr_pfx="$4"
+        _twr_line=''
+        _twr_len=0
+      fi
+      if [ "$_twr_wlen" -gt "$_twr_max" ]; then
+        printf '%s%s%s%s\n' "$_twr_pfx" "$(term_truncate "$_twr_word" "$_twr_max")" "$TERM_RESET"
+        _twr_pfx="$4"
+      else
+        _twr_line="$_twr_word"; _twr_len="$_twr_wlen"
+      fi
+    else
+      if [ -n "$_twr_line" ]; then _twr_line="$_twr_line $_twr_word"; else _twr_line="$_twr_word"; fi
+    fi
+  fi
+
+  if [ -n "$_twr_line" ]; then
+    printf '%s%s%s%s\n' "$_twr_pfx" "$_twr_line" "$TERM_RESET"
+  fi
+  return 0
+}
+
 # ---------------------------------------------------------------- the frame
 
 # ╭ + ─×L + " title " + ─×R + ╼  ->  exactly TERM_WIDTH, title centred.
@@ -545,15 +657,22 @@ term_rows_box() { # $1 frame colour $2 row accent $3 title $4 marker, then rows
     # indent + marker + space = 5, then up to TERM_ROW (56 + …) = 62. The
     # ellipsis sits at column 62 and the frame stays 64.  Every number there
     # is a constant and none of them is written here; the arithmetic lives in
-    # conventions/geometry.yaml and check.sh rule D reads it back.
+    # data/geometry.yaml and check.sh rule D reads it back.
     #
     # The reset is unconditional, so a row whose accent is empty still
     # ends with one. That is four bytes a hand-written plain row need not
-    # have printed; see conventions/output.md under Colour. Closing what was opened is
+    # have printed; see data/docs/output.md under Colour. Closing what was opened is
     # not worth a branch that has to be right on every call, and a plain
     # row inheriting the terminal's existing colour is the bug it stops.
-    printf '%s%s%s %s%s\n' "$TERM_INDENT" "$_trb_accent" "$_trb_marker" \
-      "$(term_truncate "$_trb_row" "$TERM_ROW")" "$TERM_RESET"
+    if [ -z "$_trb_row" ]; then
+      printf '%s%s%s %s%s\n' "$TERM_INDENT" "$_trb_accent" "$_trb_marker" "" "$TERM_RESET"
+      continue
+    fi
+    _trb_cols=$(term_marker_cols "$_trb_marker")
+    _trb_pad=$((_trb_cols + 1))
+    _trb_firstpfx="$TERM_INDENT$_trb_accent$_trb_marker "
+    _trb_contpfx="$TERM_INDENT$_trb_accent$(term_rep ' ' "$_trb_pad")"
+    term_wrap "$_trb_row" "$TERM_ROW" "$_trb_firstpfx" "$_trb_contpfx"
   done
   echo ""
   term_footer "$_trb_fc"
@@ -609,12 +728,19 @@ term_rows_box_file() { # $1 frame colour $2 row accent $3 title $4 marker $5 pat
       # offset right and it was a literal there; here it is a number in
       # geometry.yaml, and a change to it is a change in one place.
       _trbf_row=${_trbf_row#$(printf '\t')}
-      printf '%*s%s%s\n' "$TERM_CONT_INDENT" '' \
-        "$(term_truncate "$_trbf_row" "$TERM_ROW")" "$TERM_RESET"
+      _trbf_pfx=$(term_rep ' ' "$TERM_CONT_INDENT")
+      term_wrap "$_trbf_row" "$TERM_ROW" "$_trbf_pfx" "$_trbf_pfx"
       ;;
     *)
-      printf '%s%s%s %s%s\n' "$TERM_INDENT" "$_trbf_accent" "$_trbf_marker" \
-        "$(term_truncate "$_trbf_row" "$TERM_ROW")" "$TERM_RESET"
+      if [ -z "$_trbf_row" ]; then
+        printf '%s%s%s %s%s\n' "$TERM_INDENT" "$_trbf_accent" "$_trbf_marker" "" "$TERM_RESET"
+        continue
+      fi
+      _trbf_cols=$(term_marker_cols "$_trbf_marker")
+      _trbf_pad=$((_trbf_cols + 1))
+      _trbf_firstpfx="$TERM_INDENT$_trbf_accent$_trbf_marker "
+      _trbf_contpfx="$TERM_INDENT$_trbf_accent$(term_rep ' ' "$_trbf_pad")"
+      term_wrap "$_trbf_row" "$TERM_ROW" "$_trbf_firstpfx" "$_trbf_contpfx"
       ;;
     esac
   done <"$_trbf_path"
@@ -722,14 +848,28 @@ term_ask_row() { # term_ask_row <marker> <row> [--stderr]
 
     # Text with no glyph: no marker, and no marker's space either, so the
     # words start in the column the text of every other row starts in.
-    printf '%s%s%s%s' "$_term_ask_indent" "$TERM_NEUTRAL" \
-      "$(term_truncate "$2" $((TERM_WIDTH - _term_ask_len)))" "$TERM_RESET" "$_term_ask_nl" >&"$_term_ask_fd"
+    if [ -n "${TERM_ASK_NO_NEWLINE:-}" ]; then
+      printf '%s%s%s%s' "$_term_ask_indent" "$TERM_NEUTRAL" \
+        "$(term_truncate "$2" $((TERM_WIDTH - _term_ask_len)))" "$TERM_RESET" "$_term_ask_nl" >&"$_term_ask_fd"
+    else
+      _tak_pfx="$_term_ask_indent$TERM_NEUTRAL"
+      term_wrap "$2" $((TERM_WIDTH - _term_ask_len)) "$_tak_pfx" "$_tak_pfx" >&"$_term_ask_fd"
+    fi
     ;;
 
   *)
 
-    printf '%s%s%s %s%s%s' "$_term_ask_indent" "$(term_marker_color "$1")" "$1" \
-      "$(term_truncate "$2" "$TERM_ROW")" "$TERM_RESET" "$_term_ask_nl" >&"$_term_ask_fd"
+    _tak_color=$(term_marker_color "$1")
+    _tak_cols=$(term_marker_cols "$_tak_color$1")
+    _tak_pad=$((_tak_cols + 1))
+    _tak_firstpfx="$_term_ask_indent$_tak_color$1 "
+    _tak_contpfx="$_term_ask_indent$_tak_color$(term_rep ' ' "$_tak_pad")"
+    if [ -n "${TERM_ASK_NO_NEWLINE:-}" ]; then
+      printf '%s%s%s %s%s%s' "$_term_ask_indent" "$_tak_color" "$1" \
+        "$(term_truncate "$2" "$TERM_ROW")" "$TERM_RESET" "$_term_ask_nl" >&"$_term_ask_fd"
+    else
+      term_wrap "$2" "$TERM_ROW" "$_tak_firstpfx" "$_tak_contpfx" >&"$_term_ask_fd"
+    fi
     ;;
 
   esac
@@ -871,21 +1011,22 @@ term_notice_state() { # $1 frame colour $2 row accent $3 marker $4 message
   # The marker goes on the first line and the rest line up under it, which
   # is what term_alert does for the same reason: a hand-formatted block
   # keeps its own alignment instead of starting again at column 1.
+  _tn_cols=$(term_marker_cols "$3")
+  _tn_pad=$((_tn_cols + 1))
+  _tn_firstpfx="$TERM_INDENT$_tns_accent$3 "
+  _tn_contpfx="$TERM_INDENT$_tns_accent$(term_rep ' ' "$_tn_pad")"
   printf '%s' "$4" | (
-    _tn_first=1
+    _tn_started=0
     while IFS= read -r _tn_line || [ -n "$_tn_line" ]; do
-      if [ "$_tn_first" -eq 1 ]; then
-        printf '%s%s%s %s%s\n' \
-          "$TERM_INDENT" "$_tns_accent" "$3" "$_tn_line" \
-          "$TERM_RESET"
-        _tn_first=0
-      elif [ -z "$_tn_line" ]; then
+      if [ -z "$_tn_line" ]; then
         printf '\n'
+        continue
+      fi
+      if [ "$_tn_started" -eq 0 ]; then
+        term_wrap "$_tn_line" "$TERM_ROW" "$_tn_firstpfx" "$_tn_contpfx"
+        _tn_started=1
       else
-        # Gap before the text, not after: it was after, and
-        # every continuation line ended in two spaces.
-        printf '%s  %s%s\n' \
-          "$TERM_INDENT" "$_tn_line" "$TERM_RESET"
+        term_wrap "$_tn_line" "$TERM_ROW" "$_tn_contpfx" "$_tn_contpfx"
       fi
     done
   )
@@ -989,25 +1130,40 @@ term_status() { # $1 title, then (marker, row) pairs; "" = the plain marker
       ;;
     '')
       _ts_color=$(term_marker_color "$TERM_MARK_PLAIN")
-      printf '%s%s %s%s\n' "$TERM_INDENT" "$_ts_color$TERM_MARK_PLAIN" \
-        "$(term_truncate "$2" "$TERM_ROW")" "$TERM_RESET"
+      _ts_m="$_ts_color$TERM_MARK_PLAIN"
+      _ts_cols=$(term_marker_cols "$_ts_m")
+      _ts_pad=$((_ts_cols + 1))
+      _ts_firstpfx="$TERM_INDENT$_ts_m "
+      _ts_contpfx="$TERM_INDENT$_ts_color$(term_rep ' ' "$_ts_pad")"
+      term_wrap "$2" "$TERM_ROW" "$_ts_firstpfx" "$_ts_contpfx"
       ;;
     # Has a glyph, or has colour.  A colour is the caller's own and
     # is passed through with nothing added: a second colour would
     # be a lie about whose choice this is.
     *[![:space:]]*)
       if case "$1" in *"$(printf '\033')"*) true ;; *) false ;; esac then
-        # Already coloured by the caller; pass through.
-        printf '%s%s %s%s\n' "$TERM_INDENT" "$1" \
-          "$(term_truncate "$2" "$TERM_ROW")" "$TERM_RESET"
+        # Already coloured by the caller; pass through.  $1 is colour+glyph;
+        # the glyph is one character, so stripping the last char yields the
+        # colour prefix alone for the continuation indent.
+        _ts_m="$1"
+        _ts_c0="${_ts_m%?}"
+        _ts_cols=$(term_marker_cols "$_ts_m")
+        _ts_pad=$((_ts_cols + 1))
+        _ts_firstpfx="$TERM_INDENT$_ts_m "
+        _ts_contpfx="$TERM_INDENT$_ts_c0$(term_rep ' ' "$_ts_pad")"
+        term_wrap "$2" "$TERM_ROW" "$_ts_firstpfx" "$_ts_contpfx"
       else
         _ts_color=$(term_marker_color "$1")
         # Colour and marker as two arguments rather than one glued
         # together: the format has five conversions, and feeding it four
         # put the space that separates a marker from its text after the
         # text instead, so a row read as marker and words in one token.
-        printf '%s%s%s %s%s\n' "$TERM_INDENT" "$_ts_color" "$1" \
-          "$(term_truncate "$2" "$TERM_ROW")" "$TERM_RESET"
+        _ts_m="$_ts_color$1"
+        _ts_cols=$(term_marker_cols "$_ts_m")
+        _ts_pad=$((_ts_cols + 1))
+        _ts_firstpfx="$TERM_INDENT$_ts_m "
+        _ts_contpfx="$TERM_INDENT$_ts_color$(term_rep ' ' "$_ts_pad")"
+        term_wrap "$2" "$TERM_ROW" "$_ts_firstpfx" "$_ts_contpfx"
       fi
       ;;
     # Spaces and nothing else: no glyph, and still a row of text.
@@ -1023,8 +1179,8 @@ term_status() { # $1 title, then (marker, row) pairs; "" = the plain marker
     # would have had to be compared by value, and the one thing it
     # could not do is stop a literal from being wrong quietly.
     *)
-      printf '%s%s  %s%s\n' "$TERM_INDENT" '' \
-        "$(term_truncate "$2" "$TERM_ROW")" "$TERM_RESET"
+      _ts_pfx="$TERM_INDENT  "
+      term_wrap "$2" "$TERM_ROW" "$_ts_pfx" "$_ts_pfx"
       ;;
     esac
     shift 2
@@ -1433,31 +1589,22 @@ term_alert() { # $1 frame colour $2 marker $3 TITLE, then one or more messages
   # argument the rows after the first are still that warning's continuation,
   # which is what a hand-formatted block of advice needs.
   for _tal_msg in "$@"; do
+    _tal_cols=$(term_marker_cols "$_tal_m")
+    _tal_pad=$((_tal_cols + 1))
+    _tal_firstpfx="$TERM_INDENT$_tal_c$_tal_m "
+    _tal_contpfx="$TERM_INDENT$_tal_c$(term_rep ' ' "$_tal_pad")"
     printf '%s\n' "$_tal_msg" | (
-      _tal_first=1
-      while IFS= read -r _tal_line; do
-        if [ "$_tal_first" -eq 1 ]; then
-          printf '%s%s%s %s%s\n' \
-            "$TERM_INDENT" "$_tal_c" "$_tal_m" "$_tal_line" "$TERM_RESET"
-          _tal_first=0
+      _tal_started=0
+      while IFS= read -r _tal_line || [ -n "$_tal_line" ]; do
+        if [ -z "$_tal_line" ]; then
+          printf '\n'
+          continue
+        fi
+        if [ "$_tal_started" -eq 0 ]; then
+          term_wrap "$_tal_line" "$TERM_ROW" "$_tal_firstpfx" "$_tal_contpfx"
+          _tal_started=1
         else
-          # A blank advice line is a blank line, not an indented
-          # one.  Indenting it produced TERM_INDENT plus two
-          # spaces plus a reset on a row with no glyph on it --
-          # five trailing spaces, or a reset escape ending
-          # nothing, in every framed message that separated a
-          # sentence from the command that fixes it.  Trailing
-          # whitespace is not cosmetic here: this output is
-          # compared byte for byte by golden files and pasted
-          # into issue trackers, and both of those are made
-          # noisier by it.
-          if [ -z "$_tal_line" ]; then
-            printf '\n'
-          else
-            printf '%s%s  %s%s\n' \
-              "$TERM_INDENT" "$_tal_c" "$_tal_line" \
-              "$TERM_RESET"
-          fi
+          term_wrap "$_tal_line" "$TERM_ROW" "$_tal_contpfx" "$_tal_contpfx"
         fi
       done
     )
