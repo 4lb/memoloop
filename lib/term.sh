@@ -1129,12 +1129,13 @@ term_status() { # $1 title, then (marker, row) pairs; "" = the plain marker
         "$TERM_RESET"
       ;;
     '')
-      _ts_color=$(term_marker_color "$TERM_MARK_PLAIN")
-      _ts_m="$_ts_color$TERM_MARK_PLAIN"
+      # A plain row is a bare reset: the frame may be neutral, but the row
+      # itself carries no colour (term_notice_state does the same).
+      _ts_m="$TERM_MARK_PLAIN"
       _ts_cols=$(term_marker_cols "$_ts_m")
       _ts_pad=$((_ts_cols + 1))
       _ts_firstpfx="$TERM_INDENT$_ts_m "
-      _ts_contpfx="$TERM_INDENT$_ts_color$(term_rep ' ' "$_ts_pad")"
+      _ts_contpfx="$TERM_INDENT$(term_rep ' ' "$_ts_pad")"
       term_wrap "$2" "$TERM_ROW" "$_ts_firstpfx" "$_ts_contpfx"
       ;;
     # Has a glyph, or has colour.  A colour is the caller's own and
